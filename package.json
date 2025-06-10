@@ -1,0 +1,25 @@
+{
+  "name": "openrouter-image-analysis",
+  "version": "1.0.0",
+  "description": "MVP TypeScript application for image analysis using OpenRouter API and Google Gemini",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "text": "ts-node src/index.ts --text",
+    "clean": "rimraf dist"
+  },
+  "keywords": ["typescript", "openrouter", "gemini", "image-analysis", "ai"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "rimraf": "^5.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.0"
+  }
+} 
