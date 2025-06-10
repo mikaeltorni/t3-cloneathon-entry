@@ -1,47 +1,60 @@
 import { useState, useEffect } from 'react';
-import { ApiKeySetup } from './components/ApiKeySetup';
 import { ImageAnalysis } from './components/ImageAnalysis';
 import { TextAnalysis } from './components/TextAnalysis';
 import { createOpenRouterService, OpenRouterService } from './services/openrouter';
 
 function App() {
-  const [apiKey, setApiKey] = useState('');
   const [openRouterService, setOpenRouterService] = useState<OpenRouterService | null>(null);
   const [activeTab, setActiveTab] = useState<'image' | 'text'>('image');
-  const [apiKeySource, setApiKeySource] = useState<'env' | 'storage' | 'manual' | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load API key from environment variable or localStorage on component mount
+  // Load API key from environment variable on component mount
   useEffect(() => {
-    // First, try environment variable (Vite requires VITE_ prefix)
     const envApiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+    
     if (envApiKey && envApiKey.trim()) {
       console.log('✅ Using API key from VITE_OPENROUTER_API_KEY environment variable');
-      setApiKey(envApiKey.trim());
       setOpenRouterService(createOpenRouterService(envApiKey.trim()));
-      setApiKeySource('env');
-      return;
+      setError(null);
+    } else {
+      console.error('❌ VITE_OPENROUTER_API_KEY environment variable not found or empty');
+      setError('VITE_OPENROUTER_API_KEY environment variable is required but not set.');
     }
-
-    // Fall back to localStorage
-    const savedApiKey = localStorage.getItem('openrouter-api-key');
-    if (savedApiKey && savedApiKey.trim()) {
-      console.log('📁 Using API key from localStorage');
-      setApiKey(savedApiKey);
-      setOpenRouterService(createOpenRouterService(savedApiKey));
-      setApiKeySource('storage');
-      return;
-    }
-
-    // No API key found - user needs to enter manually
-    setApiKeySource('manual');
+    
+    setIsLoading(false);
   }, []);
 
-  const handleApiKeySubmit = (newApiKey: string) => {
-    setApiKey(newApiKey);
-    localStorage.setItem('openrouter-api-key', newApiKey);
-    setOpenRouterService(createOpenRouterService(newApiKey));
-    setApiKeySource('manual');
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+            <span className="text-4xl mb-4 block">⚠️</span>
+            <h2 className="text-xl font-bold text-red-800 mb-2">Environment Variable Required</h2>
+            <p className="text-red-700 mb-4">{error}</p>
+            <div className="bg-red-100 rounded-lg p-3 text-left">
+              <p className="text-sm text-red-800 font-medium mb-2">To fix this:</p>
+              <code className="text-xs bg-red-200 px-2 py-1 rounded block">
+                VITE_OPENROUTER_API_KEY=your_api_key_here
+              </code>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4">
@@ -56,56 +69,7 @@ function App() {
             Powered by Google's Gemini 2.5 Flash model via OpenRouter. 
             Analyze images and get AI-powered text responses with cutting-edge technology.
           </p>
-          
-          {/* API Key Status */}
-          {apiKeySource && (
-            <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              {apiKeySource === 'env' && (
-                <>
-                  <span className="mr-1">🌍</span>
-                  API key loaded from environment variable
-                </>
-              )}
-              {apiKeySource === 'storage' && (
-                <>
-                  <span className="mr-1">💾</span>
-                  API key loaded from browser storage
-                </>
-              )}
-              {apiKeySource === 'manual' && (
-                <>
-                  <span className="mr-1">✋</span>
-                  API key entered manually
-                </>
-              )}
-            </div>
-          )}
         </header>
-
-        {/* API Key Setup - Only show if no environment variable is set */}
-        {apiKeySource !== 'env' && (
-          <ApiKeySetup 
-            onApiKeySubmit={handleApiKeySubmit} 
-            currentApiKey={apiKey}
-            isEnvKeyAvailable={false}
-          />
-        )}
-
-        {/* Show environment key info if available */}
-        {apiKeySource === 'env' && (
-          <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-xl">
-            <div className="flex items-center">
-              <span className="text-2xl mr-3">🌍</span>
-              <div>
-                <h3 className="font-semibold text-green-800">Environment Configuration Active</h3>
-                <p className="text-green-700 text-sm">
-                  API key is automatically loaded from <code className="bg-green-100 px-1 rounded">VITE_OPENROUTER_API_KEY</code> environment variable.
-                  No manual setup required!
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Tab Navigation */}
         <div className="mb-6">

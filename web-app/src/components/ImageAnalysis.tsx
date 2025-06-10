@@ -13,11 +13,6 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ openRouterService 
   const [error, setError] = useState('');
 
   const handleAnalyze = async () => {
-    if (!openRouterService) {
-      setError('Please provide your OpenRouter API key first');
-      return;
-    }
-
     if (!imageUrl.trim()) {
       setError('Please provide an image URL');
       return;
@@ -28,7 +23,7 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ openRouterService 
     setResult('');
 
     try {
-      const analysis = await openRouterService.analyzeImage(imageUrl.trim(), prompt.trim());
+      const analysis = await openRouterService!.analyzeImage(imageUrl.trim(), prompt.trim());
       setResult(analysis);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during analysis');
@@ -101,9 +96,9 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ openRouterService 
 
         <button
           onClick={handleAnalyze}
-          disabled={loading || !openRouterService}
+          disabled={loading}
           className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 ${
-            loading || !openRouterService
+            loading
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
           }`}

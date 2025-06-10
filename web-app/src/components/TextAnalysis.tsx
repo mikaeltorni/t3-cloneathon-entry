@@ -12,11 +12,6 @@ export const TextAnalysis: React.FC<TextAnalysisProps> = ({ openRouterService })
   const [error, setError] = useState('');
 
   const handleAnalyze = async () => {
-    if (!openRouterService) {
-      setError('Please provide your OpenRouter API key first');
-      return;
-    }
-
     if (!prompt.trim()) {
       setError('Please enter a question or prompt');
       return;
@@ -27,7 +22,7 @@ export const TextAnalysis: React.FC<TextAnalysisProps> = ({ openRouterService })
     setResult('');
 
     try {
-      const analysis = await openRouterService.analyzeText(prompt.trim());
+      const analysis = await openRouterService!.analyzeText(prompt.trim());
       setResult(analysis);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during analysis');
@@ -97,9 +92,9 @@ export const TextAnalysis: React.FC<TextAnalysisProps> = ({ openRouterService })
 
         <button
           onClick={handleAnalyze}
-          disabled={loading || !openRouterService}
+          disabled={loading}
           className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 ${
-            loading || !openRouterService
+            loading
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
           }`}
