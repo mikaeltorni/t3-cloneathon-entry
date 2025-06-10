@@ -1,118 +1,271 @@
-# t3-cloneathon-entry
+# OpenRouter AI Analysis Platform
 
-https://cloneathon.t3.chat/
+A powerful dual-platform application for analyzing images and text using Google's Gemini 2.5 Flash model via OpenRouter API. Available as both a command-line tool and a modern web application.
 
-A TypeScript application that analyzes images using the OpenRouter API with Google's Gemini 2.5 Flash model.
+## 🚀 Features
 
-## Features
+### 🖼️ **Image Analysis**
+- Analyze any image from a URL
+- Custom prompts for specific analysis needs
+- High-quality results from Google Gemini 2.5 Flash
+- Support for various image formats
 
-- 🖼️ Analyze any image from a URL
-- 🤖 Uses Google Gemini 2.5 Flash Preview model via OpenRouter
-- 💬 Custom prompts for different analysis needs
-- 🔧 Full TypeScript support with proper types
-- ⚡ Simple command-line interface
+### 💬 **Text Analysis** 
+- Ask questions and get AI-powered responses
+- Creative writing assistance
+- Technical explanations
+- General knowledge queries
 
-## Setup
+### 🛠️ **Dual Platform Support**
+- **CLI Version**: Perfect for automation and scripting
+- **Web Version**: Beautiful, modern interface with React + Tailwind CSS
 
-### Prerequisites
+## 📦 Project Structure
 
-- Node.js (v18 or higher)
-- npm
-- An OpenRouter API key
-
-### Installation
-
-1. Install dependencies:
-```bash
-npm install
+```
+├── 📁 CLI Application (Node.js + TypeScript)
+│   ├── src/
+│   │   └── index.ts          # Main CLI application
+│   ├── package.json          # CLI dependencies
+│   ├── tsconfig.json         # TypeScript config
+│   └── openrouterkey.txt     # API key file
+│
+├── 🌐 Web Application (React + TypeScript + Tailwind)
+│   └── web-app/
+│       ├── src/
+│       │   ├── components/   # React components
+│       │   ├── services/     # API integration
+│       │   └── App.tsx       # Main React app
+│       ├── package.json      # Web dependencies
+│       └── dist/             # Built files
+│
+└── README.md                 # This file
 ```
 
-2. Get your OpenRouter API key:
-   - Visit [OpenRouter](https://openrouter.ai/)
-   - Sign up for an account
-   - Generate an API key
+## 🔧 Setup & Installation
 
-3. Add your API key:
-   - Edit the `openrouterkey.txt` file
-   - Replace `YOUR_OPENROUTER_API_KEY_HERE` with your actual API key
+### Prerequisites
+- Node.js (v18 or higher)
+- npm
+- OpenRouter API key from [OpenRouter.ai](https://openrouter.ai/)
 
-## Usage
-
-### Development Mode (Recommended)
-
-Run with TypeScript directly:
+### 1. Clone and Install
 ```bash
-# Analyze the default image
+# Install CLI dependencies
+npm install
+
+# Install web app dependencies
+cd web-app
+npm install
+cd ..
+```
+
+### 2. Get Your API Key
+1. Visit [OpenRouter.ai](https://openrouter.ai/)
+2. Create an account and generate an API key
+3. **For CLI**: Add your key to `openrouterkey.txt`
+4. **For Web**: Enter your key in the web interface (stored locally)
+
+## 🖥️ CLI Usage
+
+### Basic Commands
+```bash
+# Analyze the default demo image
 npm run dev
 
 # Analyze a custom image
-npm run dev "https://example.com/your-image.jpg"
+npm run dev "https://example.com/image.jpg"
 
-# Analyze with a custom prompt
-npm run dev "https://example.com/your-image.jpg" "Describe this image in detail"
+# Analyze with custom prompt
+npm run dev "https://example.com/image.jpg" "Describe the colors in detail"
+
+# Text-only analysis
+npm run dev --text "Explain quantum physics in simple terms"
+
+# Alternative text command
+npm run text "Write a short story about AI"
 ```
 
-### Production Mode
-
-Build and run the compiled JavaScript:
+### CLI Examples
 ```bash
-# Build the project
-npm run build
+# Image analysis examples
+npm run dev "https://picsum.photos/800/600" "What's the mood of this image?"
+npm run dev "https://example.com/photo.jpg" "Count the objects in this image"
 
-# Run the compiled version
-npm start
-
-# Or with arguments
-node dist/index.js "https://example.com/your-image.jpg" "What colors are in this image?"
+# Text analysis examples  
+npm run dev --text "How do I implement a binary search in Python?"
+npm run text "What are the differences between React and Vue?"
 ```
 
-## Example
+## 🌐 Web Application Usage
 
-The application comes with a default image for testing:
+### Start the Web Server
 ```bash
+cd web-app
 npm run dev
 ```
 
-This will analyze this sample image: https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg
+Then visit: **http://localhost:5173**
 
-## API Details
+### Web Features
+- 🎨 **Beautiful UI** with glass morphism effects
+- 📱 **Fully responsive** design
+- 🔄 **Real-time analysis** with loading states
+- 🎯 **Tab-based interface** for images and text
+- 🔐 **Secure API key management**
+- ✨ **Smooth animations** and modern UX
 
-The application uses the exact API call structure you provided:
-
-- **Model**: `google/gemini-2.5-flash-preview-05-20`
-- **Endpoint**: `https://openrouter.ai/api/v1/chat/completions`
-- **Headers**: Includes Authorization, HTTP-Referer, X-Title, and Content-Type
-- **Format**: Supports both text prompts and image URLs in the same request
-
-## Project Structure
-
-```
-├── src/
-│   └── index.ts          # Main TypeScript application
-├── dist/                 # Compiled JavaScript (after build)
-├── openrouterkey.txt     # Your API key (keep private!)
-├── package.json          # Project dependencies and scripts
-├── tsconfig.json         # TypeScript configuration
-└── README.md            # This file
+### Production Build
+```bash
+cd web-app
+npm run build      # Build for production
+npm run preview    # Preview production build
 ```
 
-## Scripts
+## 🛠️ Development
 
-- `npm run dev` - Run with ts-node for development
-- `npm run build` - Compile TypeScript to JavaScript
-- `npm start` - Run the compiled JavaScript
-- `npm run clean` - Remove the dist directory
+### CLI Development
+```bash
+# Run in development mode
+npm run dev
 
-## Security Notes
+# Build TypeScript
+npm run build
 
-- Never commit your API key to version control
-- The `openrouterkey.txt` file should be added to `.gitignore`
-- Keep your OpenRouter API key secure and private
+# Run compiled version
+npm start
 
-## Error Handling
+# Clean build files
+npm run clean
+```
 
-The application includes comprehensive error handling for:
-- Missing or invalid API keys
-- Network errors
-- Invalid image URLs
-- API response errors
+### Web Development
+```bash
+cd web-app
+
+# Development server with hot reload
+npm run dev
+
+# Build for production
+npm run build
+
+# Type checking
+npm run type-check
+```
+
+## 🔑 API Configuration
+
+### CLI Configuration
+Edit `openrouterkey.txt`:
+```
+sk-or-v1-your-api-key-here
+```
+
+### Web Configuration
+- API key is entered through the web interface
+- Stored securely in browser's localStorage
+- Never sent to external servers (except OpenRouter)
+
+## 🎯 Use Cases
+
+### Image Analysis
+- **Content Moderation**: Analyze uploaded images
+- **Accessibility**: Generate alt text for images
+- **E-commerce**: Describe product images
+- **Social Media**: Analyze visual content
+
+### Text Analysis
+- **Customer Support**: AI-powered responses
+- **Content Creation**: Writing assistance
+- **Education**: Explain complex topics
+- **Development**: Code explanations and help
+
+## 🏗️ Tech Stack
+
+### CLI Application
+- **Runtime**: Node.js
+- **Language**: TypeScript
+- **HTTP Client**: Native Node.js https module
+- **Build**: TypeScript Compiler
+
+### Web Application
+- **Framework**: React 18
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 3.4
+- **Build Tool**: Vite
+- **HTTP Client**: Fetch API
+
+## 🔒 Security
+
+- API keys stored locally (never transmitted to our servers)
+- HTTPS communication with OpenRouter API
+- No data logging or storage
+- Client-side processing for web app
+
+## 🤖 AI Model
+
+**Google Gemini 2.5 Flash Preview** via OpenRouter
+- Multimodal capabilities (text + images)
+- High-quality responses
+- Fast processing
+- Latest AI technology
+
+## 📋 Scripts Reference
+
+### CLI Scripts
+```bash
+npm run dev      # Development mode
+npm run build    # Build TypeScript
+npm start        # Run built version
+npm run clean    # Clean build files
+npm run text     # Text-only shortcut
+```
+
+### Web Scripts
+```bash
+npm run dev      # Development server
+npm run build    # Production build
+npm run preview  # Preview build
+npm run lint     # Code linting
+```
+
+## 🚀 Getting Started Quickly
+
+### Try CLI Right Now
+```bash
+# 1. Add your API key to openrouterkey.txt
+echo "your-api-key-here" > openrouterkey.txt
+
+# 2. Test with demo image
+npm run dev
+
+# 3. Try text analysis
+npm run text "Hello AI, explain machine learning!"
+```
+
+### Try Web App Right Now
+```bash
+# 1. Start web server
+cd web-app && npm run dev
+
+# 2. Open http://localhost:5173
+# 3. Enter your API key in the web interface
+# 4. Start analyzing!
+```
+
+## 🤝 Contributing
+
+Feel free to submit issues and enhancement requests! This project demonstrates:
+- Modern TypeScript development
+- React best practices
+- Beautiful UI design with Tailwind
+- API integration patterns
+- Dual-platform architecture
+
+## 📝 License
+
+MIT License - Feel free to use this code for your own projects!
+
+---
+
+**Built with ❤️ using React, TypeScript, Tailwind CSS, and Google Gemini AI**
