@@ -3,9 +3,14 @@ import { useState } from 'react';
 interface ApiKeySetupProps {
   onApiKeySubmit: (apiKey: string) => void;
   currentApiKey: string;
+  isEnvKeyAvailable?: boolean;
 }
 
-export const ApiKeySetup: React.FC<ApiKeySetupProps> = ({ onApiKeySubmit, currentApiKey }) => {
+export const ApiKeySetup: React.FC<ApiKeySetupProps> = ({ 
+  onApiKeySubmit, 
+  currentApiKey, 
+  isEnvKeyAvailable = false 
+}) => {
   const [apiKey, setApiKey] = useState(currentApiKey);
   const [showKey, setShowKey] = useState(false);
 
@@ -26,8 +31,18 @@ export const ApiKeySetup: React.FC<ApiKeySetupProps> = ({ onApiKeySubmit, curren
         <ol className="text-blue-700 text-sm space-y-1 list-decimal list-inside">
           <li>Visit <a href="https://openrouter.ai/" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-800">OpenRouter.ai</a></li>
           <li>Create an account and generate an API key</li>
-          <li>Enter your API key below to start analyzing images and text</li>
+          {isEnvKeyAvailable ? (
+            <li>Set the <code className="bg-blue-100 px-1 rounded">VITE_OPENROUTER_API_KEY</code> environment variable</li>
+          ) : (
+            <li>Enter your API key below to start analyzing images and text</li>
+          )}
         </ol>
+        
+        {!isEnvKeyAvailable && (
+          <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+            <strong>💡 Pro Tip:</strong> For easier deployment, set the <code className="bg-yellow-100 px-1 rounded">VITE_OPENROUTER_API_KEY</code> environment variable instead of manual entry.
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">

@@ -47,18 +47,30 @@ class ImageAnalyzer {
   }
 
   private loadApiKey(): string {
+    // First, try to load from environment variable
+    const envApiKey = process.env.OPENROUTER_API_KEY;
+    if (envApiKey && envApiKey.trim()) {
+      console.log('✅ Using API key from OPENROUTER_API_KEY environment variable');
+      return envApiKey.trim();
+    }
+
+    // Fall back to file-based approach
     try {
       const keyPath = join(process.cwd(), 'openrouterkey.txt');
-      const apiKey = readFileSync(keyPath, 'utf-8').trim();
+      const fileApiKey = readFileSync(keyPath, 'utf-8').trim();
       
-      if (!apiKey) {
-        throw new Error('API key is empty');
+      if (!fileApiKey || fileApiKey === 'YOUR_OPENROUTER_API_KEY_HERE') {
+        throw new Error('API key file contains placeholder text');
       }
       
-      return apiKey;
+      console.log('📁 Using API key from openrouterkey.txt file');
+      return fileApiKey;
     } catch (error) {
-      console.error('Error loading API key from openrouterkey.txt:', error);
-      console.log('Please create an openrouterkey.txt file in the project root with your OpenRouter API key.');
+      console.error('❌ Error loading API key:', error);
+      console.log('\n🔑 API Key Setup Options:');
+      console.log('  1. Set environment variable: OPENROUTER_API_KEY=your-key-here');
+      console.log('  2. Create openrouterkey.txt file with your API key');
+      console.log('  3. Get your API key from: https://openrouter.ai/');
       process.exit(1);
     }
   }
