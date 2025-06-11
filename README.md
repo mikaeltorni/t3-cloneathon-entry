@@ -1,27 +1,75 @@
 # OpenRouter Chat App
 
-A modern chat application with Google Authentication and multiple AI models via OpenRouter API.
+A modern chat application with AI integration using OpenRouter API, Google Authentication, and React + TypeScript.
 
-## 🚀 Quick Setup
+## Quick Setup
 
-### Prerequisites
-- Node.js 18+
-- OpenRouter API key ([get one here](https://openrouter.ai/))
-- Firebase project ([create one here](https://firebase.google.com/))
+1. **Clone and install dependencies:**
+   ```bash
+   git clone <your-repo-url>
+   cd t3-cloneathon-entry
+   npm install
+   cd web-app && npm install && cd ..
+   ```
 
-### 1. Environment Configuration
+2. **Set up environment variables:**
+   ```bash
+   cp env.template .env
+   ```
+   Edit `.env` with your actual values:
+   - `OPENROUTER_API_KEY` - Your OpenRouter API key
+   - Firebase configuration variables
+   - `PORT=3000` (server port)
 
-Copy the environment template and configure your keys:
+3. **Build the application:**
+   ```bash
+   npm run build
+   ```
+
+4. **Start development:**
+   ```bash
+   npm run dev
+   ```
+   - Server runs on: http://localhost:3000
+   - Frontend dev server: http://localhost:5173
+   - API endpoints: http://localhost:3000/api
+
+5. **Start production:**
+   ```bash
+   npm start
+   ```
+   - Full app runs on: http://localhost:3000
+
+## Port Configuration
+
+- **Backend Server**: PORT=3000 (configurable via .env)
+- **Frontend Dev Server**: 5173 (Vite default)
+- **Frontend Proxy**: `/api/*` requests → `http://localhost:3000`
+- **Production**: Single server on PORT=3000 serving both API and static files
+
+## Architecture
+
+- **Frontend**: React 18 + TypeScript + Tailwind CSS + Vite
+- **Backend**: Express.js + TypeScript
+- **Authentication**: Firebase Google Auth (server-side config)
+- **AI Integration**: OpenRouter API with multiple model support
+- **Build System**: TypeScript compilation + Vite bundling
+
+## Available Scripts
+
+- `npm run dev` - Start both server and frontend in development
+- `npm run build` - Build both server and frontend for production
+- `npm run server:dev` - Start only the backend server
+- `npm run web:dev` - Start only the frontend dev server
+- `npm start` - Start production server
+
+## Environment Variables
+
+All environment variables are server-side only for security:
 
 ```bash
-cp env.template .env
-```
-
-Edit `.env` with your actual values:
-
-```env
 # OpenRouter API Configuration
-OPENROUTER_API_KEY=sk-or-v1-your-actual-key-here
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
 
 # Server Configuration  
 PORT=3000
@@ -32,38 +80,31 @@ FIREBASE_API_KEY=your-firebase-api-key
 FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
-FIREBASE_MESSAGING_SENDER_ID=123456789012
-FIREBASE_APP_ID=1:123456789012:web:abcdef123456
+FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
+FIREBASE_APP_ID=your-firebase-app-id
 ```
 
-### 2. Firebase Setup
+## API Endpoints
 
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project or select existing
-3. **Enable Authentication:**
-   - Navigate to Authentication → Sign-in method
-   - Enable **Google** provider
-   - Add your domain (localhost for development)
-4. **Get Configuration:**
-   - Go to Project Settings → General
-   - Find your web app configuration
-   - Copy the values to your `.env` file
+- `GET /api/health` - Server health check
+- `GET /api/config/firebase` - Firebase configuration for frontend
+- `POST /api/chats/message` - Send chat message
+- `GET /api/models` - Available AI models
 
-### 3. Install and Run
+## Production Build Commands
 
 ```bash
-# Install dependencies
-npm install
-cd web-app && npm install && cd ..
+# Full build process
+npm run build
 
-# Start the application
-npm run dev
+# Individual builds
+npm run server:build  # TypeScript compilation
+npm run web:build     # Vite build
+
+# Alternative build commands
+cd web-app && npm run build  # Build from web-app directory
+tsc -b && vite build         # Direct TypeScript + Vite build
 ```
-
-The app will be available at:
-- **Frontend**: http://localhost:5173
-- **Backend**: http://localhost:3000
-- **API Docs**: http://localhost:3000/api
 
 ## 🔐 Authentication
 
