@@ -43,7 +43,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       handleSubmit(e);
     }
   };
@@ -163,7 +164,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Type your message... (Ctrl/Cmd + Enter to send)"
+              placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
               className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
               rows={1}
               style={{ minHeight: '48px', maxHeight: '120px' }}
@@ -192,7 +193,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </form>
         
         <p className="text-xs text-gray-500 mt-2 text-center">
-          Tip: Press Ctrl/Cmd + Enter to quickly send your message
+          Tip: Press Enter to send, Shift+Enter for new line
         </p>
       </div>
     </div>
