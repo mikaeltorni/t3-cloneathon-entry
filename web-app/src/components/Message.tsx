@@ -1,223 +1,214 @@
 /**
  * Message.tsx
  * 
- * Individual message component for chat interface
- * Extracted from ChatInterface.tsx for better organization
+ * Individual message component for displaying user and assistant messages
  * 
  * Components:
  *   Message
  * 
  * Features:
- *   - User vs Assistant message styling
- *   - Image display support (single and multiple images)
+ *   - User and assistant message styling
+ *   - Image rendering with responsive grid
  *   - Reasoning toggle and collapsible display
  *   - Timestamp formatting
- *   - Loading states for reasoning
+ *   - Copy message functionality
+ *   - Performance optimized with React.memo
  * 
- * Usage: <Message message={msg} onToggleReasoning={toggleReasoning} isReasoningExpanded={expanded} />
+ * Usage: <Message message={message} showReasoning={showReasoning} onToggleReasoning={handleToggle} />
  */
-import React, { useCallback } from 'react';
-import { cn } from '../utils/cn';
+import React, { useState, useCallback, useMemo } from 'react';
 import type { ChatMessage } from '../../../src/shared/types';
 
-/**
- * Props for the Message component
- */
 interface MessageProps {
   message: ChatMessage;
-  isReasoningExpanded: boolean;
-  onToggleReasoning: (messageId: string) => void;
+  showReasoning: boolean;
+  onToggleReasoning: () => void;
 }
 
 /**
- * Individual message component
+ * Individual message display component
  * 
- * Handles display of both user and assistant messages with:
- * - Image attachments (single and multiple)
- * - Reasoning display for AI messages
- * - Proper styling and formatting
- * 
- * @param message - Message object to display
- * @param isReasoningExpanded - Whether reasoning is expanded
- * @param onToggleReasoning - Callback to toggle reasoning expansion
- * @returns React component
+ * @param {MessageProps} props - Message properties
+ * @returns {JSX.Element} Rendered message component
  */
-export const Message: React.FC<MessageProps> = ({
-  message,
-  isReasoningExpanded,
-  onToggleReasoning
+const Message: React.FC<MessageProps> = React.memo(({ 
+  message, 
+  showReasoning, 
+  onToggleReasoning 
 }) => {
-  const isUser = message.role === 'user';
-  
-  // Only show reasoning if the message actually has reasoning content OR is currently reasoning
-  const hasReasoningContent = !isUser && (message.reasoning || message.metadata?.isReasoning === true);
-  const showReasoning = hasReasoningContent && message.reasoning;
-  const isCurrentlyReasoning = !isUser && message.metadata?.isReasoning === true;
-  const reasoningDuration = message.metadata?.reasoningDuration;
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  /**
+   * Handle image loading errors
+   */
+  const handleImageError = useCallback((imageUrl: string) => {
+    setImageErrors(prev => ({ ...prev, [imageUrl]: true }));
+  }, []);
+
+  /**
+   * Handle copying message content to clipboard
+   */
+  const handleCopyMessage = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      // You could add a toast notification here
+    } catch (error) {
+      console.error('Failed to copy message:', error);
+    }
+  }, [message.content]);
 
   /**
    * Format timestamp for display
    */
-  const formatTime = useCallback((date: Date | string) => {
-    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }, []);
+  const formattedTime = useMemo(() => {
+    return new Date(message.timestamp).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  }, [message.timestamp]);
 
   /**
-   * Format reasoning duration for display
+   * Memoized image grid rendering - handles both single imageUrl and multiple images
    */
-  const formatReasoningDuration = useCallback((duration: number): string => {
-    if (duration < 1000) {
-      return `${Math.round(duration)}ms`;
-    } else {
-      return `${(duration / 1000).toFixed(1)}s`;
-    }
-  }, []);
-
-  /**
-   * Render message images (single or multiple)
-   */
-  const renderImages = () => {
-    // Multiple images (new feature)
-    if (message.images && message.images.length > 0) {
-      return (
-        <div className="mb-3">
-          <div className={cn(
-            'grid gap-2',
-            message.images.length === 1 ? 'grid-cols-1' : 
-            message.images.length === 2 ? 'grid-cols-2' :
-            'grid-cols-2 sm:grid-cols-3'
-          )}>
-            {message.images.map((image) => (
-              <div key={image.id} className="relative">
-                <img
-                  src={image.url}
-                  alt={image.name}
-                  className="w-full h-auto rounded-lg shadow-sm"
-                  style={{ maxHeight: '200px', objectFit: 'cover' }}
-                  loading="lazy"
-                />
-                <div className="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
-                  {image.name}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    
-    // Single image (backward compatibility)
-    if (message.imageUrl) {
+  const imageGrid = useMemo(() => {
+    // Handle single image (backward compatibility)
+    if (message.imageUrl && !message.images) {
       return (
         <div className="mb-3">
           <img
             src={message.imageUrl}
             alt="Shared image"
-            className="max-w-full h-auto rounded-lg shadow-sm"
-            style={{ maxHeight: '200px' }}
+            className="w-full h-32 sm:h-40 object-cover rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
             loading="lazy"
           />
         </div>
       );
     }
-    
-    return null;
-  };
 
-  /**
-   * Render reasoning toggle button
-   */
-  const renderReasoningToggle = () => {
-    if (!hasReasoningContent && !isCurrentlyReasoning) return null;
+    // Handle multiple images
+    if (!message.images || message.images.length === 0) return null;
 
     return (
-      <button
-        onClick={() => showReasoning ? onToggleReasoning(message.id) : undefined}
-        className={cn(
-          "inline-flex items-center space-x-1 text-xs transition-colors",
-          showReasoning 
-            ? "text-gray-500 hover:text-gray-700 cursor-pointer" 
-            : "text-gray-400 cursor-default"
-        )}
-        disabled={!showReasoning}
-      >
-        <span>💭</span>
-        {isCurrentlyReasoning ? (
-          <span className="font-medium animate-pulse">Reasoning...</span>
-        ) : showReasoning && reasoningDuration ? (
-          <span className="font-medium">
-            Reasoned ({formatReasoningDuration(reasoningDuration)})
-          </span>
-        ) : showReasoning ? (
-          <span className="font-medium">Reasoned</span>
-        ) : (
-          <span className="font-medium text-gray-400">Reasoning...</span>
-        )}
-        {showReasoning && (
-          <span className={cn(
-            'transform transition-transform duration-200',
-            isReasoningExpanded ? 'rotate-180' : 'rotate-0'
-          )}>
-            ▼
-          </span>
-        )}
-      </button>
+      <div className={`mb-3 grid gap-2 ${
+        message.images.length === 1 
+          ? 'grid-cols-1' 
+          : message.images.length === 2 
+            ? 'grid-cols-2' 
+            : 'grid-cols-2 sm:grid-cols-3'
+      }`}>
+        {message.images.map((image, index) => (
+          <div key={`${image.id}-${index}`} className="relative group">
+            {!imageErrors[image.url] ? (
+              <img
+                src={image.url}
+                alt={image.name || `Attachment ${index + 1}`}
+                className="w-full h-32 sm:h-40 object-cover rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
+                onError={() => handleImageError(image.url)}
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-32 sm:h-40 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     );
-  };
+  }, [message.imageUrl, message.images, imageErrors, handleImageError]);
 
   /**
-   * Render expanded reasoning content
+   * Memoized reasoning content
    */
-  const renderReasoningContent = () => {
-    if (!showReasoning || !isReasoningExpanded) return null;
+  const reasoningContent = useMemo(() => {
+    if (!message.reasoning) return null;
 
     return (
-      <div className="bg-gray-50 bg-opacity-70 border-l-2 border-gray-300 pl-3 py-2 text-xs text-gray-600 animate-in slide-in-from-top-2 duration-200">
-        <div className="whitespace-pre-wrap font-mono leading-relaxed opacity-80 text-xs">
-          {message.reasoning}
+      <div className="mt-3 pt-3 border-t border-blue-100">
+        <button
+          onClick={onToggleReasoning}
+          className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 mb-2 transition-colors duration-200"
+          aria-expanded={showReasoning}
+          aria-controls={`reasoning-${message.id}`}
+        >
+          <svg 
+            className={`w-4 h-4 transition-transform duration-200 ${showReasoning ? 'rotate-90' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          Reasoning {showReasoning ? '(Hide)' : '(Show)'}
+        </button>
+        
+        {showReasoning && (
+          <div 
+            id={`reasoning-${message.id}`}
+            className="bg-blue-50 p-3 rounded-md text-sm text-blue-800 whitespace-pre-wrap leading-relaxed animate-in slide-in-from-top-2 duration-200"
+          >
+            {message.reasoning}
+          </div>
+        )}
+      </div>
+    );
+  }, [message.reasoning, message.id, showReasoning, onToggleReasoning]);
+
+  if (message.role === 'user') {
+    return (
+      <div className="flex justify-end mb-4 group">
+        <div className="max-w-[80%] sm:max-w-[70%]">
+          <div className="bg-blue-600 text-white p-3 rounded-lg rounded-br-sm shadow-sm">
+            {imageGrid}
+            <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+              {message.content}
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <button
+              onClick={handleCopyMessage}
+              className="text-xs text-gray-500 hover:text-gray-700 p-1 rounded hover:bg-gray-100 transition-colors duration-200"
+              title="Copy message"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
+            <span className="text-xs text-gray-500">{formattedTime}</span>
+          </div>
         </div>
       </div>
     );
-  };
+  }
 
   return (
-    <div className={cn('flex mb-4', isUser ? 'justify-end' : 'justify-start')}>
-      <div className={cn('max-w-[70%]', isUser ? 'order-2' : 'order-1')}>
-        <div
-          className={cn(
-            'px-4 py-3 rounded-2xl',
-            isUser
-              ? 'bg-blue-600 text-white'
-              : 'bg-white border border-gray-200 text-gray-900'
-          )}
-        >
-          {/* Display images */}
-          {renderImages()}
-          
-          {/* Message content with reasoning */}
-          <div className="space-y-2">
-            {/* Reasoning toggle button */}
-            {renderReasoningToggle()}
-            
-            {/* Collapsible reasoning display */}
-            {renderReasoningContent()}
-            
-            {/* Main message content */}
-            <div className="whitespace-pre-wrap break-words">{message.content}</div>
+    <div className="flex justify-start mb-4 group">
+      <div className="max-w-[85%] sm:max-w-[75%]">
+        <div className="bg-white border border-gray-200 p-3 rounded-lg rounded-bl-sm shadow-sm">
+          <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words">
+            {message.content}
           </div>
+          {reasoningContent}
         </div>
-        
-        {/* Timestamp */}
-        <div className={cn(
-          'text-xs text-gray-500 mt-1',
-          isUser ? 'text-right' : 'text-left'
-        )}>
-          {formatTime(message.timestamp)}
-          {message.modelId && !isUser && (
-            <span className="ml-2 text-gray-400">via {message.modelId.split('/').pop()}</span>
-          )}
+        <div className="flex items-center justify-start gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <span className="text-xs text-gray-500">{formattedTime}</span>
+          <button
+            onClick={handleCopyMessage}
+            className="text-xs text-gray-500 hover:text-gray-700 p-1 rounded hover:bg-gray-100 transition-colors duration-200"
+            title="Copy message"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
   );
-}; 
+});
+
+Message.displayName = 'Message';
+
+export { Message }; 

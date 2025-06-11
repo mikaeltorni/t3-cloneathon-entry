@@ -12,8 +12,9 @@
  *   - Clean separation of concerns
  *   - Enhanced maintainability and testability
  *   - Responsive design with proper spacing
+ *   - Performance optimized with React.memo and reasoning state management
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { useLogger } from '../hooks/useLogger';
@@ -43,30 +44,47 @@ interface ChatInterfaceProps {
  * @param modelsLoading - Models loading state
  * @returns React component
  */
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({
+const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   currentThread,
   onSendMessage,
   loading,
   availableModels,
   modelsLoading
 }) => {
-  const [inputBarHeight, setInputBarHeight] = useState(140); // Default height
+  const [expandedReasoningIds, setExpandedReasoningIds] = useState<Set<string>>(new Set());
   const { debug } = useLogger('ChatInterface');
 
   /**
-   * Handle input bar height changes
+   * Toggle reasoning expansion for a message
    */
-  const handleInputHeightChange = useCallback((height: number) => {
-    setInputBarHeight(height);
-    debug('Input bar height updated:', height);
+  const handleToggleReasoning = useCallback((messageId: string) => {
+    setExpandedReasoningIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+        debug(`Collapsed reasoning for message: ${messageId}`);
+      } else {
+        newSet.add(messageId);
+        debug(`Expanded reasoning for message: ${messageId}`);
+      }
+      return newSet;
+    });
   }, [debug]);
+
+  /**
+   * Memoized messages array from current thread
+   */
+  const messages = useMemo(() => {
+    return currentThread?.messages || [];
+  }, [currentThread?.messages]);
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Message List */}
       <MessageList 
-        currentThread={currentThread}
-        inputBarHeight={inputBarHeight}
+        messages={messages}
+        expandedReasoningIds={expandedReasoningIds}
+        onToggleReasoning={handleToggleReasoning}
       />
 
       {/* Chat Input */}
@@ -75,8 +93,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         loading={loading}
         availableModels={availableModels}
         modelsLoading={modelsLoading}
-        onHeightChange={handleInputHeightChange}
       />
     </div>
   );
-}; 
+});
+
+ChatInterface.displayName = 'ChatInterface';
+
+export { ChatInterface }; 

@@ -33,7 +33,7 @@ interface ChatInputProps {
   loading: boolean;
   availableModels: Record<string, ModelConfig>;
   modelsLoading: boolean;
-  onHeightChange: (height: number) => void;
+  onHeightChange?: (height: number) => void;
 }
 
 /**
@@ -92,7 +92,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         if (inputBar) {
           const height = inputBar.offsetHeight;
           const paddingBuffer = 20; // Extra buffer for comfort
-          onHeightChange(height + paddingBuffer);
+          onHeightChange?.(height + paddingBuffer);
           debug('Input bar height updated:', height + paddingBuffer);
         }
       }, 0);
@@ -107,7 +107,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     if (inputBar) {
       const height = inputBar.offsetHeight;
       const paddingBuffer = 20; // Extra buffer for comfort
-      onHeightChange(height + paddingBuffer);
+      onHeightChange?.(height + paddingBuffer);
       debug('Input bar height updated:', height + paddingBuffer);
     }
   }, [onHeightChange, debug]);

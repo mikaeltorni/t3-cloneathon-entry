@@ -1,149 +1,154 @@
 /**
  * MessageList.tsx
  * 
- * Message list component for chat interface
- * Extracted from ChatInterface.tsx for better organization
+ * Message list component for rendering conversation messages
  * 
  * Components:
  *   MessageList
  * 
  * Features:
- *   - Message rendering loop with auto-scroll
- *   - Welcome and empty state messages
+ *   - Message rendering with auto-scroll
+ *   - Welcome state for empty conversations
  *   - Reasoning state management
- *   - Responsive message container
+ *   - Performance optimized with React.memo and useCallback
+ *   - Virtualization-ready structure
  * 
- * Usage: <MessageList currentThread={thread} inputBarHeight={height} />
+ * Usage: <MessageList messages={messages} expandedReasoningIds={ids} onToggleReasoning={toggle} />
  */
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import { Message } from './Message';
-import { useLogger } from '../hooks/useLogger';
-import type { ChatThread } from '../../../src/shared/types';
+import type { ChatMessage } from '../../../src/shared/types';
 
-/**
- * Props for the MessageList component
- */
 interface MessageListProps {
-  currentThread: ChatThread | null;
-  inputBarHeight: number;
+  messages: ChatMessage[];
+  expandedReasoningIds: Set<string>;
+  onToggleReasoning: (messageId: string) => void;
 }
 
 /**
- * Message list component
+ * Message list component with optimized rendering
  * 
- * Handles display of all messages in a thread with:
- * - Auto-scrolling to latest messages
- * - Welcome and empty state displays
- * - Reasoning expansion state management
- * 
- * @param currentThread - Current active chat thread
- * @param inputBarHeight - Height of input bar for proper spacing
- * @returns React component
+ * @param {MessageListProps} props - Message list properties
+ * @returns {JSX.Element} Rendered message list component
  */
-export const MessageList: React.FC<MessageListProps> = ({
-  currentThread,
-  inputBarHeight
+const MessageList: React.FC<MessageListProps> = React.memo(({ 
+  messages, 
+  expandedReasoningIds, 
+  onToggleReasoning 
 }) => {
-  const [expandedReasoning, setExpandedReasoning] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { debug } = useLogger('MessageList');
+  const containerRef = useRef<HTMLDivElement>(null);
 
   /**
-   * Scroll to the bottom of the messages container
+   * Scroll to bottom of messages
    */
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'end'
+    });
   }, []);
 
   /**
-   * Toggle reasoning expansion for a message
+   * Auto-scroll to bottom when new messages arrive
    */
-  const toggleReasoning = useCallback((messageId: string) => {
-    setExpandedReasoning(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(messageId)) {
-        newSet.delete(messageId);
-        debug(`Collapsed reasoning for message: ${messageId}`);
-      } else {
-        newSet.add(messageId);
-        debug(`Expanded reasoning for message: ${messageId}`);
-      }
-      return newSet;
-    });
-  }, [debug]);
-
-  // Scroll to bottom when messages change
   useEffect(() => {
-    scrollToBottom();
-  }, [currentThread?.messages, scrollToBottom]);
+    const timeoutId = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timeoutId);
+  }, [messages.length, scrollToBottom]);
 
   /**
-   * Render welcome message for new users
+   * Memoized welcome message component
    */
-  const renderWelcomeMessage = () => (
-    <div className="flex flex-col items-center justify-center h-full text-center p-8">
-      <div className="text-6xl mb-4">👋</div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to OpenRouter Chat!</h2>
-      <p className="text-gray-600 max-w-md">
-        Start a conversation by typing a message below. You can also upload images and select different AI models.
-      </p>
+  const welcomeMessage = useMemo(() => (
+    <div className="flex flex-col items-center justify-center h-full text-center py-12">
+      <div className="max-w-md mx-auto">
+        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        </div>
+        
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          Welcome to OpenRouter Chat!
+        </h2>
+        
+        <p className="text-gray-600 mb-6 leading-relaxed">
+          Start a conversation with any AI model. Upload images, ask questions, 
+          and explore the capabilities of different language models.
+        </p>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-blue-900 mb-2">💬 Ask Anything</h3>
+            <p className="text-blue-700">Get help with coding, writing, analysis, and more</p>
+          </div>
+          
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-purple-900 mb-2">🖼️ Upload Images</h3>
+            <p className="text-purple-700">Share images for analysis and description</p>
+          </div>
+          
+          <div className="bg-green-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-green-900 mb-2">🧠 Reasoning Models</h3>
+            <p className="text-green-700">Enable reasoning for complex problem solving</p>
+          </div>
+          
+          <div className="bg-orange-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-orange-900 mb-2">⚡ Multiple Models</h3>
+            <p className="text-orange-700">Switch between different AI models</p>
+          </div>
+        </div>
+      </div>
     </div>
-  );
+  ), []);
 
   /**
-   * Render empty thread message
+   * Create optimized toggle handler for each message
    */
-  const renderEmptyThreadMessage = () => (
-    <div className="flex flex-col items-center justify-center h-full text-center p-8">
-      <div className="text-4xl mb-4">💬</div>
-      <h3 className="text-xl font-semibold text-gray-700 mb-2">Ready to chat!</h3>
-      <p className="text-gray-500">
-        Type your message below to start the conversation.
-      </p>
-    </div>
-  );
+  const createToggleHandler = useCallback((messageId: string) => {
+    return () => onToggleReasoning(messageId);
+  }, [onToggleReasoning]);
 
-  // No current thread - show welcome
-  if (!currentThread) {
+  /**
+   * Memoized message list rendering
+   */
+  const messagesList = useMemo(() => {
+    return messages.map((message) => (
+      <Message
+        key={message.id}
+        message={message}
+        showReasoning={expandedReasoningIds.has(message.id)}
+        onToggleReasoning={createToggleHandler(message.id)}
+      />
+    ));
+  }, [messages, expandedReasoningIds, createToggleHandler]);
+
+  // Show welcome message if no messages
+  if (messages.length === 0) {
     return (
-      <div 
-        className="flex-1 overflow-y-auto bg-gray-50"
-        style={{ paddingBottom: `${inputBarHeight}px` }}
-      >
-        {renderWelcomeMessage()}
+      <div className="flex-1 overflow-y-auto">
+        {welcomeMessage}
       </div>
     );
   }
 
-  // Thread exists but no messages - show empty state
-  if (currentThread.messages.length === 0) {
-    return (
-      <div 
-        className="flex-1 overflow-y-auto bg-gray-50"
-        style={{ paddingBottom: `${inputBarHeight}px` }}
-      >
-        {renderEmptyThreadMessage()}
-      </div>
-    );
-  }
-
-  // Thread with messages - render message list
   return (
     <div 
-      className="flex-1 overflow-y-auto bg-gray-50"
-      style={{ paddingBottom: `${inputBarHeight}px` }}
+      ref={containerRef}
+      className="flex-1 overflow-y-auto px-4 py-6 space-y-4"
+      role="log"
+      aria-label="Chat messages"
+      aria-live="polite"
     >
-      <div className="max-w-4xl mx-auto p-4">
-        {currentThread.messages.map((msg) => (
-          <Message
-            key={msg.id}
-            message={msg}
-            isReasoningExpanded={expandedReasoning.has(msg.id)}
-            onToggleReasoning={toggleReasoning}
-          />
-        ))}
-        <div ref={messagesEndRef} />
+      <div className="max-w-4xl mx-auto">
+        {messagesList}
+        <div ref={messagesEndRef} className="h-1" aria-hidden="true" />
       </div>
     </div>
   );
-}; 
+});
+
+MessageList.displayName = 'MessageList';
+
+export { MessageList }; 
