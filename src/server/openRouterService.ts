@@ -36,35 +36,30 @@ export const AVAILABLE_MODELS = {
   'google/gemini-2.5-flash-preview-05-20': {
     name: 'Gemini 2.5 Flash',
     description: 'Fast and efficient multimodal model for general tasks',
-    type: 'general',
     hasReasoning: true, // Supports :thinking variant
     reasoningType: 'thinking', // Uses :thinking suffix
   },
   'openai/gpt-4o': {
     name: 'GPT-4o',
     description: 'Advanced multimodal model from OpenAI',
-    type: 'general',
     hasReasoning: false, // No reasoning token support yet
     reasoningType: 'internal', // Internal reasoning only
   },
   'openai/o1-preview': {
     name: 'OpenAI o1 Preview',
     description: 'Reasoning model that thinks before responding',
-    type: 'reasoning',
     hasReasoning: true, // Built-in reasoning
     reasoningType: 'internal', // Uses reasoning internally, no tokens returned
   },
   'deepseek/deepseek-r1': {
     name: 'DeepSeek R1',
     description: 'Open-source reasoning model that returns reasoning tokens',
-    type: 'reasoning',
     hasReasoning: true, // Returns reasoning tokens
     reasoningType: 'effort', // Uses effort configuration
   },
   'anthropic/claude-3.7-sonnet': {
     name: 'Claude 3.7 Sonnet',
     description: 'Advanced Claude model with reasoning capabilities',
-    type: 'general',
     hasReasoning: true, // Supports :thinking variant
     reasoningType: 'thinking', // Uses :thinking suffix
   }

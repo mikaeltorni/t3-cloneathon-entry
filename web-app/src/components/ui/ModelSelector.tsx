@@ -1,15 +1,15 @@
 /**
  * ModelSelector.tsx
  * 
- * AI model selection component with descriptions and indicators
+ * AI model selection component with descriptions and reasoning indicators
  * 
  * Components:
  *   ModelSelector
  * 
  * Features:
  *   - Dropdown selection of available AI models
- *   - Model descriptions and type indicators
- *   - Reasoning model badges
+ *   - Model descriptions and capabilities
+ *   - Brain icons for reasoning models
  * 
  * Usage: <ModelSelector value={selectedModel} onChange={handleModelChange} models={availableModels} />
  */
@@ -46,24 +46,17 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   className
 }) => {
   /**
-   * Get model type badge color
+   * Render brain icon for reasoning models
    * 
-   * @param type - Model type
-   * @returns CSS classes for badge color
+   * @param hasReasoning - Whether the model has reasoning capabilities
+   * @returns Brain emoji or null
    */
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'reasoning':
-        return 'bg-purple-100 text-purple-800';
-      case 'general':
-        return 'bg-blue-100 text-blue-800';
-      case 'creative':
-        return 'bg-green-100 text-green-800';
-      case 'coding':
-        return 'bg-orange-100 text-orange-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const renderBrainIcon = (hasReasoning: boolean) => {
+    return hasReasoning ? (
+      <span className="ml-1 text-purple-600" title="Reasoning capabilities">
+        🧠
+      </span>
+    ) : null;
   };
 
 
@@ -98,7 +91,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       >
         {Object.entries(models).map(([modelId, config]) => (
           <option key={modelId} value={modelId}>
-            {config.name} - {config.type}
+            {config.name}{config.hasReasoning ? ' 🧠' : ''}
           </option>
         ))}
       </select>
@@ -110,12 +103,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             <span className="text-sm font-medium text-gray-900">
               {selectedModel.name}
             </span>
-            <span className={cn(
-              'inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium',
-              getTypeColor(selectedModel.type)
-            )}>
-              {selectedModel.type.toUpperCase()}
-            </span>
+            {renderBrainIcon(selectedModel.hasReasoning)}
           </div>
           <p className="text-xs text-gray-600">
             {selectedModel.description}

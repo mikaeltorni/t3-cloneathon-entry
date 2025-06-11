@@ -87,7 +87,6 @@ function App() {
         'google/gemini-2.5-flash-preview-05-20': {
           name: 'Gemini 2.5 Flash',
           description: 'Fast and efficient multimodal model for general tasks',
-          type: 'general',
           hasReasoning: true,
           reasoningType: 'thinking',
         }

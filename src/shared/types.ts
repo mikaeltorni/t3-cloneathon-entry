@@ -255,14 +255,12 @@ export interface HealthResponse {
  * @interface ModelConfig
  * @property name - Human-readable model name
  * @property description - Model description and capabilities
- * @property type - Model type category
  * @property hasReasoning - Whether the model supports reasoning capabilities
  * @property reasoningType - Type of reasoning implementation
  */
 export interface ModelConfig {
   name: string;
   description: string;
-  type: 'general' | 'reasoning' | 'creative' | 'coding';
   hasReasoning: boolean;
   reasoningType: 'thinking' | 'effort' | 'internal';
 }
