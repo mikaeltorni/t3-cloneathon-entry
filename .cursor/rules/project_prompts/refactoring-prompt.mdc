@@ -1,0 +1,215 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# OpenRouter Chat App - Refactoring Guide
+
+## 🎯 Refactoring Objectives
+
+This document outlines the systematic refactoring plan for the OpenRouter Chat App to improve:
+- **Code organization and structure**
+- **Type safety and consistency** 
+- **Reusability and maintainability**
+- **Performance and scalability**
+- **Developer experience**
+
+## 📊 Current Project Analysis
+
+### Project Structure
+```
+├── src/                    # Server-side code
+│   ├── server/             # Express server and API routes
+│   └── shared/             # Shared types and utilities
+├── web-app/               # React frontend application
+│   ├── src/
+│   │   ├── components/    # React components
+│   │   ├── hooks/         # Custom React hooks
+│   │   ├── services/      # API and external services
+│   │   ├── utils/         # Utility functions
+│   │   └── assets/        # Static assets
+└── data/                  # Application data storage
+```
+
+### Key Areas for Refactoring
+
+#### 1. **Component Architecture** 🏗️
+- **Current Issues**: Large, monolithic components with mixed concerns
+- **Target**: Smaller, focused components with clear responsibilities
+- **Improvements**: 
+  - Extract business logic into custom hooks
+  - Separate UI components from data logic
+  - Create compound components for complex UIs
+  - Implement proper prop interfaces and validation
+
+#### 2. **State Management** 🧠
+- **Current Issues**: Mixed local state with global concerns
+- **Target**: Clear separation between local, shared, and global state
+- **Improvements**:
+  - Centralize global state with Zustand
+  - Extract stateful logic into custom hooks
+  - Implement proper state normalization
+  - Add state persistence where needed
+
+#### 3. **Type Safety** 🔒
+- **Current Issues**: Some loose typing and potential any types
+- **Target**: Strict TypeScript with comprehensive type coverage
+- **Improvements**:
+  - Strengthen API response types
+  - Add runtime type validation where needed
+  - Implement proper error type handling
+  - Use discriminated unions for complex types
+
+#### 4. **API Layer** 🌐
+- **Current Issues**: Direct API calls scattered throughout components
+- **Target**: Centralized API layer with proper error handling
+- **Improvements**:
+  - Implement API response caching
+  - Add request/response interceptors
+  - Centralize error handling
+  - Add proper loading and retry logic
+
+#### 5. **Error Handling** ⚠️
+- **Current Issues**: Inconsistent error handling patterns
+- **Target**: Comprehensive error boundary and handling system
+- **Improvements**:
+  - Global error boundary implementation
+  - Consistent error UI patterns
+  - Proper error logging and reporting
+  - User-friendly error messages
+
+## 🚀 Refactoring Implementation Plan
+
+### Phase 1: Foundation & Types
+1. **Strengthen Type Definitions**
+   - Review and enhance shared types
+   - Add strict TypeScript compiler options
+   - Implement proper API response types
+   - Add runtime type validation
+
+2. **Error Handling System**
+   - Implement global error boundary
+   - Create consistent error UI components
+   - Add error logging infrastructure
+   - Standardize error message patterns
+
+### Phase 2: State Management
+3. **Global State Refactoring**
+   - Implement Zustand for global state
+   - Extract theme, user, and app settings
+   - Add state persistence
+   - Create state-specific hooks
+
+4. **Custom Hooks Extraction**
+   - Extract chat management logic
+   - Create model selection hooks
+   - Implement image handling hooks
+   - Add message formatting hooks
+
+### Phase 3: Component Architecture
+5. **Component Decomposition**
+   - Break down large components (App.tsx, ChatInterface.tsx)
+   - Create focused, single-responsibility components
+   - Implement compound component patterns
+   - Add proper component documentation
+
+6. **UI Component Library**
+   - Standardize UI components with consistent APIs
+   - Add component variants and sizes
+   - Implement proper accessibility features
+   - Create component usage examples
+
+### Phase 4: API & Services
+7. **API Layer Enhancement**
+   - Centralize API calls in service layer
+   - Implement request/response caching
+   - Add proper error handling and retries
+   - Create API hooks with loading states
+
+8. **Service Layer Organization**
+   - Separate business logic from UI components
+   - Implement proper service interfaces
+   - Add service-level testing capabilities
+   - Create service configuration management
+
+### Phase 5: Performance & Optimization
+9. **Performance Optimization**
+   - Implement React.memo where appropriate
+   - Add useMemo and useCallback optimizations
+   - Optimize bundle size and code splitting
+   - Implement virtual scrolling for large lists
+
+10. **Code Quality & Standards**
+    - Add comprehensive ESLint rules
+    - Implement Prettier for code formatting
+    - Add pre-commit hooks for quality checks
+    - Create coding standards documentation
+
+## 📏 Quality Metrics & Success Criteria
+
+### Code Quality Indicators
+- **TypeScript Coverage**: >95% strict type coverage
+- **Component Size**: Components <200 lines on average
+- **Hook Reusability**: Custom hooks used in multiple components
+- **Error Handling**: All async operations have proper error handling
+- **Performance**: No unnecessary re-renders or memory leaks
+
+### Architecture Improvements
+- **Separation of Concerns**: Clear boundaries between UI, logic, and data
+- **Testability**: Components and hooks easily unit testable
+- **Maintainability**: New features can be added with minimal changes
+- **Scalability**: Architecture supports feature growth
+
+## 🛠️ Implementation Guidelines
+
+### Step-by-Step Approach
+1. **Make incremental changes** - Don't break existing functionality
+2. **Test after each step** - Ensure builds and functionality work
+3. **Document changes** - Update README and component docs
+4. **Think between steps** - Analyze impact before proceeding
+5. **Maintain backwards compatibility** - Don't break existing APIs
+
+### Refactoring Principles
+- **Single Responsibility**: Each component/hook has one clear purpose
+- **Open/Closed**: Open for extension, closed for modification
+- **Dependency Inversion**: Depend on abstractions, not concretions
+- **DRY (Don't Repeat Yourself)**: Extract common patterns and logic
+- **KISS (Keep It Simple)**: Prefer simple, readable solutions
+
+## 🎯 Expected Outcomes
+
+After completing this refactoring:
+
+1. **Developer Experience**: Faster development with better IDE support
+2. **Maintainability**: Easier to modify and extend existing features
+3. **Reliability**: Better error handling and edge case coverage
+4. **Performance**: Optimized rendering and memory usage
+5. **Scalability**: Architecture ready for new features and complexity
+
+## 📋 Refactoring Checklist
+
+- [ ] Phase 1: Foundation & Types
+  - [ ] Strengthen type definitions
+  - [ ] Implement error handling system
+- [ ] Phase 2: State Management  
+  - [ ] Global state with Zustand
+  - [ ] Extract custom hooks
+- [ ] Phase 3: Component Architecture
+  - [ ] Decompose large components
+  - [ ] Build UI component library
+- [ ] Phase 4: API & Services
+  - [ ] Enhance API layer
+  - [ ] Organize service layer
+- [ ] Phase 5: Performance & Optimization
+  - [ ] Optimize performance
+  - [ ] Establish code quality standards
+
+## 🔄 Continuous Improvement
+
+This refactoring is not a one-time effort but establishes patterns for:
+- **Regular code reviews** focusing on architecture
+- **Incremental improvements** with each feature addition
+- **Documentation updates** as the codebase evolves
+- **Performance monitoring** and optimization opportunities
+
+Remember: **The goal is not just cleaner code, but a more maintainable and scalable foundation for future development.** 
