@@ -14,6 +14,7 @@
  *   - Responsive design with proper spacing
  *   - Performance optimized with React.memo and reasoning state management
  *   - Global drag-and-drop zone for images (excluding sidebar)
+ *   - Dynamic spacing to prevent messages from hiding behind input bar
  */
 import React, { useState, useCallback, useMemo } from 'react';
 import { MessageList } from './MessageList';
@@ -60,7 +61,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   onImagesChange
 }) => {
   const [expandedReasoningIds, setExpandedReasoningIds] = useState<Set<string>>(new Set());
+  const [inputBarHeight, setInputBarHeight] = useState(200); // Default height for initial render
   const { debug } = useLogger('ChatInterface');
+
+  /**
+   * Handle input bar height changes for dynamic spacing
+   */
+  const handleInputBarHeightChange = useCallback((height: number) => {
+    setInputBarHeight(height);
+    debug('Input bar height updated:', height);
+  }, [debug]);
 
   /**
    * Add new images from global drop zone
@@ -131,14 +141,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         </div>
       )}
 
-      {/* Message List */}
+      {/* Message List with Dynamic Spacing */}
       <MessageList 
         messages={messages}
         expandedReasoningIds={expandedReasoningIds}
         onToggleReasoning={handleToggleReasoning}
+        dynamicBottomPadding={inputBarHeight}
       />
 
-      {/* Chat Input */}
+      {/* Fixed Chat Input */}
       <ChatInput
         onSendMessage={onSendMessage}
         loading={loading}
@@ -146,6 +157,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         modelsLoading={modelsLoading}
         images={images}
         onImagesChange={onImagesChange}
+        onHeightChange={handleInputBarHeightChange}
       />
     </div>
   );

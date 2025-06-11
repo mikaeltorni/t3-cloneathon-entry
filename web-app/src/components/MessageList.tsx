@@ -12,8 +12,9 @@
  *   - Reasoning state management
  *   - Performance optimized with React.memo and useCallback
  *   - Virtualization-ready structure
+ *   - Dynamic bottom padding to prevent overlap with fixed input bar
  * 
- * Usage: <MessageList messages={messages} expandedReasoningIds={ids} onToggleReasoning={toggle} />
+ * Usage: <MessageList messages={messages} expandedReasoningIds={ids} onToggleReasoning={toggle} dynamicBottomPadding={height} />
  */
 import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import { Message } from './Message';
@@ -23,10 +24,11 @@ interface MessageListProps {
   messages: ChatMessage[];
   expandedReasoningIds: Set<string>;
   onToggleReasoning: (messageId: string) => void;
+  dynamicBottomPadding?: number;
 }
 
 /**
- * Message list component with optimized rendering
+ * Message list component with optimized rendering and dynamic spacing
  * 
  * @param {MessageListProps} props - Message list properties
  * @returns {JSX.Element} Rendered message list component
@@ -34,7 +36,8 @@ interface MessageListProps {
 const MessageList: React.FC<MessageListProps> = React.memo(({ 
   messages, 
   expandedReasoningIds, 
-  onToggleReasoning 
+  onToggleReasoning,
+  dynamicBottomPadding = 200 // Default fallback padding
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -127,7 +130,10 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
   // Show welcome message if no messages
   if (messages.length === 0) {
     return (
-      <div className="flex-1 overflow-y-auto">
+      <div 
+        className="flex-1 overflow-y-auto"
+        style={{ paddingBottom: `${dynamicBottomPadding}px` }}
+      >
         {welcomeMessage}
       </div>
     );
@@ -137,6 +143,7 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
     <div 
       ref={containerRef}
       className="flex-1 overflow-y-auto px-4 py-6 space-y-4"
+      style={{ paddingBottom: `${dynamicBottomPadding}px` }}
       role="log"
       aria-label="Chat messages"
       aria-live="polite"

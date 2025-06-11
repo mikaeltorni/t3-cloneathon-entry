@@ -223,7 +223,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <div 
       ref={inputBarRef}
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-30"
+      className="fixed bottom-0 left-0 md:left-80 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50"
     >
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-3">
