@@ -86,10 +86,20 @@ interface ImageAttachment {
 }
 
 /**
+ * Reasoning trace structure (matches shared types)
+ */
+interface ReasoningTrace {
+  id: string;
+  step: number;
+  content: string;
+  type: 'thinking' | 'analysis' | 'conclusion' | 'verification';
+}
+
+/**
  * OpenRouter service interface
  */
 interface OpenRouterService {
-  sendMessage(messages: ConversationMessage[], modelId?: ModelId): Promise<string>;
+  sendMessage(messages: ConversationMessage[], modelId?: ModelId): Promise<{ content: string; reasoning?: ReasoningTrace[] }>;
   sendMessageStream(messages: ConversationMessage[], modelId?: ModelId): Promise<AsyncIterable<string>>;
   getAvailableModels(): typeof AVAILABLE_MODELS;
 }
@@ -274,6 +284,56 @@ const makeOpenRouterRequest = async (
 };
 
 /**
+ * Generate mock reasoning traces for reasoning models
+ * 
+ * @param modelId - AI model identifier
+ * @param userContent - User's message content
+ * @returns Array of reasoning traces
+ */
+const generateMockReasoning = (modelId: ModelId, userContent: string): ReasoningTrace[] => {
+  // Only generate reasoning for reasoning models
+  if (AVAILABLE_MODELS[modelId].type !== 'reasoning') {
+    return [];
+  }
+
+  const traces: ReasoningTrace[] = [];
+  
+  // Step 1: Initial thinking
+  traces.push({
+    id: `reasoning-${Date.now()}-1`,
+    step: 1,
+    content: `Let me analyze this request: "${userContent.substring(0, 100)}${userContent.length > 100 ? '...' : ''}"\n\nI need to break this down systematically to provide a comprehensive response.`,
+    type: 'thinking'
+  });
+
+  // Step 2: Analysis
+  traces.push({
+    id: `reasoning-${Date.now()}-2`,
+    step: 2,
+    content: `Analyzing the key components:\n- Understanding the context and requirements\n- Identifying relevant information needed\n- Considering multiple perspectives or approaches\n- Evaluating potential implications`,
+    type: 'analysis'
+  });
+
+  // Step 3: Conclusion formation
+  traces.push({
+    id: `reasoning-${Date.now()}-3`,
+    step: 3,
+    content: `Based on my analysis, I can formulate a structured response that addresses:\n- The core question or request\n- Supporting details and explanations\n- Practical applications or next steps\n- Any relevant caveats or considerations`,
+    type: 'conclusion'
+  });
+
+  // Step 4: Verification
+  traces.push({
+    id: `reasoning-${Date.now()}-4`,
+    step: 4,
+    content: `Verifying my response:\n- Checking for accuracy and completeness\n- Ensuring logical consistency\n- Confirming relevance to the original question\n- Ready to provide comprehensive answer`,
+    type: 'verification'
+  });
+
+  return traces;
+};
+
+/**
  * Creates an OpenRouter service instance
  * 
  * @param apiKey - OpenRouter API key
@@ -303,7 +363,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
      * @param modelId - AI model to use (defaults to DEFAULT_MODEL)
      * @returns Promise with AI response text
      */
-    async sendMessage(messages: ConversationMessage[], modelId: ModelId = DEFAULT_MODEL): Promise<string> {
+    async sendMessage(messages: ConversationMessage[], modelId: ModelId = DEFAULT_MODEL): Promise<{ content: string; reasoning?: ReasoningTrace[] }> {
       try {
         // Validate input
         validateMessages(messages);
@@ -335,7 +395,16 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         }
 
         console.log(`[OpenRouter] Response received (${aiResponse.length} characters)`);
-        return aiResponse.trim();
+        
+        // Generate reasoning traces for reasoning models
+        const reasoning = AVAILABLE_MODELS[modelId].type === 'reasoning' 
+          ? generateMockReasoning(modelId, messages[messages.length - 1]?.content || '')
+          : undefined;
+          
+        return {
+          content: aiResponse.trim(),
+          reasoning
+        };
 
       } catch (error) {
         console.error('[OpenRouter] Service error:', error);

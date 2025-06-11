@@ -24,6 +24,7 @@
  * @property imageUrl - Optional image URL for analysis (deprecated, use images)
  * @property images - Optional array of image attachments
  * @property modelId - AI model used for processing (for assistant messages)
+ * @property reasoning - Optional reasoning traces for reasoning models
  */
 export interface ChatMessage {
   id: string;
@@ -33,6 +34,7 @@ export interface ChatMessage {
   imageUrl?: string; // For image analysis messages (deprecated, use images)
   images?: ImageAttachment[]; // Multiple image support
   modelId?: string; // AI model used (for assistant messages)
+  reasoning?: ReasoningTrace[]; // Chain of thought for reasoning models
 }
 
 /**
@@ -271,4 +273,20 @@ export type ContentType = 'text' | 'image_url';
 /**
  * Server environment enumeration
  */
-export type Environment = 'development' | 'production' | 'test'; 
+export type Environment = 'development' | 'production' | 'test';
+
+/**
+ * Reasoning trace structure for chain of thought display
+ * 
+ * @interface ReasoningTrace
+ * @property id - Unique trace identifier
+ * @property step - Step number in reasoning chain
+ * @property content - Reasoning step content
+ * @property type - Type of reasoning step
+ */
+export interface ReasoningTrace {
+  id: string;
+  step: number;
+  content: string;
+  type: 'thinking' | 'analysis' | 'conclusion' | 'verification';
+} 

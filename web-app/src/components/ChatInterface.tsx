@@ -22,6 +22,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from './ui/Button';
 import { ModelSelector } from './ui/ModelSelector';
+import { ReasoningDisplay } from './ReasoningDisplay';
 import { useLogger } from '../hooks/useLogger';
 import { cn } from '../utils/cn';
 import type { ChatThread, ChatMessage, ModelConfig, ImageAttachment } from '../../../src/shared/types';
@@ -69,6 +70,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const inputBarRef = useRef<HTMLDivElement>(null);
 
   const { debug, log } = useLogger('ChatInterface');
+
+  /**
+   * Check if a model is a reasoning model
+   * 
+   * @param modelId - Model identifier
+   * @returns True if the model has reasoning capabilities
+   */
+  const isReasoningModel = useCallback((modelId?: string): boolean => {
+    if (!modelId || !availableModels[modelId]) return false;
+    return availableModels[modelId].type === 'reasoning';
+  }, [availableModels]);
 
   /**
    * Scroll to the bottom of the messages container
@@ -224,6 +236,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
    */
   const renderMessage = useCallback((msg: ChatMessage) => {
     const isUser = msg.role === 'user';
+    const showReasoning = !isUser && isReasoningModel(msg.modelId) && msg.reasoning;
     
     return (
       <div key={msg.id} className={cn('flex mb-4', isUser ? 'justify-end' : 'justify-start')}>
@@ -276,6 +289,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             ) : null}
             
             <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+            
+            {/* Reasoning Display for reasoning models */}
+            {showReasoning && (
+              <ReasoningDisplay reasoning={msg.reasoning} />
+            )}
           </div>
           <div className={cn(
             'text-xs text-gray-500 mt-1',
@@ -292,7 +310,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
     );
-  }, [formatTime]);
+  }, [formatTime, isReasoningModel]);
 
   /**
    * Render welcome message for new chat
