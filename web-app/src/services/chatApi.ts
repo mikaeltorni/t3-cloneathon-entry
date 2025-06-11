@@ -163,7 +163,7 @@ class ChatApiService {
    * @returns Promise with message response
    */
   async sendMessage(request: CreateMessageRequest): Promise<CreateMessageResponse> {
-    if (!request.content?.trim() && !request.imageUrl?.trim()) {
+    if (!request.content?.trim() && !request.imageUrl?.trim() && (!request.images || request.images.length === 0)) {
       throw new Error('Message content or image URL is required');
     }
 
@@ -171,7 +171,9 @@ class ChatApiService {
       logger.info('Sending message to chat', {
         threadId: request.threadId || 'new',
         hasContent: !!request.content,
-        hasImage: !!request.imageUrl
+        hasImage: !!request.imageUrl,
+        hasImages: !!(request.images && request.images.length > 0),
+        imageCount: request.images?.length || 0
       });
 
       const response = await this.makeRequest<CreateMessageResponse>('/chats/message', {
@@ -314,7 +316,7 @@ class ChatApiService {
     onError: (error: Error) => void,
     onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void
   ): Promise<void> {
-    if (!request.content?.trim() && !request.imageUrl?.trim()) {
+    if (!request.content?.trim() && !request.imageUrl?.trim() && (!request.images || request.images.length === 0)) {
       throw new Error('Message content or image URL is required');
     }
 
@@ -322,7 +324,9 @@ class ChatApiService {
       logger.info('Starting streaming message to chat', {
         threadId: request.threadId || 'new',
         hasContent: !!request.content,
-        hasImage: !!request.imageUrl
+        hasImage: !!request.imageUrl,
+        hasImages: !!(request.images && request.images.length > 0),
+        imageCount: request.images?.length || 0
       });
 
       const url = `${this.baseUrl}/chats/message/stream`;

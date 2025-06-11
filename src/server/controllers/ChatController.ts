@@ -144,20 +144,18 @@ export class ChatController {
         console.log(`[ChatController] Created new thread: ${currentThread.id}`);
       }
 
-      // Process images if provided
-      let processedImageUrl = imageUrl;
-      if (images && images.length > 0) {
-        // Use the first image for now - could be enhanced to handle multiple images
-        processedImageUrl = images[0].url;
-        console.log(`[ChatController] Processing ${images.length} image(s)`);
-      }
-
-      // Create user message
+      // Create user message with multiple images support
       const userMessage = await chatRepository.createMessage(
         content.trim(),
         'user',
-        processedImageUrl
+        imageUrl // Keep backward compatibility for single imageUrl
       );
+
+      // Add multiple images to the message if provided
+      if (images && images.length > 0) {
+        userMessage.images = images;
+        console.log(`[ChatController] Added ${images.length} image(s) to user message`);
+      }
 
       // Add user message to thread
       await chatRepository.addMessageToThread(currentThread.id, userMessage);
@@ -338,19 +336,18 @@ export class ChatController {
         threadId: currentThread.id 
       })}\n\n`);
 
-      // Process images if provided
-      let processedImageUrl = imageUrl;
-      if (images && images.length > 0) {
-        processedImageUrl = images[0].url;
-        console.log(`[ChatController] Processing ${images.length} image(s) for streaming`);
-      }
-
-      // Create user message
+      // Create user message with multiple images support
       const userMessage = await chatRepository.createMessage(
         content || 'Analyze this image',
         'user',
-        processedImageUrl
+        imageUrl // Keep backward compatibility for single imageUrl
       );
+
+      // Add multiple images to the message if provided
+      if (images && images.length > 0) {
+        userMessage.images = images;
+        console.log(`[ChatController] Added ${images.length} image(s) to streaming user message`);
+      }
 
       // Add user message to thread
       await chatRepository.addMessageToThread(currentThread.id, userMessage);
