@@ -13,11 +13,13 @@
  *   - Enhanced maintainability and testability
  *   - Responsive design with proper spacing
  *   - Performance optimized with React.memo and reasoning state management
+ *   - Global drag-and-drop zone for images (excluding sidebar)
  */
 import React, { useState, useCallback, useMemo } from 'react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { useLogger } from '../hooks/useLogger';
+import { useGlobalDropZone } from '../hooks/useGlobalDropZone';
 import type { ChatThread, ModelConfig, ImageAttachment } from '../../../src/shared/types';
 
 /**
@@ -29,6 +31,8 @@ interface ChatInterfaceProps {
   loading: boolean;
   availableModels: Record<string, ModelConfig>;
   modelsLoading: boolean;
+  images: ImageAttachment[];
+  onImagesChange: (images: ImageAttachment[]) => void;
 }
 
 /**
@@ -42,6 +46,8 @@ interface ChatInterfaceProps {
  * @param loading - Loading state for message sending
  * @param availableModels - Available AI models
  * @param modelsLoading - Models loading state
+ * @param images - Current image attachments
+ * @param onImagesChange - Callback for image changes
  * @returns React component
  */
 const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
@@ -49,10 +55,30 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   onSendMessage,
   loading,
   availableModels,
-  modelsLoading
+  modelsLoading,
+  images,
+  onImagesChange
 }) => {
   const [expandedReasoningIds, setExpandedReasoningIds] = useState<Set<string>>(new Set());
   const { debug } = useLogger('ChatInterface');
+
+  /**
+   * Add new images from global drop zone
+   */
+  const handleImagesAdd = useCallback((newImages: ImageAttachment[]) => {
+    onImagesChange([...images, ...newImages]);
+    debug(`Added ${newImages.length} images via global drop zone`);
+  }, [images, onImagesChange, debug]);
+
+  /**
+   * Global drop zone for the entire chat interface (excluding sidebar)
+   */
+  const { isDragOver, dropHandlers } = useGlobalDropZone({
+    onImagesAdd: handleImagesAdd,
+    currentImageCount: images.length,
+    maxImages: 5,
+    excludeSelector: '[data-no-drop="true"]' // Sidebar will have this attribute
+  });
 
   /**
    * Toggle reasoning expansion for a message
@@ -79,7 +105,32 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   }, [currentThread?.messages]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div 
+      className={`flex flex-col h-full transition-colors duration-200 ${
+        isDragOver ? 'bg-blue-50' : 'bg-gray-50'
+      }`}
+      {...dropHandlers}
+    >
+      {/* Global drag overlay */}
+      {isDragOver && (
+        <div className="fixed inset-0 z-40 pointer-events-none">
+          <div className="absolute inset-0 bg-blue-500 bg-opacity-10">
+            <div className="flex items-center justify-center h-full">
+              <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm mx-4 text-center">
+                <div className="text-4xl mb-3">📸</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Drop Images Here</h3>
+                <p className="text-sm text-gray-600">
+                  Drop your images anywhere to attach them to your message
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Supports JPG, PNG, GIF, WebP • Max 5 images • 10MB each
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Message List */}
       <MessageList 
         messages={messages}
@@ -93,6 +144,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         loading={loading}
         availableModels={availableModels}
         modelsLoading={modelsLoading}
+        images={images}
+        onImagesChange={onImagesChange}
       />
     </div>
   );

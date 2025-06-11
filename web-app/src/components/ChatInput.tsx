@@ -34,6 +34,8 @@ interface ChatInputProps {
   availableModels: Record<string, ModelConfig>;
   modelsLoading: boolean;
   onHeightChange?: (height: number) => void;
+  images: ImageAttachment[];
+  onImagesChange: (images: ImageAttachment[]) => void;
 }
 
 /**
@@ -57,10 +59,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   loading,
   availableModels,
   modelsLoading,
-  onHeightChange
+  onHeightChange,
+  images,
+  onImagesChange
 }) => {
   const [message, setMessage] = useState('');
-  const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedModel, setSelectedModel] = useState('google/gemini-2.5-flash-preview-05-20');
   const [useReasoning, setUseReasoning] = useState(false);
   
@@ -177,7 +180,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     // Clear inputs immediately for better UX
     setMessage('');
-    setImages([]);
+    onImagesChange([]);
 
     // Reset textarea height immediately
     const textarea = textareaRef.current;
@@ -197,7 +200,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       // Error handling is done in parent component
       debug('Message sending failed', error);
     }
-  }, [message, images, onSendMessage, debug, log, selectedModel, useReasoning]);
+  }, [message, images, onSendMessage, debug, log, selectedModel, useReasoning, onImagesChange]);
 
   /**
    * Handle keyboard shortcuts
@@ -227,7 +230,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           {/* Image Attachments */}
           <ImageAttachments 
             images={images}
-            onImagesChange={setImages}
+            onImagesChange={onImagesChange}
           />
 
           {/* Model Selection and Options */}
@@ -247,6 +250,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 modelName={availableModels[selectedModel].name}
               />
             )}
+
+            {/* Subtle image upload hint */}
+            <div className="text-xs text-gray-400 opacity-50 flex items-center gap-1">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span>Drop images anywhere</span>
+            </div>
           </div>
 
           {/* Message Input and Send Button */}

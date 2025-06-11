@@ -31,6 +31,7 @@ interface UseChatReturn {
   loading: boolean;
   threadsLoading: boolean;
   error: string | null;
+  images: ImageAttachment[];
   
   // Actions
   loadThreads: () => Promise<void>;
@@ -39,6 +40,7 @@ interface UseChatReturn {
   handleSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean) => Promise<void>;
   handleDeleteThread: (threadId: string) => Promise<void>;
   clearError: () => void;
+  handleImagesChange: (images: ImageAttachment[]) => void;
 }
 
 /**
@@ -57,6 +59,7 @@ export const useChat = (): UseChatReturn => {
   const [loading, setLoading] = useState(false);
   const [threadsLoading, setThreadsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [images, setImages] = useState<ImageAttachment[]>([]);
 
   const { log, debug, warn, error: logError } = useLogger('useChat');
   const { handleError } = useErrorHandler();
@@ -260,6 +263,9 @@ export const useChat = (): UseChatReturn => {
           if (isNewThread || !currentThread) {
             await loadThreads();
           }
+
+          // Clear images after successful message send
+          setImages([]);
           
           log('Streaming message completed successfully');
         },
@@ -370,6 +376,15 @@ export const useChat = (): UseChatReturn => {
     setError(null);
   }, []);
 
+  /**
+   * Handle images change
+   * 
+   * @param images - New images
+   */
+  const handleImagesChange = useCallback((images: ImageAttachment[]) => {
+    setImages(images);
+  }, []);
+
   return {
     // State
     threads,
@@ -377,6 +392,7 @@ export const useChat = (): UseChatReturn => {
     loading,
     threadsLoading,
     error,
+    images,
     
     // Actions
     loadThreads,
@@ -384,6 +400,7 @@ export const useChat = (): UseChatReturn => {
     handleNewChat,
     handleSendMessage,
     handleDeleteThread,
-    clearError
+    clearError,
+    handleImagesChange
   };
 }; 

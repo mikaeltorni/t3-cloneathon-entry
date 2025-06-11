@@ -106,7 +106,7 @@ function App() {
     <ErrorBoundary>
       <div className="h-screen flex bg-gray-50">
         {/* Chat Sidebar */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+        <div className="w-80 bg-white border-r border-gray-200 flex flex-col" data-no-drop="true">
           <ChatSidebar
             threads={chat.threads}
             currentThreadId={chat.currentThread?.id || null}
@@ -132,6 +132,8 @@ function App() {
               loading={chat.loading}
               availableModels={models.availableModels}
               modelsLoading={models.modelsLoading}
+              images={chat.images}
+              onImagesChange={chat.handleImagesChange}
             />
           </div>
         </div>
