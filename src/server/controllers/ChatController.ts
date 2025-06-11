@@ -289,6 +289,214 @@ export class ChatController {
   };
 
   /**
+   * Create new message and get AI response via streaming
+   * 
+   * @route POST /api/chats/message/stream
+   */
+  createMessageStream = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { threadId, content, imageUrl, images, modelId, useReasoning }: any = req.body;
+
+      // Validate request
+      if (!content?.trim() && (!imageUrl?.trim()) && (!images || images.length === 0)) {
+        res.status(400).json({ 
+          error: 'Content, image URL, or images are required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Set headers for Server-Sent Events
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
+
+      console.log(`[ChatController] Starting streaming message for thread: ${threadId || 'new'}`);
+
+      let currentThread: any = null;
+
+      // Get or create thread
+      if (threadId) {
+        currentThread = await chatRepository.getThread(threadId);
+        if (!currentThread) {
+          res.write(`data: ${JSON.stringify({ error: 'Thread not found' })}\n\n`);
+          res.end();
+          return;
+        }
+      } else {
+        // Create new thread with the message content as title (truncated)
+        const title = content?.length > 50 ? content.substring(0, 50) + '...' : content || 'Image Analysis';
+        currentThread = await chatRepository.createThread(title);
+        console.log(`[ChatController] Created new thread for streaming: ${currentThread.id}`);
+      }
+
+      // Send thread info to client
+      res.write(`data: ${JSON.stringify({ 
+        type: 'thread_info', 
+        threadId: currentThread.id 
+      })}\n\n`);
+
+      // Process images if provided
+      let processedImageUrl = imageUrl;
+      if (images && images.length > 0) {
+        processedImageUrl = images[0].url;
+        console.log(`[ChatController] Processing ${images.length} image(s) for streaming`);
+      }
+
+      // Create user message
+      const userMessage = await chatRepository.createMessage(
+        content || 'Analyze this image',
+        'user',
+        processedImageUrl
+      );
+
+      // Add user message to thread
+      await chatRepository.addMessageToThread(currentThread.id, userMessage);
+
+      // Send user message confirmation
+      res.write(`data: ${JSON.stringify({ 
+        type: 'user_message', 
+        message: userMessage 
+      })}\n\n`);
+
+      // Get conversation history for AI
+      const updatedThread = await chatRepository.getThread(currentThread.id);
+      if (!updatedThread) {
+        res.write(`data: ${JSON.stringify({ error: 'Failed to retrieve updated thread' })}\n\n`);
+        res.end();
+        return;
+      }
+
+      console.log(`[ChatController] Streaming AI response with model: ${modelId}`);
+      
+      // Stream the AI response
+      res.write(`data: ${JSON.stringify({ type: 'ai_start' })}\n\n`);
+      
+      let fullContent = '';
+      let fullReasoning = '';
+      let hasContent = false;
+      
+      try {
+        // Use OpenRouter service directly for streaming (could be abstracted to AIService)
+        const { createOpenRouterService } = await import('../openRouterService');
+        const openRouterService = createOpenRouterService(process.env.OPENROUTER_API_KEY!);
+        
+        // Prepare conversation history
+        const conversationHistory = updatedThread.messages.map(msg => ({
+          role: msg.role as any,
+          content: msg.content,
+          imageUrl: msg.imageUrl,
+          images: msg.images
+        }));
+        
+        const responseStream = await openRouterService.sendMessageStream(
+          conversationHistory, 
+          modelId as any, 
+          useReasoning || false
+        );
+        
+        for await (const chunk of responseStream) {
+          // Handle reasoning and content chunks with prefixes from OpenRouter
+          if (chunk.startsWith('reasoning:')) {
+            // Extract reasoning content
+            const reasoningChunk = chunk.slice(10); // Remove 'reasoning:' prefix
+            fullReasoning += reasoningChunk;
+            hasContent = true;
+            
+            // Stream reasoning in real-time
+            res.write(`data: ${JSON.stringify({ 
+              type: 'reasoning_chunk', 
+              content: reasoningChunk,
+              fullReasoning: fullReasoning 
+            })}\n\n`);
+          } else if (chunk.startsWith('content:')) {
+            // Extract content chunk
+            const contentChunk = chunk.slice(8); // Remove 'content:' prefix
+            fullContent += contentChunk;
+            hasContent = true;
+            
+            // Stream content chunk
+            res.write(`data: ${JSON.stringify({ 
+              type: 'ai_chunk', 
+              content: contentChunk, 
+              fullContent: fullContent 
+            })}\n\n`);
+          } else {
+            // Fallback for chunks without prefix (backward compatibility)
+            fullContent += chunk;
+            hasContent = true;
+            
+            res.write(`data: ${JSON.stringify({ 
+              type: 'ai_chunk', 
+              content: chunk, 
+              fullContent: fullContent 
+            })}\n\n`);
+          }
+        }
+
+        // Only create and save message if we actually received content
+        if (hasContent && (fullContent.trim() || fullReasoning.trim())) {
+          // Create assistant message with full response
+          const assistantMessage = await chatRepository.createMessage(
+            fullContent || 'No content received',
+            'assistant',
+            undefined,
+            modelId
+          );
+          
+          // Add real reasoning from OpenRouter if we collected any
+          if (fullReasoning) {
+            assistantMessage.reasoning = fullReasoning;
+          }
+          
+          await chatRepository.addMessageToThread(currentThread.id, assistantMessage);
+
+          // Send completion
+          res.write(`data: ${JSON.stringify({ 
+            type: 'ai_complete', 
+            assistantMessage,
+            fullContent: fullContent 
+          })}\n\n`);
+        } else {
+          // No content received, send error
+          res.write(`data: ${JSON.stringify({ 
+            type: 'error', 
+            error: 'No response received from AI model. Check API configuration.' 
+          })}\n\n`);
+        }
+
+        res.write('data: [DONE]\n\n');
+        res.end();
+
+        console.log(`[ChatController] Successfully streamed message for thread: ${currentThread.id} (${fullContent.length} characters content, ${fullReasoning.length} characters reasoning)`);
+
+      } catch (streamError) {
+        console.error('[ChatController] Error in streaming:', streamError);
+        res.write(`data: ${JSON.stringify({ 
+          type: 'error', 
+          error: streamError instanceof Error ? streamError.message : 'Streaming failed' 
+        })}\n\n`);
+        res.end();
+      }
+
+    } catch (error) {
+      console.error('[ChatController] Error creating streaming message:', error);
+      
+      try {
+        res.write(`data: ${JSON.stringify({ 
+          type: 'error', 
+          error: error instanceof Error ? error.message : 'Failed to create streaming message' 
+        })}\n\n`);
+        res.end();
+      } catch (writeError) {
+        console.error('[ChatController] Error writing error response:', writeError);
+      }
+    }
+  };
+
+  /**
    * Health check endpoint
    * 
    * @route GET /api/chats/health
@@ -324,6 +532,7 @@ export class ChatController {
     router.get('/health', this.healthCheck);
     router.get('/:threadId', this.getThread);
     router.post('/message', this.createMessage);
+    router.post('/message/stream', this.createMessageStream);
     router.delete('/:threadId', this.deleteThread);
     router.put('/:threadId/title', this.updateThreadTitle);
 

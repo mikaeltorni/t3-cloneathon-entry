@@ -140,6 +140,7 @@ app.get('/api', (req: Request, res: Response) => {
         'GET /api/chats': 'Get all chat threads',
         'GET /api/chats/:threadId': 'Get specific chat thread',
         'POST /api/chats/message': 'Create message and get AI response',
+        'POST /api/chats/message/stream': 'Create message and stream AI response',
         'DELETE /api/chats/:threadId': 'Delete chat thread',
         'PUT /api/chats/:threadId/title': 'Update thread title',
         'GET /api/chats/health': 'Chat service health check'
