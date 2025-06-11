@@ -19,16 +19,27 @@
  *   - Fixed input bar that stays anchored to bottom of viewport
  *   - Responsive design that adapts to sidebar presence
  */
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from './ui/Button';
 import { ModelSelector } from './ui/ModelSelector';
 import { useLogger } from '../hooks/useLogger';
 import { cn } from '../utils/cn';
-import type { ChatThread, ChatMessage, ModelConfig } from '../../../src/shared/types';
+import type { ChatThread, ChatMessage, ModelConfig, ImageAttachment } from '../../../src/shared/types';
+import { ImageAttachments } from './ImageAttachments';
 
+/**
+ * Props for the ChatInterface component
+ * 
+ * @interface ChatInterfaceProps
+ * @property currentThread - Currently active chat thread
+ * @property onSendMessage - Callback for sending messages with multiple images
+ * @property loading - Loading state indicator
+ * @property availableModels - Available AI models
+ * @property modelsLoading - Models loading state
+ */
 interface ChatInterfaceProps {
   currentThread: ChatThread | null;
-  onSendMessage: (content: string, imageUrl?: string, modelId?: string) => Promise<void>;
+  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string) => Promise<void>;
   loading: boolean;
   availableModels: Record<string, ModelConfig>;
   modelsLoading: boolean;
@@ -50,7 +61,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   modelsLoading
 }) => {
   const [message, setMessage] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedModel, setSelectedModel] = useState('google/gemini-2.5-flash-preview-05-20');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -112,19 +123,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
    */
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() && !imageUrl.trim()) return;
+    if (!message.trim() && images.length === 0) return;
 
     const messageContent = message.trim();
-    const imageUrlContent = imageUrl.trim();
 
     debug('Submitting message', { 
       hasContent: !!messageContent, 
-      hasImage: !!imageUrlContent 
+      imageCount: images.length 
     });
 
     // Clear inputs immediately for better UX
     setMessage('');
-    setImageUrl('');
+    setImages([]);
 
     // Reset textarea height immediately
     const textarea = textareaRef.current;
@@ -133,13 +143,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
 
     try {
-      await onSendMessage(messageContent || 'Analyze this image', imageUrlContent || undefined, selectedModel);
+      await onSendMessage(
+        messageContent || 'Analyze these images', 
+        images.length > 0 ? images : undefined, 
+        selectedModel
+      );
       log('Message sent successfully');
     } catch (error) {
       // Error handling is done in parent component
       debug('Message sending failed', error);
     }
-  }, [message, imageUrl, onSendMessage, debug, log]);
+  }, [message, images, onSendMessage, debug, log, selectedModel]);
 
   /**
    * Handle keyboard shortcuts
@@ -267,36 +281,28 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   /**
    * Render message input form elements
-   * Contains AI model selector, image URL input, and message textarea
+   * Contains AI model selector, drag & drop images, and message textarea
    * Fixed positioning handled by container wrapper
    */
   const renderMessageInput = () => (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      {/* Model Selector and Image URL */}
-      <div className="flex space-x-3">
-        <div className="flex-1">
-          <ModelSelector
-            value={selectedModel}
-            onChange={setSelectedModel}
-            models={availableModels}
-            loading={modelsLoading}
-            disabled={loading}
-          />
-        </div>
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Image URL (Optional)
-          </label>
-          <input
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://example.com/image.jpg"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-            disabled={loading}
-          />
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Model Selector */}
+      <div>
+        <ModelSelector
+          value={selectedModel}
+          onChange={setSelectedModel}
+          models={availableModels}
+          loading={modelsLoading}
+          disabled={loading}
+        />
       </div>
+
+      {/* Image Attachments */}
+      <ImageAttachments
+        images={images}
+        onImagesChange={setImages}
+        disabled={loading}
+      />
 
       {/* Message Input */}
       <div className="flex space-x-3">
@@ -313,7 +319,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         />
         <Button
           type="submit"
-          disabled={loading || (!message.trim() && !imageUrl.trim())}
+          disabled={loading || (!message.trim() && images.length === 0)}
           loading={loading}
           size="lg"
           className="self-end"
@@ -323,7 +329,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
       
       <p className="text-xs text-gray-500 mt-2 text-center">
-        Tip: Press Enter to send, Shift+Enter for new line
+        Tip: Press Enter to send, Shift+Enter for new line • Drag & drop images to attach
       </p>
     </form>
   );

@@ -21,16 +21,36 @@
  * @property role - Message sender role (user or AI assistant)
  * @property content - Message text content
  * @property timestamp - Message creation timestamp
- * @property imageUrl - Optional image URL for multimodal messages
- * @property modelId - AI model used for assistant messages (optional)
+ * @property imageUrl - Optional image URL for analysis (deprecated, use images)
+ * @property images - Optional array of image attachments
+ * @property modelId - AI model used for processing (for assistant messages)
  */
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  imageUrl?: string; // For image analysis messages
+  imageUrl?: string; // For image analysis messages (deprecated, use images)
+  images?: ImageAttachment[]; // Multiple image support
   modelId?: string; // AI model used (for assistant messages)
+}
+
+/**
+ * Image attachment structure
+ * 
+ * @interface ImageAttachment
+ * @property id - Unique attachment identifier
+ * @property url - Image URL (data URL for uploaded files)
+ * @property name - Original filename
+ * @property size - File size in bytes
+ * @property type - MIME type
+ */
+export interface ImageAttachment {
+  id: string;
+  url: string; // Data URL or external URL
+  name: string;
+  size: number;
+  type: string; // MIME type like 'image/jpeg'
 }
 
 /**
@@ -75,13 +95,15 @@ export interface UserChats {
  * @interface CreateMessageRequest
  * @property threadId - Optional thread ID (creates new thread if omitted)
  * @property content - Message text content
- * @property imageUrl - Optional image URL for analysis
+ * @property imageUrl - Optional single image URL (deprecated, use images)
+ * @property images - Optional array of image attachments
  * @property modelId - AI model to use for processing the message
  */
 export interface CreateMessageRequest {
   threadId?: string; // If not provided, creates new thread
   content: string;
-  imageUrl?: string;
+  imageUrl?: string; // Deprecated, use images
+  images?: ImageAttachment[]; // Multiple image support
   modelId?: string; // AI model identifier
 }
 

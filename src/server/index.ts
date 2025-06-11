@@ -44,7 +44,13 @@ const openRouterService = createOpenRouterService(OPENROUTER_API_KEY);
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ 
+  limit: '50mb' // Increased limit to handle multiple base64-encoded images
+}));
+app.use(express.urlencoded({ 
+  limit: '50mb', 
+  extended: true 
+}));
 
 // Serve static files from web-app dist
 app.use(express.static(path.join(__dirname, '../../web-app/dist')));
@@ -290,12 +296,21 @@ app.post('/api/chats/message', async (req: Request, res: Response) => {
  */
 app.post('/api/chats/message/stream', async (req: Request, res: Response) => {
   try {
-    const { threadId, content, imageUrl, modelId }: CreateMessageRequest = req.body;
+    const { threadId, content, imageUrl, images, modelId }: CreateMessageRequest = req.body;
     
-    // Validate request
-    if (!content?.trim() && !imageUrl?.trim()) {
+    // Log payload info for debugging
+    console.log(`[Streaming] Request payload size: ${JSON.stringify(req.body).length} bytes`);
+    if (images && images.length > 0) {
+      console.log(`[Streaming] Images attached: ${images.length}`);
+      images.forEach((img, index) => {
+        console.log(`[Streaming]   Image ${index + 1}: ${img.name} (${(img.size / 1024).toFixed(1)}KB, ${img.type})`);
+      });
+    }
+    
+    // Validate request - support both images array and single imageUrl
+    if (!content?.trim() && (!imageUrl?.trim()) && (!images || images.length === 0)) {
       return res.status(400).json({ 
-        error: 'Content or image URL is required',
+        error: 'Content, image URL, or images are required',
         timestamp: new Date().toISOString()
       });
     }
@@ -470,54 +485,6 @@ app.delete('/api/chats/:threadId', (req: Request, res: Response) => {
 });
 
 /**
- * Update chat thread title
- * 
- * @route PUT /api/chats/:threadId/title
- * @param threadId - ID of the thread to update
- * @body { title: string }
- * @returns Updated thread data
- */
-app.put('/api/chats/:threadId/title', (req: Request, res: Response) => {
-  try {
-    const { threadId } = req.params;
-    const { title } = req.body;
-    
-    if (!threadId?.trim()) {
-      return res.status(400).json({ 
-        error: 'Thread ID is required',
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    if (!title?.trim()) {
-      return res.status(400).json({ 
-        error: 'Title is required',
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    console.log(`Updating thread title: ${threadId} -> ${title}`);
-    const thread = chatStorage.updateThreadTitle(threadId, title.trim());
-    
-    if (!thread) {
-      return res.status(404).json({ 
-        error: 'Thread not found',
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    console.log(`Successfully updated thread title: ${thread.title}`);
-    res.json(thread);
-  } catch (error) {
-    console.error('Error updating thread title:', error);
-    res.status(500).json({ 
-      error: 'Failed to update thread title',
-      timestamp: new Date().toISOString()
-    });
-  }
-});
-
-/**
  * Health check endpoint
  * 
  * @route GET /api/health
@@ -567,4 +534,4 @@ process.on('SIGTERM', () => {
     console.log('✅ Server closed successfully');
     process.exit(0);
   });
-}); 
+});

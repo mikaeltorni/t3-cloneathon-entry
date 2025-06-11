@@ -20,7 +20,7 @@ import { Button } from './components/ui/Button';
 import { chatApiService } from './services/chatApi';
 import { useLogger } from './hooks/useLogger';
 import { useErrorHandler } from './hooks/useErrorHandler';
-import type { ChatThread, ChatMessage, ModelConfig } from '../../src/shared/types';
+import type { ChatThread, ChatMessage, ModelConfig, ImageAttachment } from '../../src/shared/types';
 
 /**
  * Main application component
@@ -127,15 +127,15 @@ function App() {
    * Handle sending a message with streaming
    * 
    * @param content - Message content
-   * @param imageUrl - Optional image URL
+   * @param images - Optional image attachments
    * @param modelId - AI model to use
    */
-  const handleSendMessage = useCallback(async (content: string, imageUrl?: string, modelId?: string) => {
+  const handleSendMessage = useCallback(async (content: string, images?: ImageAttachment[], modelId?: string) => {
     setLoading(true);
     setError(null);
 
     try {
-      debug('Sending streaming message...', { content: content.substring(0, 50), hasImage: !!imageUrl });
+      debug('Sending streaming message...', { content: content.substring(0, 50), hasImages: !!images });
       
       let tempThread = currentThread;
       let isNewThread = false;
@@ -143,10 +143,11 @@ function App() {
       // Create user message immediately and show it in UI
       const userMessage: ChatMessage = {
         id: `user-${Date.now()}`,
-        content: content || 'Analyze this image',
+        content: content || (images && images.length > 0 ? 'Analyze these images' : 'Hello'),
         role: 'user',
         timestamp: new Date(),
-        imageUrl
+        imageUrl: images?.[0]?.url, // For backward compatibility
+        images: images || undefined
       };
 
       // Immediately add user message to current thread or create new thread
@@ -193,7 +194,8 @@ function App() {
         {
           threadId: currentThread?.id, // Use original thread ID for server
           content,
-          imageUrl,
+          imageUrl: images?.[0]?.url, // Backward compatibility
+          images: images,
           modelId
         },
         // onChunk callback - update the streaming message
