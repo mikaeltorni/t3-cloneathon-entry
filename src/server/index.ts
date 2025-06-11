@@ -22,7 +22,7 @@ import express, { type Request, type Response, type NextFunction } from 'express
 import cors from 'cors';
 import path from 'path';
 import { chatStorage } from './chatStorage';
-import { createOpenRouterService } from './openRouterService';
+import { createOpenRouterService, type ModelId } from './openRouterService';
 import type { 
   CreateMessageRequest, 
   CreateMessageResponse, 
@@ -99,6 +99,28 @@ app.use(requestLogger);
 // API Routes
 
 /**
+ * Get available AI models
+ * 
+ * @route GET /api/models
+ * @returns Available models configuration
+ */
+app.get('/api/models', (req: Request, res: Response) => {
+  try {
+    console.log('Fetching available AI models...');
+    const models = openRouterService.getAvailableModels();
+    
+    console.log(`Successfully fetched ${Object.keys(models).length} available models`);
+    res.json({ models });
+  } catch (error) {
+    console.error('Error getting models:', error);
+    res.status(500).json({ 
+      error: 'Failed to get available models',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
  * Get all chat threads
  * 
  * @route GET /api/chats
@@ -169,7 +191,7 @@ app.get('/api/chats/:threadId', (req: Request, res: Response) => {
  */
 app.post('/api/chats/message', async (req: Request, res: Response) => {
   try {
-    const { threadId, content, imageUrl }: CreateMessageRequest = req.body;
+    const { threadId, content, imageUrl, modelId }: CreateMessageRequest = req.body;
     
     // Validate request
     if (!content?.trim() && !imageUrl?.trim()) {
@@ -227,10 +249,10 @@ app.post('/api/chats/message', async (req: Request, res: Response) => {
     console.log(`Sending message to OpenRouter AI (${conversationHistory.length} messages in history)`);
     
     // Get AI response
-    const aiResponse = await openRouterService.sendMessage(conversationHistory);
+    const aiResponse = await openRouterService.sendMessage(conversationHistory, modelId as ModelId);
     
-    // Create assistant message
-    const assistantMessage = chatStorage.createMessage(aiResponse, 'assistant');
+    // Create assistant message with model information
+    const assistantMessage = chatStorage.createMessage(aiResponse, 'assistant', undefined, modelId);
     chatStorage.addMessageToThread(currentThreadId, assistantMessage);
 
     const response: CreateMessageResponse = {

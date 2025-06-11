@@ -20,9 +20,43 @@ import type { OpenRouterRequest, OpenRouterResponse } from '../shared/types';
 
 // OpenRouter API configuration
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL_NAME = 'google/gemini-2.5-flash-preview-05-20';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
+
+/**
+ * Available AI models configuration
+ */
+export const AVAILABLE_MODELS = {
+  'google/gemini-2.0-flash-exp:free': {
+    name: 'Gemini 2.0 Flash (Experimental)',
+    description: 'Latest experimental Gemini model with multimodal capabilities',
+    type: 'general',
+    free: true
+  },
+  'google/gemini-2.5-flash-preview-05-20': {
+    name: 'Gemini 2.5 Flash',
+    description: 'Fast and efficient multimodal model for general tasks',
+    type: 'general',
+    free: false
+  },
+  'google/gemini-2.5-pro-preview': {
+    name: 'Gemini 2.5 Pro (Reasoning)',
+    description: 'Advanced reasoning model for complex problem solving',
+    type: 'reasoning',
+    free: false
+  },
+  'deepseek/deepseek-r1-0528:free': {
+    name: 'DeepSeek R1 (Reasoning)',
+    description: 'Open-source reasoning model with advanced logical capabilities',
+    type: 'reasoning',
+    free: true
+  }
+} as const;
+
+export type ModelId = keyof typeof AVAILABLE_MODELS;
+
+// Default model
+const DEFAULT_MODEL: ModelId = 'google/gemini-2.0-flash-exp:free';
 
 /**
  * OpenRouter API error class for structured error handling
@@ -52,7 +86,8 @@ interface ConversationMessage {
  * OpenRouter service interface
  */
 interface OpenRouterService {
-  sendMessage(messages: ConversationMessage[]): Promise<string>;
+  sendMessage(messages: ConversationMessage[], modelId?: ModelId): Promise<string>;
+  getAvailableModels(): typeof AVAILABLE_MODELS;
 }
 
 /**
@@ -231,28 +266,43 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
     throw new Error('OpenRouter API key is required');
   }
 
-  console.log(`[OpenRouter] Service initialized with model: ${MODEL_NAME}`);
+  console.log(`[OpenRouter] Service initialized with default model: ${DEFAULT_MODEL}`);
 
   return {
+    /**
+     * Get available AI models
+     * 
+     * @returns Available models configuration
+     */
+    getAvailableModels(): typeof AVAILABLE_MODELS {
+      return AVAILABLE_MODELS;
+    },
+
     /**
      * Send messages to OpenRouter API and get AI response
      * 
      * @param messages - Array of conversation messages
+     * @param modelId - AI model to use (defaults to DEFAULT_MODEL)
      * @returns Promise with AI response text
      */
-    async sendMessage(messages: ConversationMessage[]): Promise<string> {
+    async sendMessage(messages: ConversationMessage[], modelId: ModelId = DEFAULT_MODEL): Promise<string> {
       try {
         // Validate input
         validateMessages(messages);
 
-        console.log(`[OpenRouter] Processing ${messages.length} message(s)`);
+        // Validate model
+        if (!AVAILABLE_MODELS[modelId]) {
+          throw new Error(`Invalid model ID: ${modelId}`);
+        }
+
+        console.log(`[OpenRouter] Processing ${messages.length} message(s) with model: ${AVAILABLE_MODELS[modelId].name}`);
         
         // Format messages for API
         const formattedMessages = formatMessagesForAPI(messages);
 
         // Prepare request
         const requestData: OpenRouterRequest = {
-          model: MODEL_NAME,
+          model: modelId,
           messages: formattedMessages,
         };
 

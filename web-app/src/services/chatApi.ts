@@ -19,7 +19,8 @@ import type {
   ChatThread, 
   CreateMessageRequest, 
   CreateMessageResponse, 
-  GetChatsResponse 
+  GetChatsResponse,
+  AvailableModelsResponse 
 } from '../../../src/shared/types';
 
 // Base API URL - defaults to localhost for development
@@ -256,6 +257,23 @@ class ChatApiService {
       }
       
       throw new Error('Failed to update thread title. Please try again.');
+    }
+  }
+
+  /**
+   * Get available AI models
+   * 
+   * @returns Promise with available models configuration
+   */
+  async getAvailableModels(): Promise<AvailableModelsResponse> {
+    try {
+      logger.info('Fetching available AI models');
+      const response = await this.makeRequest<AvailableModelsResponse>('/models');
+      logger.info(`Successfully fetched ${Object.keys(response.models).length} available models`);
+      return response;
+    } catch (error) {
+      logger.error('Failed to fetch available models', error as Error);
+      throw new Error('Failed to load available AI models. Please try again.');
     }
   }
 

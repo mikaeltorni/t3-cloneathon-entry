@@ -20,7 +20,7 @@ import { Button } from './components/ui/Button';
 import { chatApiService } from './services/chatApi';
 import { useLogger } from './hooks/useLogger';
 import { useErrorHandler } from './hooks/useErrorHandler';
-import type { ChatThread } from '../../src/shared/types';
+import type { ChatThread, ModelConfig } from '../../src/shared/types';
 
 /**
  * Main application component
@@ -33,14 +33,17 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [threadsLoading, setThreadsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [availableModels, setAvailableModels] = useState<Record<string, ModelConfig>>({});
+  const [modelsLoading, setModelsLoading] = useState(true);
 
   const { log, debug, warn, error: logError } = useLogger('App');
   const { handleError } = useErrorHandler();
 
-  // Load all threads on app start
+  // Load all threads and models on app start
   useEffect(() => {
-    debug('App mounted, loading threads...');
+    debug('App mounted, loading threads and models...');
     loadThreads();
+    loadModels();
   }, []);
 
   /**
@@ -61,6 +64,34 @@ function App() {
       warn(errorMessage);
     } finally {
       setThreadsLoading(false);
+    }
+  }, [debug, log, warn, handleError]);
+
+  /**
+   * Load available AI models from the server
+   */
+  const loadModels = useCallback(async () => {
+    try {
+      setModelsLoading(true);
+      debug('Loading available models from server...');
+      const response = await chatApiService.getAvailableModels();
+      setAvailableModels(response.models);
+      log(`Successfully loaded ${Object.keys(response.models).length} models`);
+    } catch (err) {
+      const errorMessage = 'Failed to load AI models.';
+      handleError(err as Error, 'LoadModels');
+      warn(errorMessage);
+      // Set default model if loading fails
+      setAvailableModels({
+        'google/gemini-2.0-flash-exp:free': {
+          name: 'Gemini 2.0 Flash (Experimental)',
+          description: 'Latest experimental Gemini model',
+          type: 'general',
+          free: true
+        }
+      });
+    } finally {
+      setModelsLoading(false);
     }
   }, [debug, log, warn, handleError]);
 
@@ -98,8 +129,9 @@ function App() {
    * 
    * @param content - Message content
    * @param imageUrl - Optional image URL
+   * @param modelId - AI model to use
    */
-  const handleSendMessage = useCallback(async (content: string, imageUrl?: string) => {
+  const handleSendMessage = useCallback(async (content: string, imageUrl?: string, modelId?: string) => {
     setLoading(true);
     setError(null);
 
@@ -109,7 +141,8 @@ function App() {
       const response = await chatApiService.sendMessage({
         threadId: currentThread?.id,
         content,
-        imageUrl
+        imageUrl,
+        modelId
       });
 
       // Update current thread with new messages
@@ -265,6 +298,8 @@ function App() {
               currentThread={currentThread}
               onSendMessage={handleSendMessage}
               loading={loading}
+              availableModels={availableModels}
+              modelsLoading={modelsLoading}
             />
           </div>
 

@@ -42,7 +42,7 @@ interface ChatStorageService {
   createThread(title: string): ChatThread;
   deleteThread(threadId: string): boolean;
   updateThreadTitle(threadId: string, title: string): ChatThread | null;
-  createMessage(content: string, role: 'user' | 'assistant', imageUrl?: string): ChatMessage;
+  createMessage(content: string, role: 'user' | 'assistant', imageUrl?: string, modelId?: string): ChatMessage;
   addMessageToThread(threadId: string, message: ChatMessage): void;
 }
 
@@ -405,9 +405,10 @@ class ChatStorageServiceImpl implements ChatStorageService {
    * @param content - Message content
    * @param role - Message role (user or assistant)
    * @param imageUrl - Optional image URL
+   * @param modelId - Optional AI model identifier (for assistant messages)
    * @returns Created message data
    */
-  createMessage(content: string, role: 'user' | 'assistant', imageUrl?: string): ChatMessage {
+  createMessage(content: string, role: 'user' | 'assistant', imageUrl?: string, modelId?: string): ChatMessage {
     try {
       if (!content?.trim() && !imageUrl?.trim()) {
         throw new Error('Message must have content or image URL');
@@ -422,7 +423,8 @@ class ChatStorageServiceImpl implements ChatStorageService {
         role,
         content: content?.trim() || '',
         timestamp: new Date(),
-        ...(imageUrl?.trim() && { imageUrl: imageUrl.trim() })
+        ...(imageUrl?.trim() && { imageUrl: imageUrl.trim() }),
+        ...(modelId?.trim() && { modelId: modelId.trim() })
       };
 
       validateMessage(message);

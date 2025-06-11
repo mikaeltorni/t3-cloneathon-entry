@@ -22,6 +22,7 @@
  * @property content - Message text content
  * @property timestamp - Message creation timestamp
  * @property imageUrl - Optional image URL for multimodal messages
+ * @property modelId - AI model used for assistant messages (optional)
  */
 export interface ChatMessage {
   id: string;
@@ -29,6 +30,7 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   imageUrl?: string; // For image analysis messages
+  modelId?: string; // AI model used (for assistant messages)
 }
 
 /**
@@ -74,11 +76,13 @@ export interface UserChats {
  * @property threadId - Optional thread ID (creates new thread if omitted)
  * @property content - Message text content
  * @property imageUrl - Optional image URL for analysis
+ * @property modelId - AI model to use for processing the message
  */
 export interface CreateMessageRequest {
   threadId?: string; // If not provided, creates new thread
   content: string;
   imageUrl?: string;
+  modelId?: string; // AI model identifier
 }
 
 /**
@@ -188,6 +192,34 @@ export interface HealthResponse {
   timestamp: string;
   uptime: number;
   version: string;
+}
+
+// ===== AI Model Types =====
+
+/**
+ * AI model configuration structure
+ * 
+ * @interface ModelConfig
+ * @property name - Human-readable model name
+ * @property description - Model description and capabilities
+ * @property type - Model type category
+ * @property free - Whether the model is free to use
+ */
+export interface ModelConfig {
+  name: string;
+  description: string;
+  type: 'general' | 'reasoning' | 'creative' | 'coding';
+  free: boolean;
+}
+
+/**
+ * Available models response structure
+ * 
+ * @interface AvailableModelsResponse
+ * @property models - Object mapping model IDs to their configurations
+ */
+export interface AvailableModelsResponse {
+  models: Record<string, ModelConfig>;
 }
 
 // ===== Utility Types =====
