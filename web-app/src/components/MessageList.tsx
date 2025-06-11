@@ -45,7 +45,8 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
-   * Enhanced scroll to bottom with multiple fallback strategies
+   * PRECISE scroll calculation to anchor content to model selector position
+   * Mathematical approach: position messagesEnd exactly above the fixed input bar
    */
   const scrollToBottom = useCallback((force = false) => {
     const container = containerRef.current;
@@ -56,25 +57,55 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
     // If user is actively scrolling, don't auto-scroll (unless forced)
     if (isUserScrolling.current && !force) return;
 
-    // Method 1: Scroll container to bottom (most reliable)
-    container.scrollTop = container.scrollHeight;
-
-    // Method 2: Also use scrollIntoView as fallback
-    if (messagesEnd) {
-      messagesEnd.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'nearest'
-      });
-    }
-
-    // Method 3: Force scroll after a delay to handle dynamic content
+    // Smart scroll: only scroll if content overflows, position optimally if it does
     setTimeout(() => {
-      if (container) {
-        container.scrollTop = container.scrollHeight;
+      if (container && messagesEnd) {
+        const containerHeight = container.clientHeight;
+        const containerScrollHeight = container.scrollHeight;
+        const messagesEndOffsetTop = messagesEnd.offsetTop;
+        
+        // Check if content actually overflows (needs scrolling)
+        const contentOverflows = containerScrollHeight > containerHeight;
+        
+        if (!contentOverflows) {
+          // Content fits in viewport - just scroll to the very end to show everything
+          const finalScrollPosition = containerScrollHeight - containerHeight;
+          
+          console.log('📏 SHORT CONTENT - scroll to show all:', {
+            containerHeight,
+            containerScrollHeight,
+            finalScrollPosition,
+            reason: 'Content fits in viewport'
+          });
+          
+          container.scrollTo({
+            top: Math.max(0, finalScrollPosition),
+            behavior: 'smooth'
+          });
+        } else {
+          // Content overflows - position messagesEnd above the input bar area
+          // Account for the input bar by using the dynamicBottomPadding
+          const spaceForInputBar = dynamicBottomPadding;
+          const targetScrollPosition = messagesEndOffsetTop - containerHeight + spaceForInputBar;
+          const finalScrollPosition = Math.max(0, targetScrollPosition);
+          
+          console.log('📜 LONG CONTENT - anchor to input bar:', {
+            messagesEndOffsetTop,
+            containerHeight,
+            spaceForInputBar,
+            targetScrollPosition,
+            finalScrollPosition,
+            reason: 'Content overflows viewport'
+          });
+          
+          container.scrollTo({
+            top: finalScrollPosition,
+            behavior: 'smooth'
+          });
+        }
       }
-    }, 50);
-  }, []);
+    }, 150);
+  }, [dynamicBottomPadding]);
 
   /**
    * Detect if user is manually scrolling
@@ -94,18 +125,18 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
   }, []);
 
   /**
-   * Enhanced auto-scroll: triggers on message changes with improved timing
+   * Precise auto-scroll: new messages get precise positioning
    */
   useEffect(() => {
-    // Force scroll to bottom when new messages arrive
+    // Gentle scroll when new messages arrive
     const timeoutId = setTimeout(() => {
-      scrollToBottom(true); // Force scroll even if user was scrolling
+      scrollToBottom(false); // Don't force during initial load
     }, 100);
 
-    // Additional scroll after content has definitely rendered
+    // Final precise scroll after content renders
     const secondTimeout = setTimeout(() => {
-      scrollToBottom(true);
-    }, 300);
+      scrollToBottom(true); // Force precise positioning
+    }, 500);
 
     return () => {
       clearTimeout(timeoutId);
@@ -114,15 +145,15 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
   }, [messages.length, scrollToBottom]);
 
   /**
-   * Scroll when message content changes (streaming updates)
+   * Gentle scroll during streaming updates (less aggressive)
    */
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && lastMessage.role === 'assistant') {
-      // Debounced scroll during streaming to avoid excessive scrolling
+      // Very gentle scroll during streaming - only if user isn't scrolling
       const timeoutId = setTimeout(() => {
-        scrollToBottom();
-      }, 150);
+        scrollToBottom(false); // Never force during streaming
+      }, 300);
 
       return () => clearTimeout(timeoutId);
     }
