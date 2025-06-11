@@ -267,9 +267,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
    */
   const renderMessage = useCallback((msg: ChatMessage) => {
     const isUser = msg.role === 'user';
-    const showReasoning = !isUser && isReasoningModel(msg.modelId) && msg.reasoning;
+    // Only show reasoning if the message actually has reasoning content OR is currently reasoning
+    const hasReasoningContent = !isUser && (msg.reasoning || msg.metadata?.isReasoning === true);
+    const showReasoning = hasReasoningContent && msg.reasoning;
     const isReasoningExpanded = expandedReasoning.has(msg.id);
-    const isCurrentlyReasoning = !isUser && isReasoningModel(msg.modelId) && msg.metadata?.isReasoning === true;
+    const isCurrentlyReasoning = !isUser && msg.metadata?.isReasoning === true;
     const reasoningDuration = msg.metadata?.reasoningDuration;
 
     return (
@@ -324,8 +326,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             
             {/* Message content with reasoning toggle */}
             <div className="space-y-2">
-              {/* Reasoning toggle button for reasoning models */}
-              {(showReasoning || (!isUser && isReasoningModel(msg.modelId))) && (
+              {/* Reasoning toggle button - only show if message has reasoning content or is currently reasoning */}
+              {(showReasoning || isCurrentlyReasoning) && (
                 <button
                   onClick={() => showReasoning ? toggleReasoning(msg.id) : undefined}
                   className={cn(
