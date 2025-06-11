@@ -11,11 +11,11 @@
  *   - Brain emoji icons with smart opacity (full, half, very low)
  *   - One-click model switching with visual feedback
  *   - Selected model description below
- *   - Reasoning toggle positioned appropriately
+ *   - Automatic sorting by release date (newest first)
  * 
  * Usage: <ModelSelector value={selectedModel} onChange={setSelectedModel} models={availableModels} />
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { cn } from '../utils/cn';
 import type { ModelConfig } from '../../../src/shared/types';
 
@@ -42,6 +42,16 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   loading = false
 }) => {
   const currentModel = models[value];
+
+  /**
+   * Sort models by release date (newest first)
+   */
+  const sortedModels = useMemo(() => {
+    return Object.entries(models).sort(([, a], [, b]) => {
+      // Sort by release date descending (newest first)
+      return new Date(b.released).getTime() - new Date(a.released).getTime();
+    });
+  }, [models]);
 
   if (loading) {
     return (
@@ -75,11 +85,22 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     return <span className="opacity-60 text-blue-600">🧠</span>;
   };
 
+  /**
+   * Format release date for display
+   */
+  const formatReleaseDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short' 
+    });
+  };
+
   return (
     <div className="space-y-3">
-      {/* Horizontal Model Buttons */}
+      {/* Horizontal Model Buttons - Sorted by Release Date */}
       <div className="flex flex-wrap gap-2">
-        {Object.entries(models).map(([modelId, model]) => {
+        {sortedModels.map(([modelId, model]) => {
           const isSelected = value === modelId;
           
           return (
@@ -135,6 +156,12 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                 <span className="font-semibold text-gray-900">
                   {currentModel.name}
                 </span>
+                
+                {/* Release Date Badge */}
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                  Released {formatReleaseDate(currentModel.released)}
+                </span>
+                
                 {/* Reasoning Capability Badge */}
                 {currentModel.hasReasoning && (
                   <span 

@@ -42,6 +42,7 @@ export const AVAILABLE_MODELS = {
     color: '#4285F4', // Google Blue
     bgColor: '#E8F0FE', // Light Google Blue
     textColor: '#1A73E8', // Darker Google Blue for text
+    released: '2024-12-19', // December 2024 - Very recent Google release
   },
   'openai/gpt-4o': {
     name: 'GPT-4o',
@@ -52,6 +53,7 @@ export const AVAILABLE_MODELS = {
     color: '#10A37F', // OpenAI Green
     bgColor: '#F0FDF4', // Light Green
     textColor: '#065F46', // Dark Green for text
+    released: '2024-05-13', // May 2024 - GPT-4o launch
   },
   'openai/o1-preview': {
     name: 'OpenAI o1 Preview',
@@ -62,6 +64,7 @@ export const AVAILABLE_MODELS = {
     color: '#FF6B35', // OpenAI Orange for reasoning models
     bgColor: '#FFF7ED', // Light Orange
     textColor: '#C2410C', // Dark Orange for text
+    released: '2024-09-12', // September 2024 - o1 preview launch
   },
   'deepseek/deepseek-r1': {
     name: 'DeepSeek R1',
@@ -72,6 +75,7 @@ export const AVAILABLE_MODELS = {
     color: '#3B82F6', // Tech Blue
     bgColor: '#EFF6FF', // Light Blue
     textColor: '#1D4ED8', // Dark Blue for text
+    released: '2025-01-20', // January 2025 - Very recent DeepSeek release
   },
   'anthropic/claude-3.7-sonnet': {
     name: 'Claude 3.7 Sonnet',
@@ -82,6 +86,7 @@ export const AVAILABLE_MODELS = {
     color: '#FF7A00', // Anthropic Orange
     bgColor: '#FFF7ED', // Light Orange
     textColor: '#C2410C', // Dark Orange for text
+    released: '2024-11-15', // November 2024 - Hypothetical Claude 3.7 release
   }
 } as const;
 

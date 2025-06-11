@@ -82,6 +82,7 @@ export const useModels = (): UseModelsReturn => {
           color: '#4285F4', // Google Blue
           bgColor: '#E8F0FE', // Light Google Blue
           textColor: '#1A73E8', // Darker Google Blue for text
+          released: '2024-12-19', // December 2024 - Very recent Google release
         }
       });
       log('Fallback to default model configuration');

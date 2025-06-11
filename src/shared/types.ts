@@ -262,6 +262,7 @@ export interface HealthResponse {
  * @property color - Brand color for the model (hex code)
  * @property bgColor - Background color for selected state (hex code)
  * @property textColor - Text color for selected state (hex code)
+ * @property released - Release date in ISO format (YYYY-MM-DD) for sorting
  */
 export interface ModelConfig {
   name: string;
@@ -272,6 +273,7 @@ export interface ModelConfig {
   color: string;
   bgColor: string;
   textColor: string;
+  released: string;
 }
 
 /**
