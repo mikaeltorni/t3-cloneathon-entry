@@ -35,6 +35,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<Record<string, ModelConfig>>({});
   const [modelsLoading, setModelsLoading] = useState(true);
+  const [reasoningTimers, setReasoningTimers] = useState<Map<string, number>>(new Map());
 
   const { log, debug, warn, error: logError } = useLogger('App');
   const { handleError } = useErrorHandler();
@@ -233,9 +234,42 @@ function App() {
         async (response) => {
           debug('Streaming completed', { threadId: response.threadId });
           
+          // Calculate reasoning duration if timer exists
+          const startTime = reasoningTimers.get(tempAiMessage.id);
+          if (startTime) {
+            const duration = Date.now() - startTime;
+            debug(`Reasoning completed in ${duration}ms`);
+            
+            // Store duration in the message metadata and mark reasoning as complete
+            tempAiMessage.metadata = { 
+              ...tempAiMessage.metadata, 
+              reasoningDuration: duration,
+              isReasoning: false
+            };
+          }
+          
           // Get the final thread from server to ensure consistency
           const finalThread = await chatApiService.getChat(response.threadId);
+          
+          // If we have reasoning duration, add it to the final message
+          if (startTime && finalThread.messages.length > 0) {
+            const lastMessage = finalThread.messages[finalThread.messages.length - 1];
+            if (lastMessage.role === 'assistant' && lastMessage.reasoning) {
+              lastMessage.metadata = {
+                ...lastMessage.metadata,
+                reasoningDuration: Date.now() - startTime
+              };
+            }
+          }
+          
           setCurrentThread(finalThread);
+
+          // Clean up timer
+          setReasoningTimers(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(tempAiMessage.id);
+            return newMap;
+          });
 
           // Reload threads to update sidebar if new thread was created
           if (isNewThread || !currentThread) {
@@ -269,8 +303,20 @@ function App() {
         (reasoningChunk: string, fullReasoning: string) => {
           debug('Received reasoning chunk', { chunkLength: reasoningChunk.length, totalLength: fullReasoning.length });
           
+          // Start timing on first reasoning chunk
+          if (!reasoningTimers.has(tempAiMessage.id) && reasoningChunk.length > 0) {
+            setReasoningTimers(prev => new Map(prev).set(tempAiMessage.id, Date.now()));
+            debug('Started reasoning timer for message:', tempAiMessage.id);
+          }
+          
           // Update the temporary message with the streaming reasoning
           tempAiMessage.reasoning = fullReasoning;
+          
+          // Mark that this message is currently reasoning
+          tempAiMessage.metadata = {
+            ...tempAiMessage.metadata,
+            isReasoning: true
+          };
           
           if (tempThread) {
             // Find if temp message already exists in thread

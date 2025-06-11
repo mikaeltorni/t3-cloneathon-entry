@@ -247,6 +247,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     });
   }, []);
 
+
+
+  /**
+   * Format reasoning duration for display
+   */
+  const formatReasoningDuration = useCallback((duration: number): string => {
+    if (duration < 1000) {
+      return `${Math.round(duration)}ms`;
+    } else {
+      return `${(duration / 1000).toFixed(1)}s`;
+    }
+  }, []);
+
   /**
    * Render individual message component
    * 
@@ -257,12 +270,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const isUser = msg.role === 'user';
     const showReasoning = !isUser && isReasoningModel(msg.modelId) && msg.reasoning;
     const isReasoningExpanded = expandedReasoning.has(msg.id);
-    
-    console.log("reasoning:", msg.reasoning)
-    console.log("showReasoning:", showReasoning)
-    console.log("isReasoningExpanded:", isReasoningExpanded)
-    console.log("isUser:", isUser)
-    console.log("isReasoningModel:", isReasoningModel(msg.modelId))
+    const isCurrentlyReasoning = !isUser && isReasoningModel(msg.modelId) && msg.metadata?.isReasoning === true;
+    const reasoningDuration = msg.metadata?.reasoningDuration;
 
     return (
       <div key={msg.id} className={cn('flex mb-4', isUser ? 'justify-end' : 'justify-start')}>
@@ -317,19 +326,37 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             {/* Message content with reasoning toggle */}
             <div className="space-y-2">
               {/* Reasoning toggle button for reasoning models */}
-              {showReasoning && (
+              {(showReasoning || (!isUser && isReasoningModel(msg.modelId))) && (
                 <button
-                  onClick={() => toggleReasoning(msg.id)}
-                  className="inline-flex items-center space-x-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                  onClick={() => showReasoning ? toggleReasoning(msg.id) : undefined}
+                  className={cn(
+                    "inline-flex items-center space-x-1 text-xs transition-colors",
+                    showReasoning 
+                      ? "text-gray-500 hover:text-gray-700 cursor-pointer" 
+                      : "text-gray-400 cursor-default"
+                  )}
+                  disabled={!showReasoning}
                 >
                   <span>💭</span>
-                  <span className="font-medium">Reasoned</span>
-                  <span className={cn(
-                    'transform transition-transform duration-200',
-                    isReasoningExpanded ? 'rotate-180' : 'rotate-0'
-                  )}>
-                    ▼
-                  </span>
+                  {isCurrentlyReasoning ? (
+                    <span className="font-medium animate-pulse">Reasoning...</span>
+                  ) : showReasoning && reasoningDuration ? (
+                    <span className="font-medium">
+                      Reasoned ({formatReasoningDuration(reasoningDuration)})
+                    </span>
+                  ) : showReasoning ? (
+                    <span className="font-medium">Reasoned</span>
+                  ) : (
+                    <span className="font-medium text-gray-400">Reasoning...</span>
+                  )}
+                  {showReasoning && (
+                    <span className={cn(
+                      'transform transition-transform duration-200',
+                      isReasoningExpanded ? 'rotate-180' : 'rotate-0'
+                    )}>
+                      ▼
+                    </span>
+                  )}
                 </button>
               )}
               
@@ -361,7 +388,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
     );
-  }, [formatTime, isReasoningModel, expandedReasoning, toggleReasoning]);
+  }, [formatTime, isReasoningModel, expandedReasoning, toggleReasoning, loading, formatReasoningDuration]);
 
   /**
    * Render welcome message for new chat

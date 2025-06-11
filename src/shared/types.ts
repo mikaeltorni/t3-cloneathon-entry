@@ -25,6 +25,7 @@
  * @property images - Optional array of image attachments
  * @property modelId - AI model used for processing (for assistant messages)
  * @property reasoning - Optional reasoning content for reasoning models (raw text)
+ * @property metadata - Optional metadata for additional message information
  */
 export interface ChatMessage {
   id: string;
@@ -35,6 +36,11 @@ export interface ChatMessage {
   images?: ImageAttachment[]; // Multiple image support
   modelId?: string; // AI model used (for assistant messages)
   reasoning?: string; // Raw reasoning content for reasoning models
+  metadata?: { // Additional message metadata
+    reasoningDuration?: number; // Duration in milliseconds for reasoning
+    isReasoning?: boolean; // Whether the message is currently reasoning
+    [key: string]: any; // Allow other metadata
+  };
 }
 
 /**
