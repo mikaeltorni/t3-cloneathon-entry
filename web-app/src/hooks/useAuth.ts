@@ -1,108 +1,132 @@
 /**
  * useAuth.ts
  * 
- * Custom hook for Firebase Authentication state management
+ * Custom hook for Firebase authentication management
  * 
  * Hook:
- *   useAuth - Manages authentication state and provides auth methods
+ *   useAuth
  * 
- * Usage: const { user, loading, signIn, signOut, signUp } = useAuth()
+ * Usage: const { user, loading, signInWithGoogle, signOut } = useAuth();
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut as firebaseSignOut,
-  type User
+  type User,
+  type Auth
 } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { initializeFirebaseAuth } from '../config/firebase';
 
 interface AuthState {
   user: User | null;
   loading: boolean;
+  initialized: boolean;
 }
 
 interface AuthMethods {
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
-interface UseAuthReturn extends AuthState, AuthMethods {}
+type UseAuthReturn = AuthState & AuthMethods;
 
 /**
- * Custom hook for Firebase Authentication
+ * Custom hook for authentication state management
  * 
- * @returns Auth state and methods
+ * @returns Authentication state and methods
  */
 export function useAuth(): UseAuthReturn {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     loading: true,
+    initialized: false,
   });
 
+  const [authInstance, setAuthInstance] = useState<Auth | null>(null);
+
   /**
-   * Listen for authentication state changes
+   * Initialize Firebase auth when component mounts
    */
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setAuthState({
-        user,
-        loading: false,
-      });
-    });
+    let unsubscribe: (() => void) | undefined;
 
-    return unsubscribe;
+    const initAuth = async () => {
+      try {
+        console.log('🔐 Initializing Firebase Auth...');
+        const auth = await initializeFirebaseAuth();
+        setAuthInstance(auth);
+
+        // Set up auth state listener
+        unsubscribe = onAuthStateChanged(auth, (user) => {
+          setAuthState({
+            user,
+            loading: false,
+            initialized: true,
+          });
+        });
+
+        console.log('✅ Firebase Auth initialized');
+      } catch (error) {
+        console.error('❌ Failed to initialize Firebase Auth:', error);
+        setAuthState({
+          user: null,
+          loading: false,
+          initialized: false,
+        });
+      }
+    };
+
+    initAuth();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   /**
-   * Sign in with email and password
-   * 
-   * @param email - User email
-   * @param password - User password
+   * Sign in with Google using popup
    */
-  const signIn = async (email: string, password: string): Promise<void> => {
+  const signInWithGoogle = useCallback(async (): Promise<void> => {
+    if (!authInstance) {
+      throw new Error('Firebase Auth not initialized');
+    }
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const provider = new GoogleAuthProvider();
+      provider.addScope('profile');
+      provider.addScope('email');
+      
+      await signInWithPopup(authInstance, provider);
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error('Google sign in error:', error);
       throw error;
     }
-  };
+  }, [authInstance]);
 
   /**
-   * Sign up with email and password
-   * 
-   * @param email - User email
-   * @param password - User password
+   * Sign out the current user
    */
-  const signUp = async (email: string, password: string): Promise<void> => {
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-      console.error('Sign up error:', error);
-      throw error;
+  const signOut = useCallback(async (): Promise<void> => {
+    if (!authInstance) {
+      throw new Error('Firebase Auth not initialized');
     }
-  };
 
-  /**
-   * Sign out current user
-   */
-  const signOut = async (): Promise<void> => {
     try {
-      await firebaseSignOut(auth);
+      await firebaseSignOut(authInstance);
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;
     }
-  };
+  }, [authInstance]);
 
   return {
     ...authState,
-    signIn,
-    signUp,
+    signInWithGoogle,
     signOut,
   };
 } 

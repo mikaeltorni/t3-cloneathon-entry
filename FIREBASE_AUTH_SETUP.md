@@ -1,165 +1,175 @@
 # Firebase Authentication Setup Guide
 
-This guide walks you through setting up Firebase Authentication for the OpenRouter Chat App.
+This guide walks you through setting up Firebase Authentication with Google Sign-In for the OpenRouter Chat application.
 
-## 🎯 Overview
+## Prerequisites
 
-Firebase Authentication has been integrated into the frontend with:
-- ✅ **Email/Password Authentication** 
-- ✅ **React Hook** for auth state management
-- ✅ **Sign In/Sign Up Forms** with error handling
-- ✅ **Protected Routes** - chat only available when signed in
-- ✅ **Auth Button** in sidebar showing user state
-- ✅ **Environment Variable** configuration
+- A Google/Firebase account
+- A Firebase project
 
-## 📋 Quick Setup
+## Step 1: Create Firebase Project
 
-### 1. Create Firebase Project
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click "Create a project"
-3. Follow the setup wizard
-4. Enable Authentication → Sign-in method → Email/Password
+1. Go to the [Firebase Console](https://console.firebase.google.com/)
+2. Click "Add project" or select an existing project
+3. Follow the setup wizard to create your project
+4. Enable Google Analytics (optional but recommended)
 
-### 2. Get Firebase Configuration
-1. In Firebase Console, go to Project Settings (gear icon)
-2. Scroll down to "Your apps" section
-3. Click "Web app" icon to add a web app
-4. Copy the configuration object
+## Step 2: Enable Authentication
 
-### 3. Configure Environment Variables
-Create `web-app/.env` file with your Firebase config:
+1. In your Firebase project console, navigate to **Authentication** in the left sidebar
+2. Click on the **Sign-in method** tab
+3. Enable **Google** as a sign-in provider:
+   - Click on **Google**
+   - Toggle the **Enable** switch
+   - Enter your project's public-facing name
+   - Select your support email
+   - Click **Save**
 
-```bash
-# Firebase Configuration
-VITE_FIREBASE_API_KEY=your-api-key-here
-VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
-VITE_FIREBASE_APP_ID=your-app-id-here
+## Step 3: Register Your Web App
+
+1. In the Firebase console, click the **Web** icon (</>)
+2. Register your app with a nickname (e.g., "OpenRouter Chat Web")
+3. **Optional**: Enable Firebase Hosting (not required for this setup)
+4. Click **Register app**
+
+## Step 4: Get Configuration Keys
+
+After registering, you'll see a configuration object. Copy these values:
+
+```javascript
+const firebaseConfig = {
+  apiKey: "your-api-key-here",
+  authDomain: "your-project-id.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project-id.appspot.com",
+  messagingSenderId: "123456789012",
+  appId: "1:123456789012:web:abcdef123456"
+};
 ```
 
-### 4. Test Authentication
-1. Start the development server: `npm run dev`
-2. Navigate to `http://localhost:5173`
-3. You should see the sign-in form
-4. Create an account and test sign in/out
+## Step 5: Configure Environment Variables
 
-## 🏗️ What's Been Added
+### Server-Side Configuration (.env)
 
-### Components Added
-```
-web-app/src/
-├── config/
-│   └── firebase.ts              # Firebase configuration and auth instance
-├── hooks/
-│   └── useAuth.ts               # Authentication state management hook
-└── components/auth/
-    ├── AuthButton.tsx           # User status and sign out button
-    └── SignInForm.tsx           # Sign in/sign up form
-```
+All configuration is now managed server-side for better security.
+
+1. Copy the `env.template` file to `.env` in the root directory:
+   ```bash
+   cp env.template .env
+   ```
+
+2. Update the `.env` file with your actual configuration:
+   ```env
+   # OpenRouter API Configuration
+   OPENROUTER_API_KEY=sk-or-v1-your-actual-key-here
+   
+   # Server Configuration  
+   PORT=3001
+   NODE_ENV=development
+   
+   # Firebase Configuration (Server-side)
+   FIREBASE_API_KEY=your-firebase-api-key
+   FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+   FIREBASE_PROJECT_ID=your-project-id
+   FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+   FIREBASE_MESSAGING_SENDER_ID=123456789012
+   FIREBASE_APP_ID=1:123456789012:web:abcdef123456
+   ```
+
+**Security Note**: All environment variables are now server-side only. The frontend fetches Firebase configuration from `/api/config/firebase` endpoint.
+
+## Step 6: Configure Authorized Domains
+
+1. In the Firebase console, go to **Authentication** > **Settings** > **Authorized domains**
+2. Add your development domain (usually `localhost`) if not already present
+3. For production, add your actual domain
+
+## Step 7: Install Dependencies and Run
+
+1. Install the required dependencies:
+   ```bash
+   npm install
+   cd web-app && npm install
+   ```
+
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+**Note**: The frontend will automatically fetch Firebase configuration from the server at `/api/config/firebase`.
+
+## How It Works
+
+### Google Authentication Flow
+
+1. User clicks "Continue with Google" button
+2. Firebase opens Google's OAuth popup
+3. User signs in with their Google account
+4. Firebase returns user information and authentication token
+5. App saves auth state and redirects to chat interface
 
 ### Key Features
-- **Protected App**: Users must sign in to access chat
-- **Auth State**: Persistent login across browser sessions  
-- **Error Handling**: User-friendly auth error messages
-- **Loading States**: Proper loading indicators
-- **Responsive Design**: Works on all screen sizes
 
-## 🔧 How It Works
+- **Secure**: Uses Google's OAuth 2.0 for authentication
+- **Persistent**: Auth state persists across browser sessions
+- **Protected Routes**: Chat interface only accessible when signed in
+- **Easy Sign Out**: One-click sign out from any page
 
-### Authentication Flow
-1. **App starts** → Check if user is signed in
-2. **Not signed in** → Show sign-in form
-3. **Sign in successful** → Show main chat interface
-4. **Sign out** → Return to sign-in form
+### Authentication Components
 
-### Auth Hook Usage
-```typescript
-import { useAuth } from '../hooks/useAuth';
+- `useAuth.ts` - Custom hook managing auth state and methods
+- `SignInForm.tsx` - Google sign-in interface
+- `AuthButton.tsx` - Shows user status and sign-out option
+- `App.tsx` - Route protection based on auth state
 
-const { user, loading, signIn, signUp, signOut } = useAuth();
+## Testing the Setup
 
-// Check if user is authenticated
-if (user) {
-  // User is signed in
-  console.log('User email:', user.email);
-}
+1. Start the application (`npm run dev`)
+2. You should see the Google sign-in page
+3. Click "Continue with Google"
+4. Complete Google OAuth flow
+5. You should be redirected to the chat interface
+6. Your name should appear in the sidebar with a sign-out option
 
-// Sign in
-await signIn('user@example.com', 'password');
+## Security Notes
 
-// Sign up
-await signUp('user@example.com', 'password');
+- Environment variables in `.env` files are git-ignored
+- Firebase API keys are safe to expose in frontend code
+- Auth tokens are automatically managed by Firebase
+- Google handles all password security
 
-// Sign out
-await signOut();
-```
-
-### Firebase Config Usage
-```typescript
-import { auth } from '../config/firebase';
-
-// The auth instance is available throughout the app
-// It automatically uses environment variables for configuration
-```
-
-## 🚦 Current State
-
-### ✅ What's Working
-- Email/password authentication
-- User state management
-- Protected routes
-- Sign in/sign up forms
-- User interface integration
-- Environment-based configuration
-
-### 🔄 What's Still Using File Storage
-- Chat threads (stored in `data/` folder)
-- User data is NOT yet connected to chats
-- Each user currently sees all chats (not user-specific yet)
-
-### 🔮 Future Enhancements (NOT IMPLEMENTED YET)
-- User-specific chat storage
-- Remove shared `data/` folder
-- Connect auth to backend
-- User profiles and preferences
-
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
-**"Firebase config not found"**
-- Make sure `web-app/.env` exists with all Firebase variables
-- Check that variables start with `VITE_` prefix
-- Restart the dev server after adding environment variables
+1. **"auth/invalid-api-key"**
+   - Check your `VITE_FIREBASE_API_KEY` in `web-app/.env`
 
-**"Authentication failed"**
-- Check Firebase Console → Authentication → Sign-in method
-- Ensure Email/Password is enabled
-- Check if user exists (create account first)
+2. **"auth/auth-domain-config-required"**  
+   - Verify `VITE_FIREBASE_AUTH_DOMAIN` is correct
 
-**"User not redirected after sign in"**
-- Check browser console for errors
-- Ensure Firebase config is correct
-- Try clearing browser cache/localStorage
+3. **"auth/unauthorized-domain"**
+   - Add your domain to Firebase Console > Authentication > Settings > Authorized domains
 
-### Debugging Tips
-```typescript
-// Check current auth state
-import { auth } from './config/firebase';
-console.log('Current user:', auth.currentUser);
+4. **Popup blocked**
+   - Ensure popup blockers allow Firebase auth domains
+   - Try using `signInWithRedirect` instead of `signInWithPopup`
 
-// Check Firebase config
-console.log('Firebase config loaded:', !!auth.app);
-```
+### Getting Help
 
-## 📚 Firebase Auth Documentation
+- Check the browser console for detailed error messages
+- Verify all environment variables are set correctly
+- Ensure Firebase project has Google auth enabled
+- Check Firebase project settings match your configuration
 
-- [Firebase Auth Web Guide](https://firebase.google.com/docs/auth/web/start)
-- [Email/Password Authentication](https://firebase.google.com/docs/auth/web/password-auth)
-- [Firebase Console](https://console.firebase.google.com/)
+## Next Steps
 
----
+- Add user profile management
+- Implement user-specific chat storage
+- Add additional authentication providers
+- Set up custom claims for role-based access
 
-**🎉 Firebase Authentication is now integrated!** Users must sign in to access the chat interface, but the existing file-based chat storage remains unchanged for now. 
+For more Firebase Auth documentation, visit: https://firebase.google.com/docs/auth
+
+ 

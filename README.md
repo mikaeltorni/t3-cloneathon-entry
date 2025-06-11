@@ -57,7 +57,7 @@ src/server/
 ## 🚀 Features
 
 ### 💬 **Chat Features**
-- **Firebase Authentication** with email/password sign-in
+- **Firebase Authentication** with Google Sign-In
 - **Multi-threaded conversations** with persistent storage
 - **Multiple AI models** with real-time model switching
 - **Image analysis support** with drag-and-drop upload
@@ -89,7 +89,7 @@ src/server/
 
 ### **Frontend Architecture**
 - **React 18+** with TypeScript for type safety
-- **Firebase Authentication** for secure user management
+- **Firebase Authentication** with Google OAuth for secure user management
 - **Tailwind CSS 3+** for responsive, modern styling
 - **Vite** for fast development and optimized builds
 - **Custom hooks** for state management (useChat, useModels, useAuth)
