@@ -1,4 +1,22 @@
-import { useState, useRef, useEffect } from 'react';
+/**
+ * ChatInterface.tsx
+ * 
+ * Main chat interface component for message display and input
+ * 
+ * Components:
+ *   ChatInterface
+ * 
+ * Features:
+ *   - Message display with image support
+ *   - Message input with image URL support
+ *   - Auto-scrolling to latest messages
+ *   - Loading states and error handling
+ *   - Keyboard shortcuts (Enter to send, Shift+Enter for new line)
+ */
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Button } from './ui/Button';
+import { useLogger } from '../hooks/useLogger';
+import { cn } from '../utils/cn';
 import type { ChatThread, ChatMessage } from '../../../src/shared/types';
 
 interface ChatInterfaceProps {
@@ -7,6 +25,14 @@ interface ChatInterfaceProps {
   loading: boolean;
 }
 
+/**
+ * Main chat interface component
+ * 
+ * @param currentThread - Current active chat thread
+ * @param onSendMessage - Callback for sending messages
+ * @param loading - Loading state for message sending
+ * @returns React component
+ */
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentThread,
   onSendMessage,
@@ -15,56 +41,114 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [message, setMessage] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const scrollToBottom = () => {
+  const { debug, log } = useLogger('ChatInterface');
+
+  /**
+   * Scroll to the bottom of the messages container
+   */
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
+  /**
+   * Auto-resize textarea based on content
+   */
+  const autoResizeTextarea = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    }
+  }, []);
+
+  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
-  }, [currentThread?.messages]);
+  }, [currentThread?.messages, scrollToBottom]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  /**
+   * Handle form submission
+   * 
+   * @param e - Form event
+   */
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() && !imageUrl.trim()) return;
 
     const messageContent = message.trim();
     const imageUrlContent = imageUrl.trim();
 
+    debug('Submitting message', { 
+      hasContent: !!messageContent, 
+      hasImage: !!imageUrlContent 
+    });
+
+    // Clear inputs immediately for better UX
     setMessage('');
     setImageUrl('');
 
     try {
       await onSendMessage(messageContent || 'Analyze this image', imageUrlContent || undefined);
+      log('Message sent successfully');
     } catch (error) {
       // Error handling is done in parent component
-      console.error('Failed to send message:', error);
+      debug('Message sending failed', error);
     }
-  };
+  }, [message, imageUrl, onSendMessage, debug, log]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  /**
+   * Handle keyboard shortcuts
+   * 
+   * @param e - Keyboard event
+   */
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
     }
-  };
+  }, [handleSubmit]);
 
-  const formatTime = (date: Date | string) => {
+  /**
+   * Handle textarea input changes
+   * 
+   * @param e - Input event
+   */
+  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.target.value);
+    autoResizeTextarea();
+  }, [autoResizeTextarea]);
+
+  /**
+   * Format timestamp for display
+   * 
+   * @param date - Date to format
+   * @returns Formatted time string
+   */
+  const formatTime = useCallback((date: Date | string) => {
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  }, []);
 
-  const renderMessage = (msg: ChatMessage) => {
+  /**
+   * Render individual message component
+   * 
+   * @param msg - Message to render
+   * @returns React element
+   */
+  const renderMessage = useCallback((msg: ChatMessage) => {
     const isUser = msg.role === 'user';
     
     return (
-      <div key={msg.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
-        <div className={`max-w-[70%] ${isUser ? 'order-2' : 'order-1'}`}>
+      <div key={msg.id} className={cn('flex mb-4', isUser ? 'justify-end' : 'justify-start')}>
+        <div className={cn('max-w-[70%]', isUser ? 'order-2' : 'order-1')}>
           <div
-            className={`px-4 py-3 rounded-2xl ${
+            className={cn(
+              'px-4 py-3 rounded-2xl',
               isUser
                 ? 'bg-blue-600 text-white'
                 : 'bg-white border border-gray-200 text-gray-900'
-            }`}
+            )}
           >
             {msg.imageUrl && (
               <div className="mb-3">
@@ -73,129 +157,161 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   alt="Shared image"
                   className="max-w-full h-auto rounded-lg shadow-sm"
                   style={{ maxHeight: '200px' }}
+                  loading="lazy"
                 />
               </div>
             )}
             <div className="whitespace-pre-wrap break-words">{msg.content}</div>
           </div>
-          <div className={`text-xs text-gray-500 mt-1 ${isUser ? 'text-right' : 'text-left'}`}>
+          <div className={cn(
+            'text-xs text-gray-500 mt-1',
+            isUser ? 'text-right' : 'text-left'
+          )}>
             {formatTime(msg.timestamp)}
           </div>
         </div>
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${isUser ? 'order-1 mr-3' : 'order-2 ml-3'}`}>
+        <div className={cn(
+          'w-8 h-8 rounded-full flex items-center justify-center text-sm',
+          isUser ? 'order-1 mr-3' : 'order-2 ml-3'
+        )}>
           {isUser ? '👤' : '🤖'}
         </div>
       </div>
     );
-  };
+  }, [formatTime]);
+
+  /**
+   * Render loading indicator
+   */
+  const renderLoadingIndicator = () => (
+    <div className="flex justify-start mb-4">
+      <div className="order-1 max-w-[70%]">
+        <div className="bg-white border border-gray-200 text-gray-900 px-4 py-3 rounded-2xl">
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <span className="text-gray-500">AI is thinking...</span>
+          </div>
+        </div>
+      </div>
+      <div className="order-2 ml-3 w-8 h-8 rounded-full flex items-center justify-center text-sm">
+        🤖
+      </div>
+    </div>
+  );
+
+  /**
+   * Render welcome message for new chat
+   */
+  const renderWelcomeMessage = () => (
+    <div className="flex items-center justify-center h-full">
+      <div className="text-center text-gray-500">
+        <span className="text-6xl block mb-4">💬</span>
+        <h3 className="text-xl font-medium mb-2">Welcome to OpenRouter Chat</h3>
+        <p className="text-gray-400">Start a new conversation or select an existing chat from the sidebar</p>
+      </div>
+    </div>
+  );
+
+  /**
+   * Render empty thread message
+   */
+  const renderEmptyThreadMessage = () => (
+    <div className="flex items-center justify-center h-full">
+      <div className="text-center text-gray-500">
+        <span className="text-4xl block mb-4">🌟</span>
+        <h3 className="text-lg font-medium mb-2">New Conversation</h3>
+        <p className="text-gray-400">Send your first message to get started!</p>
+      </div>
+    </div>
+  );
+
+  /**
+   * Render header with thread information
+   */
+  const renderHeader = () => (
+    <div className="bg-white border-b border-gray-200 p-4">
+      <h2 className="text-lg font-semibold text-gray-900">
+        {currentThread ? currentThread.title : 'Select a chat or start a new one'}
+      </h2>
+      {currentThread && (
+        <p className="text-sm text-gray-500 mt-1">
+          {currentThread.messages.length} messages • Updated {new Date(currentThread.updatedAt).toLocaleString()}
+        </p>
+      )}
+    </div>
+  );
+
+  /**
+   * Render message input form
+   */
+  const renderMessageInput = () => (
+    <div className="bg-white border-t border-gray-200 p-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {/* Image URL Input */}
+        <div>
+          <input
+            type="url"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="Image URL (optional)"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
+            disabled={loading}
+          />
+        </div>
+
+        {/* Message Input */}
+        <div className="flex space-x-3">
+          <textarea
+            ref={textareaRef}
+            value={message}
+            onChange={handleMessageChange}
+            onKeyDown={handleKeyPress}
+            placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
+            rows={1}
+            style={{ minHeight: '48px', maxHeight: '120px' }}
+            disabled={loading}
+          />
+          <Button
+            type="submit"
+            disabled={loading || (!message.trim() && !imageUrl.trim())}
+            loading={loading}
+            size="lg"
+            className="self-end"
+          >
+            Send
+          </Button>
+        </div>
+      </form>
+      
+      <p className="text-xs text-gray-500 mt-2 text-center">
+        Tip: Press Enter to send, Shift+Enter for new line
+      </p>
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-4">
-        <h2 className="text-lg font-semibold text-gray-900">
-          {currentThread ? currentThread.title : 'Select a chat or start a new one'}
-        </h2>
-        {currentThread && (
-          <p className="text-sm text-gray-500 mt-1">
-            {currentThread.messages.length} messages • Updated {new Date(currentThread.updatedAt).toLocaleString()}
-          </p>
-        )}
-      </div>
+      {renderHeader()}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {!currentThread ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-500">
-              <span className="text-6xl block mb-4">💬</span>
-              <h3 className="text-xl font-medium mb-2">Welcome to OpenRouter Chat</h3>
-              <p className="text-gray-400">Start a new conversation or select an existing chat from the sidebar</p>
-            </div>
-          </div>
+          renderWelcomeMessage()
         ) : currentThread.messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-500">
-              <span className="text-4xl block mb-4">🌟</span>
-              <h3 className="text-lg font-medium mb-2">New Conversation</h3>
-              <p className="text-gray-400">Send your first message to get started!</p>
-            </div>
-          </div>
+          renderEmptyThreadMessage()
         ) : (
           <>
             {currentThread.messages.map(renderMessage)}
-            {loading && (
-              <div className="flex justify-start mb-4">
-                <div className="order-1 max-w-[70%]">
-                  <div className="bg-white border border-gray-200 text-gray-900 px-4 py-3 rounded-2xl">
-                    <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      <span className="text-gray-500">AI is thinking...</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="order-2 ml-3 w-8 h-8 rounded-full flex items-center justify-center text-sm">
-                  🤖
-                </div>
-              </div>
-            )}
+            {loading && renderLoadingIndicator()}
           </>
         )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
-      <div className="bg-white border-t border-gray-200 p-4">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Image URL Input */}
-          <div>
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="Image URL (optional)"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
-            />
-          </div>
-
-          {/* Message Input */}
-          <div className="flex space-x-3">
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
-              rows={1}
-              style={{ minHeight: '48px', maxHeight: '120px' }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto';
-                target.style.height = Math.min(target.scrollHeight, 120) + 'px';
-              }}
-            />
-            <button
-              type="submit"
-              disabled={loading || (!message.trim() && !imageUrl.trim())}
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                loading || (!message.trim() && !imageUrl.trim())
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              ) : (
-                'Send'
-              )}
-            </button>
-          </div>
-        </form>
-        
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          Tip: Press Enter to send, Shift+Enter for new line
-        </p>
-      </div>
+      {renderMessageInput()}
     </div>
   );
 }; 

@@ -1,9 +1,32 @@
-import { useState, useEffect } from 'react';
+/**
+ * App.tsx
+ * 
+ * Main application component managing chat state and routing
+ * 
+ * Components:
+ *   App
+ * 
+ * Features:
+ *   - Chat thread management
+ *   - Real-time messaging with OpenRouter API
+ *   - Error handling and loading states
+ *   - Responsive design
+ */
+import { useState, useEffect, useCallback } from 'react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
+import { Button } from './components/ui/Button';
 import { chatApiService } from './services/chatApi';
+import { useLogger } from './hooks/useLogger';
+import { useErrorHandler } from './hooks/useErrorHandler';
 import type { ChatThread } from '../../src/shared/types';
 
+/**
+ * Main application component
+ * 
+ * @returns React component
+ */
 function App() {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [currentThread, setCurrentThread] = useState<ChatThread | null>(null);
@@ -11,45 +34,78 @@ function App() {
   const [threadsLoading, setThreadsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { log, debug, warn, error: logError } = useLogger('App');
+  const { handleError } = useErrorHandler();
+
   // Load all threads on app start
   useEffect(() => {
+    debug('App mounted, loading threads...');
     loadThreads();
   }, []);
 
-  const loadThreads = async () => {
+  /**
+   * Load all chat threads from the server
+   */
+  const loadThreads = useCallback(async () => {
     try {
       setThreadsLoading(true);
+      debug('Loading threads from server...');
       const allThreads = await chatApiService.getAllChats();
       setThreads(allThreads);
       setError(null);
+      log(`Successfully loaded ${allThreads.length} threads`);
     } catch (err) {
-      console.error('Failed to load threads:', err);
-      setError('Failed to load chat history. Make sure the server is running.');
+      const errorMessage = 'Failed to load chat history. Make sure the server is running.';
+      handleError(err as Error, 'LoadThreads');
+      setError(errorMessage);
+      warn(errorMessage);
     } finally {
       setThreadsLoading(false);
     }
-  };
+  }, [debug, log, warn, handleError]);
 
-  const handleThreadSelect = async (threadId: string) => {
+  /**
+   * Handle thread selection from sidebar
+   * 
+   * @param threadId - ID of the thread to select
+   */
+  const handleThreadSelect = useCallback(async (threadId: string) => {
     try {
+      debug(`Selecting thread: ${threadId}`);
       const thread = await chatApiService.getChat(threadId);
       setCurrentThread(thread);
       setError(null);
+      log(`Thread selected: ${thread.title}`);
     } catch (err) {
-      console.error('Failed to load thread:', err);
-      setError('Failed to load chat thread');
+      const errorMessage = 'Failed to load chat thread';
+      handleError(err as Error, 'ThreadSelect');
+      setError(errorMessage);
+      warn(errorMessage);
     }
-  };
+  }, [debug, log, warn, handleError]);
 
-  const handleNewChat = () => {
+  /**
+   * Handle creating a new chat
+   */
+  const handleNewChat = useCallback(() => {
+    debug('Creating new chat');
     setCurrentThread(null);
-  };
+    log('New chat created');
+  }, [debug, log]);
 
-  const handleSendMessage = async (content: string, imageUrl?: string) => {
+  /**
+   * Handle sending a message
+   * 
+   * @param content - Message content
+   * @param imageUrl - Optional image URL
+   */
+  const handleSendMessage = useCallback(async (content: string, imageUrl?: string) => {
     setLoading(true);
     setError(null);
 
     try {
+      debug('Sending message...', { content: content.substring(0, 50), hasImage: !!imageUrl });
+      
       const response = await chatApiService.sendMessage({
         threadId: currentThread?.id,
         content,
@@ -71,16 +127,25 @@ function App() {
 
       // Reload threads to update sidebar
       await loadThreads();
+      log('Message sent successfully');
     } catch (err) {
-      console.error('Failed to send message:', err);
-      setError(err instanceof Error ? err.message : 'Failed to send message');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
+      handleError(err as Error, 'SendMessage');
+      setError(errorMessage);
+      logError('Failed to send message', err as Error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentThread, debug, log, logError, handleError, loadThreads]);
 
-  const handleDeleteThread = async (threadId: string) => {
+  /**
+   * Handle deleting a thread
+   * 
+   * @param threadId - ID of the thread to delete
+   */
+  const handleDeleteThread = useCallback(async (threadId: string) => {
     try {
+      debug(`Deleting thread: ${threadId}`);
       await chatApiService.deleteChat(threadId);
       
       // Remove from local state
@@ -92,97 +157,122 @@ function App() {
       }
       
       setError(null);
+      log('Thread deleted successfully');
     } catch (err) {
-      console.error('Failed to delete thread:', err);
-      setError('Failed to delete chat thread');
+      const errorMessage = 'Failed to delete chat thread';
+      handleError(err as Error, 'DeleteThread');
+      setError(errorMessage);
+      warn(errorMessage);
     }
-  };
+  }, [threads, currentThread?.id, debug, log, warn, handleError]);
 
-  if (error && threads.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-md w-full">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-            <span className="text-4xl mb-4 block">⚠️</span>
-            <h2 className="text-xl font-bold text-red-800 mb-2">Server Connection Error</h2>
-            <p className="text-red-700 mb-4">{error}</p>
-            <div className="bg-red-100 rounded-lg p-3 text-left text-sm">
-              <p className="text-red-800 font-medium mb-2">Make sure the server is running:</p>
-              <code className="text-xs bg-red-200 px-2 py-1 rounded block">
-                npm run server:dev
-              </code>
-            </div>
-            <button
-              onClick={loadThreads}
-              className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Try Again
-            </button>
+  /**
+   * Render server connection error UI
+   */
+  const renderConnectionError = () => (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <span className="text-4xl mb-4 block">⚠️</span>
+          <h2 className="text-xl font-bold text-red-800 mb-2">Server Connection Error</h2>
+          <p className="text-red-700 mb-4">{error}</p>
+          <div className="bg-red-100 rounded-lg p-3 text-left text-sm">
+            <p className="text-red-800 font-medium mb-2">Make sure the server is running:</p>
+            <code className="text-xs bg-red-200 px-2 py-1 rounded block">
+              npm run server:dev
+            </code>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-screen flex bg-gray-100">
-      {/* Sidebar */}
-      <ChatSidebar
-        threads={threads}
-        currentThreadId={currentThread?.id || null}
-        onThreadSelect={handleThreadSelect}
-        onNewChat={handleNewChat}
-        onDeleteThread={handleDeleteThread}
-        loading={threadsLoading}
-      />
-
-      {/* Main Chat */}
-      <div className="flex-1 flex flex-col">
-        {/* Error Banner */}
-        {error && (
-          <div className="bg-red-50 border-b border-red-200 p-3">
-            <div className="flex items-center justify-between">
-              <p className="text-red-800 text-sm">
-                <span className="font-medium">Error:</span> {error}
-              </p>
-              <button
-                onClick={() => setError(null)}
-                className="text-red-600 hover:text-red-800 text-sm"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Chat Interface */}
-        <div className="flex-1">
-          <ChatInterface
-            currentThread={currentThread}
-            onSendMessage={handleSendMessage}
-            loading={loading}
-          />
-        </div>
-
-        {/* Footer */}
-        <div className="bg-white border-t border-gray-200 p-3 text-center text-xs text-gray-500">
-          <span className="flex items-center justify-center space-x-4">
-            <span className="flex items-center">
-              <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-              Google Gemini 2.5 Flash
-            </span>
-            <span className="flex items-center">
-              <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
-              OpenRouter API
-            </span>
-            <span className="flex items-center">
-              <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
-              Persistent Chat Storage
-            </span>
-          </span>
+          <Button
+            onClick={loadThreads}
+            variant="destructive"
+            className="mt-4 w-full"
+          >
+            Try Again
+          </Button>
         </div>
       </div>
     </div>
+  );
+
+  /**
+   * Render error banner
+   */
+  const renderErrorBanner = () => (
+    <div className="bg-red-50 border-b border-red-200 p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-red-800 text-sm">
+          <span className="font-medium">Error:</span> {error}
+        </p>
+        <button
+          onClick={() => setError(null)}
+          className="text-red-600 hover:text-red-800 text-sm transition-colors"
+          aria-label="Dismiss error"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+
+  /**
+   * Render footer status indicators
+   */
+  const renderFooter = () => (
+    <div className="bg-white border-t border-gray-200 p-3 text-center text-xs text-gray-500">
+      <span className="flex items-center justify-center space-x-4">
+        <span className="flex items-center">
+          <span className="w-2 h-2 bg-green-400 rounded-full mr-2" aria-hidden="true"></span>
+          Google Gemini 2.5 Flash
+        </span>
+        <span className="flex items-center">
+          <span className="w-2 h-2 bg-blue-400 rounded-full mr-2" aria-hidden="true"></span>
+          OpenRouter API
+        </span>
+        <span className="flex items-center">
+          <span className="w-2 h-2 bg-purple-400 rounded-full mr-2" aria-hidden="true"></span>
+          Persistent Chat Storage
+        </span>
+      </span>
+    </div>
+  );
+
+  // Show connection error if no threads could be loaded
+  if (error && threads.length === 0) {
+    return renderConnectionError();
+  }
+
+  return (
+    <ErrorBoundary>
+      <div className="h-screen flex bg-gray-100">
+        {/* Sidebar */}
+        <ChatSidebar
+          threads={threads}
+          currentThreadId={currentThread?.id || null}
+          onThreadSelect={handleThreadSelect}
+          onNewChat={handleNewChat}
+          onDeleteThread={handleDeleteThread}
+          loading={threadsLoading}
+        />
+
+        {/* Main Chat */}
+        <div className="flex-1 flex flex-col">
+          {/* Error Banner */}
+          {error && renderErrorBanner()}
+
+          {/* Chat Interface */}
+          <div className="flex-1">
+            <ChatInterface
+              currentThread={currentThread}
+              onSendMessage={handleSendMessage}
+              loading={loading}
+            />
+          </div>
+
+          {/* Footer */}
+          {renderFooter()}
+        </div>
+      </div>
+    </ErrorBoundary>
   );
 }
 
