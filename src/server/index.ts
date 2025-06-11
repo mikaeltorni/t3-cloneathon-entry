@@ -234,7 +234,7 @@ app.post('/api/chats/message', async (req: Request, res: Response) => {
     const userMessage = chatStorage.createMessage(
       content || 'Analyze this image', 
       'user', 
-      imageUrl,
+      images && images.length > 0 ? undefined : imageUrl, // Only set imageUrl if no images array
       undefined // modelId not needed for user messages
     );
     
@@ -257,7 +257,7 @@ app.post('/api/chats/message', async (req: Request, res: Response) => {
     conversationHistory.push({
       role: 'user',
       content: content || 'Analyze this image',
-      imageUrl,
+      imageUrl: images && images.length > 0 ? undefined : imageUrl, // Only set imageUrl if no images array
       images
     });
 
@@ -363,7 +363,7 @@ app.post('/api/chats/message/stream', async (req: Request, res: Response) => {
     const userMessage = chatStorage.createMessage(
       content || 'Analyze this image', 
       'user', 
-      imageUrl,
+      images && images.length > 0 ? undefined : imageUrl, // Only set imageUrl if no images array
       undefined // modelId not needed for user messages
     );
     
@@ -392,7 +392,7 @@ app.post('/api/chats/message/stream', async (req: Request, res: Response) => {
     conversationHistory.push({
       role: 'user',
       content: content || 'Analyze this image',
-      imageUrl,
+      imageUrl: images && images.length > 0 ? undefined : imageUrl, // Only set imageUrl if no images array
       images
     });
 

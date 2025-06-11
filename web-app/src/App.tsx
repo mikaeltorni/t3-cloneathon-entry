@@ -146,7 +146,7 @@ function App() {
         content: content,
         role: 'user',
         timestamp: new Date(),
-        imageUrl: images?.[0]?.url, // For backward compatibility
+        imageUrl: images && images.length > 1 ? undefined : images?.[0]?.url, // Only set imageUrl for single image
         images: images || undefined
       };
 
@@ -194,7 +194,7 @@ function App() {
         {
           threadId: currentThread?.id, // Use original thread ID for server
           content,
-          imageUrl: images?.[0]?.url, // Backward compatibility
+          imageUrl: images && images.length > 1 ? undefined : images?.[0]?.url, // Only for single image
           images: images,
           modelId
         },

@@ -207,21 +207,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 : 'bg-white border border-gray-200 text-gray-900'
             )}
           >
-            {/* Single image (backward compatibility) */}
-            {msg.imageUrl && (
-              <div className="mb-3">
-                <img
-                  src={msg.imageUrl}
-                  alt="Shared image"
-                  className="max-w-full h-auto rounded-lg shadow-sm"
-                  style={{ maxHeight: '200px' }}
-                  loading="lazy"
-                />
-              </div>
-            )}
-            
-            {/* Multiple images (new feature) */}
-            {msg.images && msg.images.length > 0 && (
+            {/* Display multiple images if available, otherwise single image */}
+            {msg.images && msg.images.length > 0 ? (
+              /* Multiple images (new feature) */
               <div className="mb-3">
                 <div className={cn(
                   'grid gap-2',
@@ -245,7 +233,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   ))}
                 </div>
               </div>
-            )}
+            ) : msg.imageUrl ? (
+              /* Single image (backward compatibility) */
+              <div className="mb-3">
+                <img
+                  src={msg.imageUrl}
+                  alt="Shared image"
+                  className="max-w-full h-auto rounded-lg shadow-sm"
+                  style={{ maxHeight: '200px' }}
+                  loading="lazy"
+                />
+              </div>
+            ) : null}
             
             <div className="whitespace-pre-wrap break-words">{msg.content}</div>
           </div>
