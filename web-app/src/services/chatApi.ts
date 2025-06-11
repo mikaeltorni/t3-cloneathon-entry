@@ -1,6 +1,6 @@
 import type { ChatThread, CreateMessageRequest, CreateMessageResponse, GetChatsResponse } from '../../../src/shared/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const API_BASE_URL = 'http://localhost:3001';
 
 export class ChatApiService {
   private baseUrl: string;

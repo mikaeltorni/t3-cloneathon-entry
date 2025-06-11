@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 3001;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 if (!OPENROUTER_API_KEY) {
   console.error('❌ OPENROUTER_API_KEY environment variable is required');
+  console.error('💡 Set it with: $env:OPENROUTER_API_KEY="sk-or-v1-your-key-here"');
   process.exit(1);
 }
 
