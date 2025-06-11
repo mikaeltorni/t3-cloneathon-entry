@@ -285,93 +285,97 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   );
 
   /**
-   * Render message input form - Fixed to bottom of viewport
-   * Anchored positioning ensures input stays visible during scrolling
+   * Render message input form elements
+   * Contains AI model selector, image URL input, and message textarea
+   * Fixed positioning handled by container wrapper
    */
   const renderMessageInput = () => (
-    <div className="fixed bottom-12 left-0 md:left-80 right-0 bg-white border-t border-gray-200 p-4 z-10 shadow-lg">
-      <div className="max-w-full mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Model Selector and Image URL */}
-          <div className="flex space-x-3">
-            <div className="flex-1">
-              <ModelSelector
-                value={selectedModel}
-                onChange={setSelectedModel}
-                models={availableModels}
-                loading={modelsLoading}
-                disabled={loading}
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Image URL (Optional)
-              </label>
-              <input
-                type="url"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                disabled={loading}
-              />
-            </div>
-          </div>
-
-          {/* Message Input */}
-          <div className="flex space-x-3">
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={handleMessageChange}
-              onKeyDown={handleKeyPress}
-              placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
-              rows={1}
-              style={{ minHeight: '48px', maxHeight: '120px' }}
-              disabled={loading}
-            />
-            <Button
-              type="submit"
-              disabled={loading || (!message.trim() && !imageUrl.trim())}
-              loading={loading}
-              size="lg"
-              className="self-end"
-            >
-              Send
-            </Button>
-          </div>
-        </form>
-        
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          Tip: Press Enter to send, Shift+Enter for new line
-        </p>
+    <form onSubmit={handleSubmit} className="space-y-3">
+      {/* Model Selector and Image URL */}
+      <div className="flex space-x-3">
+        <div className="flex-1">
+          <ModelSelector
+            value={selectedModel}
+            onChange={setSelectedModel}
+            models={availableModels}
+            loading={modelsLoading}
+            disabled={loading}
+          />
+        </div>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Image URL (Optional)
+          </label>
+          <input
+            type="url"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://example.com/image.jpg"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            disabled={loading}
+          />
+        </div>
       </div>
-    </div>
+
+      {/* Message Input */}
+      <div className="flex space-x-3">
+        <textarea
+          ref={textareaRef}
+          value={message}
+          onChange={handleMessageChange}
+          onKeyDown={handleKeyPress}
+          placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
+          className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
+          rows={1}
+          style={{ minHeight: '48px', maxHeight: '120px' }}
+          disabled={loading}
+        />
+        <Button
+          type="submit"
+          disabled={loading || (!message.trim() && !imageUrl.trim())}
+          loading={loading}
+          size="lg"
+          className="self-end"
+        >
+          Send
+        </Button>
+      </div>
+      
+      <p className="text-xs text-gray-500 mt-2 text-center">
+        Tip: Press Enter to send, Shift+Enter for new line
+      </p>
+    </form>
   );
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      {/* Header */}
-      {renderHeader()}
+    <>
+      {/* Main Chat Area */}
+      <div className="flex flex-col h-full bg-gray-50">
+        {/* Header */}
+        {renderHeader()}
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-60">
-        {!currentThread ? (
-          renderWelcomeMessage()
-        ) : currentThread.messages.length === 0 ? (
-          renderEmptyThreadMessage()
-        ) : (
-          <>
-            {currentThread.messages.map(renderMessage)}
-            {loading && renderLoadingIndicator()}
-          </>
-        )}
-        <div ref={messagesEndRef} />
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-52">
+          {!currentThread ? (
+            renderWelcomeMessage()
+          ) : currentThread.messages.length === 0 ? (
+            renderEmptyThreadMessage()
+          ) : (
+            <>
+              {currentThread.messages.map(renderMessage)}
+              {loading && renderLoadingIndicator()}
+            </>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
-      {/* Fixed Input */}
-      {renderMessageInput()}
-    </div>
+      {/* Fixed Input Bar */}
+      <div className="fixed bottom-0 left-0 md:left-80 right-0 bg-white border-t border-gray-200 p-4 z-50 shadow-lg">
+        <div className="max-w-full mx-auto">
+          {renderMessageInput()}
+        </div>
+      </div>
+    </>
   );
 }; 

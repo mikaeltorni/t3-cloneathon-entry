@@ -246,27 +246,7 @@ function App() {
     </div>
   );
 
-  /**
-   * Render footer status indicators
-   */
-  const renderFooter = () => (
-    <div className="bg-white border-t border-gray-200 p-3 text-center text-xs text-gray-500">
-      <span className="flex items-center justify-center space-x-4">
-        <span className="flex items-center">
-          <span className="w-2 h-2 bg-green-400 rounded-full mr-2" aria-hidden="true"></span>
-          Google Gemini 2.5 Flash
-        </span>
-        <span className="flex items-center">
-          <span className="w-2 h-2 bg-blue-400 rounded-full mr-2" aria-hidden="true"></span>
-          OpenRouter API
-        </span>
-        <span className="flex items-center">
-          <span className="w-2 h-2 bg-purple-400 rounded-full mr-2" aria-hidden="true"></span>
-          Persistent Chat Storage
-        </span>
-      </span>
-    </div>
-  );
+  // Footer removed since fixed input bar handles the bottom area
 
   // Show connection error if no threads could be loaded
   if (error && threads.length === 0) {
@@ -302,8 +282,7 @@ function App() {
             />
           </div>
 
-          {/* Footer */}
-          {renderFooter()}
+
         </div>
       </div>
     </ErrorBoundary>
