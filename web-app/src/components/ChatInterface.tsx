@@ -80,7 +80,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const isReasoningModel = useCallback((modelId?: string): boolean => {
     if (!modelId) return false;
     // Check for reasoning models based on their ID patterns
-    return modelId.includes('deepseek') || modelId.includes('r1') || modelId.includes('reasoning');
+    return modelId.includes('deepseek') || 
+           modelId.includes('r1') || 
+           modelId.includes(':thinking') || // For Gemini/Claude thinking models
+           modelId.includes('reasoning');
   }, []);
 
   /**
@@ -255,6 +258,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const showReasoning = !isUser && isReasoningModel(msg.modelId) && msg.reasoning;
     const isReasoningExpanded = expandedReasoning.has(msg.id);
     
+    console.log("reasoning:", msg.reasoning)
+    console.log("showReasoning:", showReasoning)
+    console.log("isReasoningExpanded:", isReasoningExpanded)
+    console.log("isUser:", isUser)
+    console.log("isReasoningModel:", isReasoningModel(msg.modelId))
+
     return (
       <div key={msg.id} className={cn('flex mb-4', isUser ? 'justify-end' : 'justify-start')}>
         <div className={cn('max-w-[70%]', isUser ? 'order-2' : 'order-1')}>
