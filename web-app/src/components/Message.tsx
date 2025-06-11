@@ -126,7 +126,7 @@ const Message: React.FC<MessageProps> = React.memo(({
     if (!message.reasoning) return null;
 
     return (
-      <div className="mt-3 pt-3 border-t border-blue-100">
+      <div className="mb-3">
         <button
           onClick={onToggleReasoning}
           className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 mb-2 transition-colors duration-200"
@@ -187,10 +187,12 @@ const Message: React.FC<MessageProps> = React.memo(({
     <div className="flex justify-start mb-4 group">
       <div className="max-w-[85%] sm:max-w-[75%]">
         <div className="bg-white border border-gray-200 p-3 rounded-lg rounded-bl-sm shadow-sm">
-          <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words">
+          {reasoningContent}
+          <div className={`text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words ${
+            message.reasoning ? 'mt-3 pt-3 border-t border-gray-100' : ''
+          }`}>
             {message.content}
           </div>
-          {reasoningContent}
         </div>
         <div className="flex items-center justify-start gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <span className="text-xs text-gray-500">{formattedTime}</span>
