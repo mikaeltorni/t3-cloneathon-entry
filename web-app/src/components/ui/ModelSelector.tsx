@@ -103,7 +103,9 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       >
         {Object.entries(models).map(([modelId, config]) => (
           <option key={modelId} value={modelId}>
-            {config.name}{config.reasoningMode === 'forced' ? ' 🧠' : config.reasoningMode === 'optional' ? ' 🧠' : ''}
+            {config.name}
+            {config.reasoningMode === 'forced' ? ' 🧠 (always)' : 
+             config.reasoningMode === 'optional' ? ' 🧠 (optional)' : ''}
           </option>
         ))}
       </select>
