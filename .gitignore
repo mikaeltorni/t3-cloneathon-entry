@@ -137,3 +137,5 @@ dist
 .cursor/rules/global_prompts
 
 openrouterkey.txt
+
+data/userChats.json
