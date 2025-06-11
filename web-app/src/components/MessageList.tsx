@@ -41,24 +41,125 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isUserScrolling = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
-   * Scroll to bottom of messages
+   * Enhanced scroll to bottom with multiple fallback strategies
    */
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ 
-      behavior: 'smooth',
-      block: 'end'
-    });
+  const scrollToBottom = useCallback((force = false) => {
+    const container = containerRef.current;
+    const messagesEnd = messagesEndRef.current;
+    
+    if (!container) return;
+
+    // If user is actively scrolling, don't auto-scroll (unless forced)
+    if (isUserScrolling.current && !force) return;
+
+    // Method 1: Scroll container to bottom (most reliable)
+    container.scrollTop = container.scrollHeight;
+
+    // Method 2: Also use scrollIntoView as fallback
+    if (messagesEnd) {
+      messagesEnd.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest'
+      });
+    }
+
+    // Method 3: Force scroll after a delay to handle dynamic content
+    setTimeout(() => {
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }, 50);
   }, []);
 
   /**
-   * Auto-scroll to bottom when new messages arrive
+   * Detect if user is manually scrolling
+   */
+  const handleScroll = useCallback(() => {
+    isUserScrolling.current = true;
+    
+    // Clear existing timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    
+    // Reset scrolling flag after 1 second of no scroll activity
+    scrollTimeoutRef.current = setTimeout(() => {
+      isUserScrolling.current = false;
+    }, 1000);
+  }, []);
+
+  /**
+   * Enhanced auto-scroll: triggers on message changes with improved timing
    */
   useEffect(() => {
-    const timeoutId = setTimeout(scrollToBottom, 100);
-    return () => clearTimeout(timeoutId);
+    // Force scroll to bottom when new messages arrive
+    const timeoutId = setTimeout(() => {
+      scrollToBottom(true); // Force scroll even if user was scrolling
+    }, 100);
+
+    // Additional scroll after content has definitely rendered
+    const secondTimeout = setTimeout(() => {
+      scrollToBottom(true);
+    }, 300);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearTimeout(secondTimeout);
+    };
   }, [messages.length, scrollToBottom]);
+
+  /**
+   * Scroll when message content changes (streaming updates)
+   */
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.role === 'assistant') {
+      // Debounced scroll during streaming to avoid excessive scrolling
+      const timeoutId = setTimeout(() => {
+        scrollToBottom();
+      }, 150);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [messages[messages.length - 1]?.content, scrollToBottom]);
+
+  /**
+   * Re-scroll when padding changes to maintain bottom position
+   */
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      scrollToBottom();
+    }, 200);
+
+    return () => clearTimeout(timeoutId);
+  }, [dynamicBottomPadding, scrollToBottom]);
+
+  /**
+   * Re-scroll when reasoning is toggled (changes content height)
+   */
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      scrollToBottom();
+    }, 300); // Longer delay for animation completion
+
+    return () => clearTimeout(timeoutId);
+  }, [expandedReasoningIds.size, scrollToBottom]);
+
+  /**
+   * Cleanup scroll timeout on unmount
+   */
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   /**
    * Memoized welcome message component
@@ -144,6 +245,7 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
       ref={containerRef}
       className="flex-1 overflow-y-auto px-4 py-6 space-y-4"
       style={{ paddingBottom: `${dynamicBottomPadding}px` }}
+      onScroll={handleScroll}
       role="log"
       aria-label="Chat messages"
       aria-live="polite"
