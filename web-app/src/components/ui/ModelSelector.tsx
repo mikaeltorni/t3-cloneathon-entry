@@ -46,17 +46,29 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   className
 }) => {
   /**
-   * Render brain icon for reasoning models
+   * Render brain icon for reasoning models with appropriate opacity
    * 
-   * @param hasReasoning - Whether the model has reasoning capabilities
-   * @returns Brain emoji or null
+   * @param reasoningMode - The reasoning mode of the model
+   * @returns Brain emoji with appropriate styling or null
    */
-  const renderBrainIcon = (hasReasoning: boolean) => {
-    return hasReasoning ? (
-      <span className="ml-1 text-purple-600" title="Reasoning capabilities">
-        🧠
-      </span>
-    ) : null;
+  const renderBrainIcon = (reasoningMode: 'forced' | 'optional' | 'none') => {
+    switch (reasoningMode) {
+      case 'forced':
+        return (
+          <span className="ml-1 text-purple-600" title="Always uses reasoning (cannot be disabled)">
+            🧠
+          </span>
+        );
+      case 'optional':
+        return (
+          <span className="ml-1 text-purple-600 opacity-50" title="Optional reasoning (can be toggled)">
+            🧠
+          </span>
+        );
+      case 'none':
+      default:
+        return null;
+    }
   };
 
 
@@ -91,7 +103,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       >
         {Object.entries(models).map(([modelId, config]) => (
           <option key={modelId} value={modelId}>
-            {config.name}{config.hasReasoning ? ' 🧠' : ''}
+            {config.name}{config.reasoningMode === 'forced' ? ' 🧠' : config.reasoningMode === 'optional' ? ' 🧠' : ''}
           </option>
         ))}
       </select>
@@ -103,7 +115,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             <span className="text-sm font-medium text-gray-900">
               {selectedModel.name}
             </span>
-            {renderBrainIcon(selectedModel.hasReasoning)}
+            {renderBrainIcon(selectedModel.reasoningMode)}
           </div>
           <p className="text-xs text-gray-600">
             {selectedModel.description}

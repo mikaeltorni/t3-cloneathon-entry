@@ -38,30 +38,35 @@ export const AVAILABLE_MODELS = {
     description: 'Fast and efficient multimodal model for general tasks',
     hasReasoning: true, // Supports :thinking variant
     reasoningType: 'thinking', // Uses :thinking suffix
+    reasoningMode: 'optional', // Can toggle reasoning on/off
   },
   'openai/gpt-4o': {
     name: 'GPT-4o',
     description: 'Advanced multimodal model from OpenAI',
     hasReasoning: false, // No reasoning token support yet
     reasoningType: 'internal', // Internal reasoning only
+    reasoningMode: 'none', // No reasoning capabilities
   },
   'openai/o1-preview': {
     name: 'OpenAI o1 Preview',
     description: 'Reasoning model that thinks before responding',
     hasReasoning: true, // Built-in reasoning
     reasoningType: 'internal', // Uses reasoning internally, no tokens returned
+    reasoningMode: 'forced', // Always uses reasoning, can't be disabled
   },
   'deepseek/deepseek-r1': {
     name: 'DeepSeek R1',
     description: 'Open-source reasoning model that returns reasoning tokens',
     hasReasoning: true, // Returns reasoning tokens
     reasoningType: 'effort', // Uses effort configuration
+    reasoningMode: 'forced', // Always uses reasoning, can't be disabled
   },
   'anthropic/claude-3.7-sonnet': {
     name: 'Claude 3.7 Sonnet',
     description: 'Advanced Claude model with reasoning capabilities',
     hasReasoning: true, // Supports :thinking variant
     reasoningType: 'thinking', // Uses :thinking suffix
+    reasoningMode: 'optional', // Can toggle reasoning on/off
   }
 } as const;
 

@@ -257,12 +257,14 @@ export interface HealthResponse {
  * @property description - Model description and capabilities
  * @property hasReasoning - Whether the model supports reasoning capabilities
  * @property reasoningType - Type of reasoning implementation
+ * @property reasoningMode - Whether reasoning is forced, optional, or unavailable
  */
 export interface ModelConfig {
   name: string;
   description: string;
   hasReasoning: boolean;
   reasoningType: 'thinking' | 'effort' | 'internal';
+  reasoningMode: 'forced' | 'optional' | 'none';
 }
 
 /**

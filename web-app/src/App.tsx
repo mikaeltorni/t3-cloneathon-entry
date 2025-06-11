@@ -89,6 +89,7 @@ function App() {
           description: 'Fast and efficient multimodal model for general tasks',
           hasReasoning: true,
           reasoningType: 'thinking',
+          reasoningMode: 'optional',
         }
       });
     } finally {

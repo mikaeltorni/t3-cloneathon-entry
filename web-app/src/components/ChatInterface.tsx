@@ -159,6 +159,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, [updateInputBarHeight]);
 
+  // Handle reasoning state when model changes
+  useEffect(() => {
+    const currentModel = availableModels[selectedModel];
+    if (currentModel) {
+      if (currentModel.reasoningMode === 'forced') {
+        // For forced reasoning models, always enable reasoning
+        if (!useReasoning) {
+          setUseReasoning(true);
+          debug('Auto-enabled reasoning for forced reasoning model:', currentModel.name);
+        }
+      } else if (currentModel.reasoningMode === 'none') {
+        // For models without reasoning, always disable reasoning
+        if (useReasoning) {
+          setUseReasoning(false);
+          debug('Auto-disabled reasoning for non-reasoning model:', currentModel.name);
+        }
+      }
+      // For optional reasoning models, keep current user preference
+    }
+  }, [selectedModel, availableModels, useReasoning, debug]);
+
   /**
    * Handle form submission
    * 
@@ -454,7 +475,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <ReasoningToggle
           enabled={useReasoning}
           onChange={setUseReasoning}
-          disabled={!isReasoningModel(selectedModel)}
+          reasoningMode={availableModels[selectedModel]?.reasoningMode || 'none'}
           modelName={availableModels[selectedModel]?.name}
         />
       </div>

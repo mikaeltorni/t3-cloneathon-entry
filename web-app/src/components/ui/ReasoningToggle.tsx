@@ -12,7 +12,7 @@
  *   - Tooltip explaining reasoning functionality
  *   - Disabled state for non-reasoning models
  * 
- * Usage: <ReasoningToggle enabled={useReasoning} onChange={setUseReasoning} disabled={!hasReasoning} />
+ * Usage: <ReasoningToggle enabled={useReasoning} onChange={setUseReasoning} reasoningMode={model.reasoningMode} />
  */
 import React from 'react';
 import { cn } from '../../utils/cn';
@@ -20,7 +20,7 @@ import { cn } from '../../utils/cn';
 interface ReasoningToggleProps {
   enabled: boolean;
   onChange: (enabled: boolean) => void;
-  disabled?: boolean;
+  reasoningMode: 'forced' | 'optional' | 'none';
   modelName?: string;
   className?: string;
 }
@@ -30,7 +30,7 @@ interface ReasoningToggleProps {
  * 
  * @param enabled - Whether reasoning is currently enabled
  * @param onChange - Callback when toggle state changes
- * @param disabled - Whether the toggle is disabled (model doesn't support reasoning)
+ * @param reasoningMode - The reasoning mode of the current model
  * @param modelName - Name of the current model for tooltip
  * @param className - Additional CSS classes
  * @returns React component
@@ -38,49 +38,67 @@ interface ReasoningToggleProps {
 export const ReasoningToggle: React.FC<ReasoningToggleProps> = ({
   enabled,
   onChange,
-  disabled = false,
+  reasoningMode,
   modelName,
   className
 }) => {
+  const isDisabled = reasoningMode === 'none';
+  const isForced = reasoningMode === 'forced';
+  const isTogglable = reasoningMode === 'optional';
+
   const handleClick = () => {
-    if (!disabled) {
+    if (isTogglable) {
       onChange(!enabled);
     }
   };
 
   const getTooltipText = () => {
-    if (disabled) {
-      return `${modelName || 'This model'} does not support reasoning`;
+    switch (reasoningMode) {
+      case 'none':
+        return `${modelName || 'This model'} does not support reasoning`;
+      case 'forced':
+        return `${modelName || 'This model'} always uses reasoning (cannot be disabled)`;
+      case 'optional':
+        return enabled 
+          ? 'Reasoning enabled - AI will show its thinking process'
+          : 'Reasoning disabled - Click to enable AI reasoning';
+      default:
+        return '';
     }
-    return enabled 
-      ? 'Reasoning enabled - AI will show its thinking process'
-      : 'Reasoning disabled - Click to enable AI reasoning';
   };
 
   return (
     <div className={cn('relative group', className)}>
       <button
         onClick={handleClick}
-        disabled={disabled}
+        disabled={isDisabled}
         className={cn(
           'inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ease-in-out',
           'border focus:outline-none focus:ring-2 focus:ring-offset-1',
-          // Enabled state
-          enabled && !disabled && [
+          // Active reasoning (enabled optional or forced)
+          (enabled || isForced) && !isDisabled && [
             'bg-blue-50 border-blue-200 text-blue-700',
-            'hover:bg-blue-100 hover:border-blue-300',
+            isTogglable && 'hover:bg-blue-100 hover:border-blue-300',
             'focus:ring-blue-500',
             'shadow-sm'
           ],
-          // Disabled/inactive state
-          (!enabled || disabled) && [
-            'bg-gray-50 border-gray-200 text-gray-500',
-            !disabled && 'hover:bg-gray-100 hover:border-gray-300 hover:text-gray-600',
-            'focus:ring-gray-500'
+          // Forced reasoning (always on, different styling)
+          isForced && [
+            'bg-purple-50 border-purple-200 text-purple-700',
+            'cursor-default'
           ],
-          // Disabled cursor
-          disabled && 'cursor-not-allowed opacity-60',
-          !disabled && 'cursor-pointer'
+          // Inactive optional reasoning
+          !enabled && isTogglable && [
+            'bg-gray-50 border-gray-200 text-gray-500',
+            'hover:bg-gray-100 hover:border-gray-300 hover:text-gray-600',
+            'focus:ring-gray-500',
+            'cursor-pointer'
+          ],
+          // Disabled (no reasoning support)
+          isDisabled && [
+            'bg-gray-50 border-gray-200 text-gray-400',
+            'cursor-not-allowed opacity-60'
+          ]
         )}
         title={getTooltipText()}
         aria-label={getTooltipText()}
@@ -89,8 +107,8 @@ export const ReasoningToggle: React.FC<ReasoningToggleProps> = ({
         <span 
           className={cn(
             'text-base transition-transform duration-200',
-            enabled && !disabled && 'scale-110',
-            enabled && !disabled && 'animate-pulse'
+            (enabled || isForced) && !isDisabled && 'scale-110',
+            (enabled || isForced) && !isDisabled && 'animate-pulse'
           )}
         >
           🧠
@@ -99,18 +117,18 @@ export const ReasoningToggle: React.FC<ReasoningToggleProps> = ({
         {/* Label text */}
         <span className={cn(
           'font-medium',
-          enabled && !disabled && 'text-blue-700',
-          (!enabled || disabled) && 'text-gray-500'
+          (enabled || isForced) && !isDisabled && (isForced ? 'text-purple-700' : 'text-blue-700'),
+          (!enabled && !isForced) && 'text-gray-500'
         )}>
-          {enabled ? 'Reasoning' : 'Reasoning'}
+          {isForced ? 'Always On' : (enabled ? 'Reasoning' : 'Reasoning')}
         </span>
 
         {/* Status indicator */}
         <div 
           className={cn(
             'w-2 h-2 rounded-full transition-colors duration-200',
-            enabled && !disabled && 'bg-blue-500',
-            (!enabled || disabled) && 'bg-gray-300'
+            (enabled || isForced) && !isDisabled && (isForced ? 'bg-purple-500' : 'bg-blue-500'),
+            (!enabled && !isForced) && 'bg-gray-300'
           )}
         />
       </button>
