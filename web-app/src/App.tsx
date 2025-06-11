@@ -143,7 +143,7 @@ function App() {
       // Create user message immediately and show it in UI
       const userMessage: ChatMessage = {
         id: `user-${Date.now()}`,
-        content: content || (images && images.length > 0 ? 'Analyze these images' : 'Hello'),
+        content: content,
         role: 'user',
         timestamp: new Date(),
         imageUrl: images?.[0]?.url, // For backward compatibility

@@ -144,7 +144,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     try {
       await onSendMessage(
-        messageContent || 'Analyze these images', 
+        messageContent, 
         images.length > 0 ? images : undefined, 
         selectedModel
       );
