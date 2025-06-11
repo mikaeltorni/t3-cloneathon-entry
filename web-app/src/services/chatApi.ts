@@ -24,7 +24,7 @@ import type {
 } from '../../../src/shared/types';
 
 // Base API URL - defaults to localhost for development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 /**
  * API Error class for structured error handling

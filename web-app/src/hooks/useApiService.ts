@@ -24,7 +24,7 @@ import type { ApiRequestConfig } from '../services/types/api';
 import { logger } from '../utils/logger';
 
 // Create a singleton HTTP client instance
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 const httpClient = new EnhancedHttpClient(API_BASE_URL);
 
 /**
