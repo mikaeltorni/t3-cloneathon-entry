@@ -2,13 +2,14 @@
  * types.ts
  * 
  * Shared TypeScript type definitions for the OpenRouter Chat application
+ * Enhanced with strict typing, discriminated unions, and comprehensive coverage
  * 
  * Types:
- *   - ChatMessage: Individual chat message structure
- *   - ChatThread: Chat conversation thread structure
- *   - UserChats: User's complete chat data structure
- *   - API Request/Response types for client-server communication
- *   - OpenRouter API integration types
+ *   - Core Domain Types: ChatMessage, ChatThread, UserChats
+ *   - API Types: Request/Response interfaces with strict validation
+ *   - OpenRouter Integration: Enhanced with proper reasoning types
+ *   - Error Handling: Comprehensive error type definitions
+ *   - Utility Types: Helper types for better developer experience
  * 
  * Usage: import type { ChatMessage, ChatThread } from '../shared/types'
  */
@@ -306,4 +307,72 @@ export type ContentType = 'text' | 'image_url';
 /**
  * Server environment enumeration
  */
-export type Environment = 'development' | 'production' | 'test'; 
+export type Environment = 'development' | 'production' | 'test';
+
+// ===== Enhanced Error Handling Types =====
+
+/**
+ * Comprehensive error categorization for better error handling
+ */
+export type ErrorCategory = 
+  | 'VALIDATION_ERROR'
+  | 'NETWORK_ERROR' 
+  | 'API_ERROR'
+  | 'AUTH_ERROR'
+  | 'NOT_FOUND_ERROR'
+  | 'SERVER_ERROR'
+  | 'UNKNOWN_ERROR';
+
+/**
+ * Enhanced error interface with categorization and context
+ */
+export interface AppError {
+  category: ErrorCategory;
+  message: string;
+  code?: string;
+  details?: Record<string, any>;
+  timestamp: Date;
+  path?: string;
+  retryable?: boolean;
+}
+
+/**
+ * Result type for operations that may fail
+ */
+export type Result<T, E = AppError> = 
+  | { success: true; data: T }
+  | { success: false; error: E };
+
+// ===== Enhanced Utility Types =====
+
+/**
+ * Loading state management
+ */
+export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
+
+/**
+ * Async operation state with error handling
+ */
+export interface AsyncState<T> {
+  data: T | null;
+  loading: boolean;
+  error: AppError | null;
+  lastUpdated?: Date;
+}
+
+/**
+ * Pagination metadata
+ */
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+/**
+ * Generic API response wrapper
+ */
+export type ApiResponse<T> = Result<T, ApiErrorResponse>;

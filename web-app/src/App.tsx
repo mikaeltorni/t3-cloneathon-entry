@@ -1,26 +1,26 @@
 /**
  * App.tsx
  * 
- * Main application component managing chat state and routing
+ * Main application component - refactored for better organization
+ * Now uses custom hooks for chat and model management
  * 
  * Components:
  *   App
  * 
  * Features:
- *   - Chat thread management
- *   - Real-time messaging with OpenRouter API
- *   - Error handling and loading states
+ *   - Simplified layout and state management
+ *   - Custom hooks for chat and model operations
+ *   - Enhanced error handling with ErrorBoundary
  *   - Responsive design
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { Button } from './components/ui/Button';
-import { chatApiService } from './services/chatApi';
+import { useChat } from './hooks/useChat';
+import { useModels } from './hooks/useModels';
 import { useLogger } from './hooks/useLogger';
-import { useErrorHandler } from './hooks/useErrorHandler';
-import type { ChatThread, ChatMessage, ModelConfig, ImageAttachment } from '../../src/shared/types';
 
 /**
  * Main application component
@@ -28,355 +28,17 @@ import type { ChatThread, ChatMessage, ModelConfig, ImageAttachment } from '../.
  * @returns React component
  */
 function App() {
-  const [threads, setThreads] = useState<ChatThread[]>([]);
-  const [currentThread, setCurrentThread] = useState<ChatThread | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [threadsLoading, setThreadsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [availableModels, setAvailableModels] = useState<Record<string, ModelConfig>>({});
-  const [modelsLoading, setModelsLoading] = useState(true);
-
-
-  const { log, debug, warn, error: logError } = useLogger('App');
-  const { handleError } = useErrorHandler();
+  // Use custom hooks for state management
+  const chat = useChat();
+  const models = useModels();
+  const { debug } = useLogger('App');
 
   // Load all threads and models on app start
   useEffect(() => {
     debug('App mounted, loading threads and models...');
-    loadThreads();
-    loadModels();
-  }, []);
-
-  /**
-   * Load all chat threads from the server
-   */
-  const loadThreads = useCallback(async () => {
-    try {
-      setThreadsLoading(true);
-      debug('Loading threads from server...');
-      const allThreads = await chatApiService.getAllChats();
-      setThreads(allThreads);
-      setError(null);
-      log(`Successfully loaded ${allThreads.length} threads`);
-    } catch (err) {
-      const errorMessage = 'Failed to load chat history. Make sure the server is running.';
-      handleError(err as Error, 'LoadThreads');
-      setError(errorMessage);
-      warn(errorMessage);
-    } finally {
-      setThreadsLoading(false);
-    }
-  }, [debug, log, warn, handleError]);
-
-  /**
-   * Load available AI models from the server
-   */
-  const loadModels = useCallback(async () => {
-    try {
-      setModelsLoading(true);
-      debug('Loading available models from server...');
-      const response = await chatApiService.getAvailableModels();
-      setAvailableModels(response.models);
-      log(`Successfully loaded ${Object.keys(response.models).length} models`);
-    } catch (err) {
-      const errorMessage = 'Failed to load AI models.';
-      handleError(err as Error, 'LoadModels');
-      warn(errorMessage);
-      // Set default model if loading fails
-      setAvailableModels({
-        'google/gemini-2.5-flash-preview-05-20': {
-          name: 'Gemini 2.5 Flash',
-          description: 'Fast and efficient multimodal model for general tasks',
-          hasReasoning: true,
-          reasoningType: 'thinking',
-          reasoningMode: 'optional',
-        }
-      });
-    } finally {
-      setModelsLoading(false);
-    }
-  }, [debug, log, warn, handleError]);
-
-  /**
-   * Handle thread selection from sidebar
-   * 
-   * @param threadId - ID of the thread to select
-   */
-  const handleThreadSelect = useCallback(async (threadId: string) => {
-    try {
-      debug(`Selecting thread: ${threadId}`);
-      const thread = await chatApiService.getChat(threadId);
-      setCurrentThread(thread);
-      setError(null);
-      log(`Thread selected: ${thread.title}`);
-    } catch (err) {
-      const errorMessage = 'Failed to load chat thread';
-      handleError(err as Error, 'ThreadSelect');
-      setError(errorMessage);
-      warn(errorMessage);
-    }
-  }, [debug, log, warn, handleError]);
-
-  /**
-   * Handle creating a new chat
-   */
-  const handleNewChat = useCallback(() => {
-    debug('Creating new chat');
-    setCurrentThread(null);
-    log('New chat created');
-  }, [debug, log]);
-
-  /**
-   * Handle sending a message with streaming
-   * 
-   * @param content - Message content
-   * @param images - Optional image attachments
-   * @param modelId - AI model to use
-   * @param useReasoning - Whether to enable reasoning for the request
-   */
-  const handleSendMessage = useCallback(async (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Check server connectivity first
-      const isHealthy = await chatApiService.checkHealth();
-      if (!isHealthy) {
-        setError('Server is not running. Start it with: npm run dev');
-        return;
-      }
-
-      let tempThread = currentThread;
-      let isNewThread = false;
-
-      // Create user message immediately for instant feedback
-      const userMessage: ChatMessage = {
-        id: `user-${Date.now()}`,
-        content,
-        role: 'user',
-        timestamp: new Date(),
-        images: images,
-        imageUrl: images && images.length === 1 ? images[0].url : undefined // For backward compatibility
-      };
-
-      // If no current thread, create a temporary one
-      if (!currentThread) {
-        tempThread = {
-          id: `temp-${Date.now()}`,
-          title: content.length > 50 ? content.substring(0, 50) + '...' : content,
-          messages: [userMessage],
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        setCurrentThread(tempThread);
-        isNewThread = true;
-      } else {
-        // Add user message to existing thread immediately
-        tempThread = {
-          ...currentThread,
-          messages: [...currentThread.messages, userMessage],
-          updatedAt: new Date()
-        };
-        setCurrentThread(tempThread);
-        isNewThread = true;
-      }
-
-      // Create a temporary streaming message for the AI response
-      const tempAiMessage: ChatMessage = {
-        id: `temp-${Date.now()}`,
-        content: '',
-        role: 'assistant',
-        timestamp: new Date(),
-        modelId,
-        reasoning: '' // Initialize reasoning for reasoning models
-      };
-
-      await chatApiService.sendMessageStream(
-        {
-          threadId: currentThread?.id, // Use original thread ID for server
-          content,
-          imageUrl: images && images.length > 1 ? undefined : images?.[0]?.url, // Only for single image
-          images: images,
-          modelId,
-          useReasoning
-        },
-        // onChunk callback - update the streaming message content
-        (chunk: string, fullContent: string) => {
-          debug('📝 Received content chunk', { chunkLength: chunk.length, totalLength: fullContent.length, wasReasoning: tempAiMessage.metadata?.isReasoning });
-          
-          // IMPORTANT: If we're receiving content chunks, reasoning has definitely ended
-          if (tempAiMessage.metadata?.isReasoning === true) {
-            debug('🔄 Reasoning ended (content streaming started)');
-            
-            tempAiMessage.metadata = {
-              ...tempAiMessage.metadata,
-              isReasoning: false
-            };
-          }
-          
-          // Update the temporary message with the streaming content
-          tempAiMessage.content = fullContent;
-          
-          if (tempThread) {
-            // Find if temp message already exists in thread
-            const existingTempIndex = tempThread.messages.findIndex(msg => msg.id === tempAiMessage.id);
-            
-            if (existingTempIndex >= 0) {
-              // Update existing temp message (this will include the updated metadata)
-              const updatedMessages = [...tempThread.messages];
-              updatedMessages[existingTempIndex] = { ...tempAiMessage };
-              const updatedThread = {
-                ...tempThread,
-                messages: updatedMessages,
-                updatedAt: new Date()
-              };
-              setCurrentThread(updatedThread);
-              tempThread = updatedThread;
-            } else {
-              // Add temp message for the first time
-              const updatedThread = {
-                ...tempThread,
-                messages: [...tempThread.messages, tempAiMessage],
-                updatedAt: new Date()
-              };
-              setCurrentThread(updatedThread);
-              tempThread = updatedThread;
-            }
-          }
-        },
-        // onComplete callback - finalize the response
-        async (response) => {
-          debug('Streaming completed', { threadId: response.threadId });
-          
-          // Final cleanup of reasoning state if not already done
-          if (tempAiMessage.metadata?.isReasoning === true) {
-            debug('Final reasoning cleanup');
-            
-            tempAiMessage.metadata = { 
-              ...tempAiMessage.metadata, 
-              isReasoning: false
-            };
-          }
-          
-          // Get the final thread from server to ensure consistency
-          const finalThread = await chatApiService.getChat(response.threadId);
-          
-          // Transfer metadata from temp message to final message
-          if (tempAiMessage.metadata && finalThread.messages.length > 0) {
-            const lastMessage = finalThread.messages[finalThread.messages.length - 1];
-            if (lastMessage.role === 'assistant' && lastMessage.id === tempAiMessage.id) {
-              lastMessage.metadata = tempAiMessage.metadata;
-            }
-          }
-          
-          setCurrentThread(finalThread);
-
-          // Reload threads to update sidebar if new thread was created
-          if (isNewThread || !currentThread) {
-            await loadThreads();
-          }
-          
-          log('Streaming message completed successfully');
-        },
-        // onError callback - handle errors and clean up
-        (error) => {
-          const errorMessage = error.message || 'Failed to send message';
-          setError(errorMessage);
-          logError('Failed to send streaming message', error);
-          
-          // Always remove temp AI message on error to prevent empty messages
-          if (tempThread) {
-            const messagesWithoutTempAi = tempThread.messages.filter(msg => msg.id !== tempAiMessage.id);
-            setCurrentThread({
-              ...tempThread,
-              messages: messagesWithoutTempAi,
-              updatedAt: tempThread.updatedAt
-            });
-          }
-          
-          // Also show a user-friendly error message
-          if (error.message.includes('Failed to fetch') || error.message.includes('TypeError')) {
-            setError('Cannot connect to server. Make sure the server is running with: npm run dev');
-          }
-        },
-        // onReasoningChunk callback - update the reasoning in real-time
-        (reasoningChunk: string, fullReasoning: string) => {
-          debug('🧠 Received reasoning chunk', { chunkLength: reasoningChunk.length, totalLength: fullReasoning.length });
-          
-          // Update the temporary message with the streaming reasoning
-          tempAiMessage.reasoning = fullReasoning;
-          
-          // Mark that this message is currently reasoning
-          tempAiMessage.metadata = {
-            ...tempAiMessage.metadata,
-            isReasoning: true
-          };
-          
-          if (tempThread) {
-            // Find if temp message already exists in thread
-            const existingTempIndex = tempThread.messages.findIndex(msg => msg.id === tempAiMessage.id);
-            
-            if (existingTempIndex >= 0) {
-              // Update existing temp message
-              const updatedMessages = [...tempThread.messages];
-              updatedMessages[existingTempIndex] = { ...tempAiMessage };
-              const updatedThread = {
-                ...tempThread,
-                messages: updatedMessages,
-                updatedAt: new Date()
-              };
-              setCurrentThread(updatedThread);
-              tempThread = updatedThread;
-            } else {
-              // Add temp message for the first time (this shouldn't happen for reasoning)
-              const updatedThread = {
-                ...tempThread,
-                messages: [...tempThread.messages, tempAiMessage],
-                updatedAt: new Date()
-              };
-              setCurrentThread(updatedThread);
-              tempThread = updatedThread;
-            }
-          }
-        }
-      );
-
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-      setError(errorMessage);
-      logError('Failed to start streaming message', err as Error);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentThread, debug, log, logError, loadThreads]);
-
-  /**
-   * Handle deleting a thread
-   * 
-   * @param threadId - ID of the thread to delete
-   */
-  const handleDeleteThread = useCallback(async (threadId: string) => {
-    try {
-      debug(`Deleting thread: ${threadId}`);
-      await chatApiService.deleteChat(threadId);
-      
-      // Remove from local state
-      setThreads(threads.filter(t => t.id !== threadId));
-      
-      // Clear current thread if it was deleted
-      if (currentThread?.id === threadId) {
-        setCurrentThread(null);
-      }
-      
-      setError(null);
-      log('Thread deleted successfully');
-    } catch (err) {
-      const errorMessage = 'Failed to delete chat thread';
-      handleError(err as Error, 'DeleteThread');
-      setError(errorMessage);
-      warn(errorMessage);
-    }
-  }, [threads, currentThread?.id, debug, log, warn, handleError]);
+    chat.loadThreads();
+    models.loadModels();
+  }, [debug, chat.loadThreads, models.loadModels]);
 
   /**
    * Render server connection error UI
@@ -387,7 +49,7 @@ function App() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <span className="text-4xl mb-4 block">⚠️</span>
           <h2 className="text-xl font-bold text-red-800 mb-2">Server Connection Error</h2>
-          <p className="text-red-700 mb-4">{error}</p>
+          <p className="text-red-700 mb-4">{chat.error}</p>
           <div className="bg-red-100 rounded-lg p-3 text-left text-sm">
             <p className="text-red-800 font-medium mb-2">Make sure the server is running:</p>
             <code className="text-xs bg-red-200 px-2 py-1 rounded block">
@@ -395,9 +57,9 @@ function App() {
             </code>
           </div>
           <Button
-            onClick={loadThreads}
+            onClick={chat.loadThreads}
             variant="destructive"
-            className="mt-4 w-full"
+            className="mt-4"
           >
             Try Again
           </Button>
@@ -407,58 +69,69 @@ function App() {
   );
 
   /**
-   * Render error banner
+   * Render error banner for non-critical errors
    */
   const renderErrorBanner = () => (
-    <div className="bg-red-50 border-b border-red-200 p-3">
+    <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
       <div className="flex items-center justify-between">
-        <p className="text-red-800 text-sm">
-          <span className="font-medium">Error:</span> {error}
-        </p>
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <p className="text-sm text-red-700">{chat.error}</p>
+          </div>
+        </div>
         <button
-          onClick={() => setError(null)}
-          className="text-red-600 hover:text-red-800 text-sm transition-colors"
-          aria-label="Dismiss error"
+          onClick={chat.clearError}
+          className="text-red-400 hover:text-red-600"
         >
-          ✕
+          <span className="sr-only">Dismiss</span>
+          <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
         </button>
       </div>
     </div>
   );
 
-  // Footer removed since fixed input bar handles the bottom area
-
-  // Show connection error if no threads could be loaded
-  if (error && threads.length === 0) {
+  // Show connection error if threads failed to load and error suggests server issues
+  if (chat.error && (chat.error.includes('server') || chat.error.includes('running'))) {
     return renderConnectionError();
   }
 
   return (
     <ErrorBoundary>
-      <div className="h-screen bg-gray-100">
-        {/* Fixed Sidebar */}
-        <ChatSidebar
-          threads={threads}
-          currentThreadId={currentThread?.id || null}
-          onThreadSelect={handleThreadSelect}
-          onNewChat={handleNewChat}
-          onDeleteThread={handleDeleteThread}
-          loading={threadsLoading}
-        />
+      <div className="h-screen flex bg-gray-50">
+        {/* Chat Sidebar */}
+        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+          <ChatSidebar
+            threads={chat.threads}
+            currentThreadId={chat.currentThread?.id || null}
+            onThreadSelect={chat.handleThreadSelect}
+            onNewChat={chat.handleNewChat}
+            onDeleteThread={chat.handleDeleteThread}
+            loading={chat.threadsLoading}
+          />
+        </div>
 
-        {/* Main Chat - offset by sidebar width on desktop */}
-        <div className="ml-0 md:ml-80 h-full flex flex-col">
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col">
           {/* Error Banner */}
-          {error && renderErrorBanner()}
+          {chat.error && !chat.error.includes('server') && !chat.error.includes('running') && (
+            renderErrorBanner()
+          )}
 
           {/* Chat Interface */}
           <div className="flex-1">
             <ChatInterface
-              currentThread={currentThread}
-              onSendMessage={handleSendMessage}
-              loading={loading}
-              availableModels={availableModels}
-              modelsLoading={modelsLoading}
+              currentThread={chat.currentThread}
+              onSendMessage={chat.handleSendMessage}
+              loading={chat.loading}
+              availableModels={models.availableModels}
+              modelsLoading={models.modelsLoading}
             />
           </div>
         </div>
