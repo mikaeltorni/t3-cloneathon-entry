@@ -10,9 +10,7 @@
     "build": "npm run server:build && npm run web:build",
     "server:build": "tsc -p tsconfig.server.json",
     "web:build": "cd web-app && npm run build",
-    "start": "node dist/server/index.js",
-    "image": "ts-node src/cli/index.ts",
-    "text": "ts-node src/cli/index.ts --text"
+    "start": "node dist/server/index.js"
   },
   "keywords": ["typescript", "openrouter", "gemini", "image-analysis", "ai"],
   "author": "",
