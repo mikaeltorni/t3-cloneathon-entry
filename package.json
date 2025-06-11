@@ -12,7 +12,7 @@
     "web:build": "cd web-app && npm run build",
     "start": "node dist/server/index.js"
   },
-  "keywords": ["typescript", "openrouter", "gemini", "image-analysis", "ai"],
+  "keywords": ["typescript", "openrouter", "gemini", "image-analysis", "ai", "firebase-auth"],
   "author": "",
   "license": "MIT",
   "devDependencies": {

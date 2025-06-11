@@ -57,6 +57,7 @@ src/server/
 ## 🚀 Features
 
 ### 💬 **Chat Features**
+- **Firebase Authentication** with email/password sign-in
 - **Multi-threaded conversations** with persistent storage
 - **Multiple AI models** with real-time model switching
 - **Image analysis support** with drag-and-drop upload
@@ -88,9 +89,10 @@ src/server/
 
 ### **Frontend Architecture**
 - **React 18+** with TypeScript for type safety
+- **Firebase Authentication** for secure user management
 - **Tailwind CSS 3+** for responsive, modern styling
 - **Vite** for fast development and optimized builds
-- **Custom hooks** for state management (useChat, useModels)
+- **Custom hooks** for state management (useChat, useModels, useAuth)
 - **Error boundaries** for graceful error handling
 - **Server-Sent Events** for real-time streaming
 
@@ -113,6 +115,7 @@ src/server/
 ### **Prerequisites**
 - Node.js 18+ and npm
 - OpenRouter API key ([get one here](https://openrouter.ai/))
+- Firebase project for authentication ([create one here](https://firebase.google.com/))
 
 ### **Quick Start**
 ```bash
@@ -134,10 +137,18 @@ npm run server:dev # Backend (http://localhost:3001)
 
 ### **Environment Variables**
 ```bash
-# .env file
+# Root .env file
 OPENROUTER_API_KEY=sk-or-v1-your-key-here
 PORT=3001
 NODE_ENV=development
+
+# web-app/.env file (for Firebase config)
+VITE_FIREBASE_API_KEY=your-firebase-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+VITE_FIREBASE_APP_ID=your-app-id
 ```
 
 ## 🏃‍♂️ Development
@@ -198,8 +209,10 @@ GET    /api/health             # Overall system health
 │   ├── src/
 │   │   ├── components/    # React components
 │   │   │   ├── ui/        # Reusable UI components
+│   │   │   ├── auth/      # Authentication components
 │   │   │   └── ...        # Feature components
 │   │   ├── hooks/         # Custom React hooks
+│   │   ├── config/        # Configuration files (Firebase)
 │   │   ├── services/      # API client services
 │   │   └── utils/         # Utility functions
 │   └── dist/              # Built frontend files

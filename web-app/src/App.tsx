@@ -18,9 +18,12 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { Button } from './components/ui/Button';
+import { AuthButton } from './components/auth/AuthButton';
+import { SignInForm } from './components/auth/SignInForm';
 import { useChat } from './hooks/useChat';
 import { useModels } from './hooks/useModels';
 import { useLogger } from './hooks/useLogger';
+import { useAuth } from './hooks/useAuth';
 
 /**
  * Main application component
@@ -31,6 +34,7 @@ function App() {
   // Use custom hooks for state management
   const chat = useChat();
   const models = useModels();
+  const { user, loading: authLoading } = useAuth();
   const { debug } = useLogger('App');
 
   // Load all threads and models on app start
@@ -102,11 +106,27 @@ function App() {
     return renderConnectionError();
   }
 
+  // Show sign-in form if user is not authenticated
+  if (!authLoading && !user) {
+    return (
+      <ErrorBoundary>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <SignInForm />
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <div className="h-screen flex bg-gray-50">
         {/* Chat Sidebar */}
         <div className="w-80 bg-white border-r border-gray-200 flex flex-col" data-no-drop="true">
+          {/* Auth Button at the top of sidebar */}
+          <div className="p-4 border-b border-gray-200">
+            <AuthButton />
+          </div>
+          
           <ChatSidebar
             threads={chat.threads}
             currentThreadId={chat.currentThread?.id || null}
