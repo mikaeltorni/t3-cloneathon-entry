@@ -70,7 +70,19 @@ class OpenRouterError extends Error {
 interface ConversationMessage {
   role: 'user' | 'assistant';
   content: string;
-  imageUrl?: string;
+  imageUrl?: string; // Single image (backward compatibility)
+  images?: ImageAttachment[]; // Multiple images (new feature)
+}
+
+/**
+ * Image attachment structure (matches shared types)
+ */
+interface ImageAttachment {
+  id: string;
+  url: string;
+  name: string;
+  size: number;
+  type: string;
 }
 
 /**
@@ -131,12 +143,26 @@ const formatMessagesForAPI = (messages: ConversationMessage[]): OpenRouterReques
       });
     }
 
-    // Add image if present
+    // Add single image if present (backward compatibility)
     if (msg.imageUrl?.trim()) {
       content.push({
         type: 'image_url',
         image_url: {
           url: msg.imageUrl.trim()
+        }
+      });
+    }
+
+    // Add multiple images if present (new feature)
+    if (msg.images && msg.images.length > 0) {
+      msg.images.forEach(image => {
+        if (image.url?.trim()) {
+          content.push({
+            type: 'image_url',
+            image_url: {
+              url: image.url.trim()
+            }
+          });
         }
       });
     }

@@ -197,12 +197,12 @@ app.get('/api/chats/:threadId', (req: Request, res: Response) => {
  */
 app.post('/api/chats/message', async (req: Request, res: Response) => {
   try {
-    const { threadId, content, imageUrl, modelId }: CreateMessageRequest = req.body;
+    const { threadId, content, imageUrl, images, modelId }: CreateMessageRequest = req.body;
     
-    // Validate request
-    if (!content?.trim() && !imageUrl?.trim()) {
+    // Validate request - support both images array and single imageUrl
+    if (!content?.trim() && (!imageUrl?.trim()) && (!images || images.length === 0)) {
       return res.status(400).json({ 
-        error: 'Content or image URL is required',
+        error: 'Content, image URL, or images are required',
         timestamp: new Date().toISOString()
       });
     }
@@ -230,26 +230,35 @@ app.post('/api/chats/message', async (req: Request, res: Response) => {
       }
     }
 
-    // Create user message
+    // Create user message with multiple images support
     const userMessage = chatStorage.createMessage(
       content || 'Analyze this image', 
       'user', 
-      imageUrl
+      imageUrl,
+      undefined // modelId not needed for user messages
     );
+    
+    // Add images array to user message if provided
+    if (images && images.length > 0) {
+      userMessage.images = images;
+    }
+    
     chatStorage.addMessageToThread(currentThreadId, userMessage);
 
-    // Prepare conversation history for AI
+    // Prepare conversation history for AI (include both imageUrl and images)
     const conversationHistory = thread.messages.map(msg => ({
       role: msg.role,
       content: msg.content,
-      imageUrl: msg.imageUrl
+      imageUrl: msg.imageUrl,
+      images: msg.images
     }));
 
     // Add the new user message to history
     conversationHistory.push({
       role: 'user',
       content: content || 'Analyze this image',
-      imageUrl
+      imageUrl,
+      images
     });
 
     console.log(`Sending message to OpenRouter AI (${conversationHistory.length} messages in history)`);
@@ -350,12 +359,19 @@ app.post('/api/chats/message/stream', async (req: Request, res: Response) => {
       threadId: currentThreadId 
     })}\n\n`);
 
-    // Create user message
+    // Create user message with multiple images support
     const userMessage = chatStorage.createMessage(
       content || 'Analyze this image', 
       'user', 
-      imageUrl
+      imageUrl,
+      undefined // modelId not needed for user messages
     );
+    
+    // Add images array to user message if provided
+    if (images && images.length > 0) {
+      userMessage.images = images;
+    }
+    
     chatStorage.addMessageToThread(currentThreadId, userMessage);
 
     // Send user message confirmation
@@ -364,18 +380,20 @@ app.post('/api/chats/message/stream', async (req: Request, res: Response) => {
       message: userMessage 
     })}\n\n`);
 
-    // Prepare conversation history for AI
+    // Prepare conversation history for AI (include both imageUrl and images)
     const conversationHistory = thread.messages.map(msg => ({
       role: msg.role,
       content: msg.content,
-      imageUrl: msg.imageUrl
+      imageUrl: msg.imageUrl,
+      images: msg.images
     }));
 
     // Add the new user message to history
     conversationHistory.push({
       role: 'user',
       content: content || 'Analyze this image',
-      imageUrl
+      imageUrl,
+      images
     });
 
     console.log(`Streaming message to OpenRouter AI (${conversationHistory.length} messages in history)`);
