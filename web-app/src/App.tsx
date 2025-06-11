@@ -18,7 +18,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { Button } from './components/ui/Button';
-import { AuthButton } from './components/auth/AuthButton';
 import { SignInForm } from './components/auth/SignInForm';
 import { useChat } from './hooks/useChat';
 import { useModels } from './hooks/useModels';
@@ -121,21 +120,14 @@ function App() {
     <ErrorBoundary>
       <div className="h-screen flex bg-gray-50">
         {/* Chat Sidebar */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col" data-no-drop="true">
-          {/* Auth Button at the top of sidebar */}
-          <div className="p-4 border-b border-gray-200">
-            <AuthButton />
-          </div>
-          
-          <ChatSidebar
-            threads={chat.threads}
-            currentThreadId={chat.currentThread?.id || null}
-            onThreadSelect={chat.handleThreadSelect}
-            onNewChat={chat.handleNewChat}
-            onDeleteThread={chat.handleDeleteThread}
-            loading={chat.threadsLoading}
-          />
-        </div>
+        <ChatSidebar
+          threads={chat.threads}
+          currentThreadId={chat.currentThread?.id || null}
+          onThreadSelect={chat.handleThreadSelect}
+          onNewChat={chat.handleNewChat}
+          onDeleteThread={chat.handleDeleteThread}
+          loading={chat.threadsLoading}
+        />
 
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col">
