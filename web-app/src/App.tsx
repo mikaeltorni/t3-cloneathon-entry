@@ -140,6 +140,46 @@ function App() {
       let tempThread = currentThread;
       let isNewThread = false;
 
+      // Create user message immediately and show it in UI
+      const userMessage: ChatMessage = {
+        id: `user-${Date.now()}`,
+        content: content || 'Analyze this image',
+        role: 'user',
+        timestamp: new Date(),
+        imageUrl
+      };
+
+      // Immediately add user message to current thread or create new thread
+      if (tempThread) {
+        // Add to existing thread
+        setCurrentThread({
+          ...tempThread,
+          messages: [...tempThread.messages, userMessage],
+          updatedAt: new Date()
+        });
+        tempThread = {
+          ...tempThread,
+          messages: [...tempThread.messages, userMessage],
+          updatedAt: new Date()
+        };
+      } else {
+        // Create new temporary thread for immediate UI feedback
+        const tempThreadId = `temp-${Date.now()}`;
+        const title = content?.length > 50 
+          ? content.substring(0, 50) + '...' 
+          : content || 'Image Analysis';
+        
+        tempThread = {
+          id: tempThreadId,
+          title,
+          messages: [userMessage],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        setCurrentThread(tempThread);
+        isNewThread = true;
+      }
+
       // Create a temporary streaming message for the AI response
       const tempAiMessage: ChatMessage = {
         id: `temp-${Date.now()}`,
@@ -151,7 +191,7 @@ function App() {
 
       await chatApiService.sendMessageStream(
         {
-          threadId: currentThread?.id,
+          threadId: currentThread?.id, // Use original thread ID for server
           content,
           imageUrl,
           modelId
@@ -171,18 +211,22 @@ function App() {
               // Update existing temp message
               const updatedMessages = [...tempThread.messages];
               updatedMessages[existingTempIndex] = { ...tempAiMessage };
-              setCurrentThread({
+              const updatedThread = {
                 ...tempThread,
                 messages: updatedMessages,
                 updatedAt: new Date()
-              });
+              };
+              setCurrentThread(updatedThread);
+              tempThread = updatedThread;
             } else {
               // Add temp message for the first time
-              setCurrentThread({
+              const updatedThread = {
                 ...tempThread,
                 messages: [...tempThread.messages, tempAiMessage],
                 updatedAt: new Date()
-              });
+              };
+              setCurrentThread(updatedThread);
+              tempThread = updatedThread;
             }
           }
         },
@@ -190,24 +234,12 @@ function App() {
         async (response) => {
           debug('Streaming completed', { threadId: response.threadId });
           
-          // Update current thread with final messages
-          if (tempThread && tempThread.id === response.threadId) {
-            // Replace temp message with final assistant message
-            const messagesWithoutTemp = tempThread.messages.filter(msg => msg.id !== tempAiMessage.id);
-            setCurrentThread({
-              ...tempThread,
-              messages: [...messagesWithoutTemp, response.message, response.assistantResponse],
-              updatedAt: response.assistantResponse.timestamp
-            });
-          } else {
-            // New thread created, load it
-            const newThread = await chatApiService.getChat(response.threadId);
-            setCurrentThread(newThread);
-            isNewThread = true;
-          }
+          // Get the final thread from server to ensure consistency
+          const finalThread = await chatApiService.getChat(response.threadId);
+          setCurrentThread(finalThread);
 
           // Reload threads to update sidebar if new thread was created
-          if (isNewThread || !tempThread) {
+          if (isNewThread || !currentThread) {
             await loadThreads();
           }
           
@@ -219,13 +251,13 @@ function App() {
           setError(errorMessage);
           logError('Failed to send streaming message', error);
           
-          // Remove temp message on error
+          // Remove temp AI message on error, keep user message
           if (tempThread) {
-            const messagesWithoutTemp = tempThread.messages.filter(msg => msg.id !== tempAiMessage.id);
+            const messagesWithoutTempAi = tempThread.messages.filter(msg => msg.id !== tempAiMessage.id);
             setCurrentThread({
               ...tempThread,
-              messages: messagesWithoutTemp,
-              updatedAt: new Date()
+              messages: messagesWithoutTempAi,
+              updatedAt: tempThread.updatedAt
             });
           }
         }
