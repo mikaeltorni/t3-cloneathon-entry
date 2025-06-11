@@ -63,8 +63,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [message, setMessage] = useState('');
   const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedModel, setSelectedModel] = useState('google/gemini-2.5-flash-preview-05-20');
+  const [inputBarHeight, setInputBarHeight] = useState(320); // Default height
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputBarRef = useRef<HTMLDivElement>(null);
 
   const { debug, log } = useLogger('ChatInterface');
 
@@ -76,6 +78,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, []);
 
   /**
+   * Measure input bar height and update messages padding
+   */
+  const updateInputBarHeight = useCallback(() => {
+    const inputBar = inputBarRef.current;
+    if (inputBar) {
+      const height = inputBar.offsetHeight;
+      const paddingBuffer = 20; // Extra buffer for comfort
+      setInputBarHeight(height + paddingBuffer);
+      debug('Input bar height updated:', height + paddingBuffer);
+    }
+  }, [debug]);
+
+  /**
    * Auto-resize textarea based on content
    */
   const autoResizeTextarea = useCallback(() => {
@@ -83,8 +98,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (textarea) {
       textarea.style.height = 'auto';
       textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+      // Update input bar height after textarea resize
+      setTimeout(updateInputBarHeight, 0);
     }
-  }, []);
+  }, [updateInputBarHeight]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -115,6 +132,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
     }
   }, [loading]);
+
+  // Update input bar height when content changes
+  useEffect(() => {
+    updateInputBarHeight();
+  }, [images.length, message, updateInputBarHeight]);
+
+  // Update input bar height on window resize
+  useEffect(() => {
+    const handleResize = () => updateInputBarHeight();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [updateInputBarHeight]);
 
   /**
    * Handle form submission
@@ -369,8 +398,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         {/* Header */}
         {renderHeader()}
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-52">
+        {/* Messages with dynamic spacing based on actual input bar height */}
+        <div 
+          className="flex-1 overflow-y-auto p-4 space-y-4" 
+          style={{ paddingBottom: `${inputBarHeight}px` }}
+        >
           {!currentThread ? (
             renderWelcomeMessage()
           ) : currentThread.messages.length === 0 ? (
@@ -384,8 +416,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
 
-      {/* Fixed Input Bar */}
-      <div className="fixed bottom-0 left-0 md:left-80 right-0 bg-white border-t border-gray-200 p-4 z-50 shadow-lg">
+      {/* Fixed Input Bar with dynamic height measurement */}
+      <div 
+        ref={inputBarRef}
+        className="fixed bottom-0 left-0 md:left-80 right-0 bg-white border-t border-gray-200 p-4 z-50 shadow-lg"
+      >
         <div className="max-w-full mx-auto">
           {renderMessageInput()}
         </div>
