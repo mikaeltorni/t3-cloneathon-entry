@@ -1,0 +1,175 @@
+---
+description: for maintaining the project documentation
+globs: 
+alwaysApply: false
+---
+# Project Documentation Maintenance Guidelines
+
+## Documentation Philosophy
+
+**Single Source of Truth**: The root `README.md` is the ONLY user-facing documentation. All setup instructions, configuration details, and essential information must be consolidated there.
+
+## README.md Maintenance Rules
+
+### ✅ What MUST be in README.md
+
+1. **Quick Setup Section** - Environment configuration and Firebase setup
+2. **Installation Commands** - Exact commands to get the project running
+3. **Troubleshooting** - Common issues users encounter during setup
+4. **Essential API Endpoints** - Core endpoints developers need to know
+5. **Project Structure** - High-level overview of directories
+6. **Development Commands** - npm scripts for daily development
+
+### ❌ What MUST NOT be in README.md
+
+1. **Detailed Architecture Explanations** - Keep it high-level only
+2. **Feature Lists** - Focus on setup, not marketing
+3. **Migration Histories** - Users don't care about past refactoring
+4. **Future Enhancement Plans** - Document current state only
+5. **Verbose Technology Descriptions** - Brief mentions only
+6. **Multiple Setup Methods** - One clear path only
+7. **Excessive Examples** - Practical essentials only
+
+### 📝 Content Guidelines
+
+#### Environment Setup Section
+- **Must be copy-pasteable** - Users should be able to copy commands directly
+- **Include actual example values** - Show real format with placeholder data
+- **Step-by-step numbered instructions** - Clear sequence for setup
+- **Common error solutions** - Address issues users actually encounter
+
+#### Writing Style
+- **Imperative mood** - "Copy the file" not "You should copy the file"
+- **Concrete actions** - "Edit .env" not "Configure your environment"
+- **Minimal explanations** - What to do, not why (unless critical)
+- **Scannable format** - Use bullet points, code blocks, headers
+
+## File Management Rules
+
+### Documentation Files
+- **Single README.md only** - Never create additional setup guides
+- **No duplicate content** - If it's in README.md, it shouldn't exist elsewhere
+- **Delete outdated files** - Remove old setup guides, quick starts, etc.
+
+### README.md Updates
+When making changes to:
+
+1. **Environment Variables** - Update README.md environment section immediately
+2. **Setup Process** - Update installation steps
+3. **Dependencies** - Update prerequisites if new major dependencies added
+4. **Port Changes** - Update all URL references
+5. **Authentication Flow** - Update Firebase setup instructions
+
+### Quality Checklist
+
+Before updating README.md, ensure:
+
+- [ ] Can a new developer clone and run the project in <5 minutes?
+- [ ] Are all environment variables documented with examples?
+- [ ] Do all copy-paste commands work exactly as written?
+- [ ] Is troubleshooting section covering actual user issues?
+- [ ] Are there no dead links or outdated information?
+- [ ] Is the content scannable (headers, bullet points, code blocks)?
+- [ ] Are there no marketing/promotional sections?
+
+## Testing New Documentation
+
+### Documentation Validation Process
+
+1. **Fresh Environment Test**:
+   ```bash
+   # Start with clean directory
+   git clone <repo>
+   cd <project>
+   
+   # Follow README.md exactly
+   # Document any friction encountered
+   ```
+
+2. **Time Test**: Setup should take less than 5 minutes for experienced developer
+
+3. **Error Test**: Try common mistakes (wrong API key format, missing files)
+
+4. **Mobile Test**: Ensure README.md is readable on mobile GitHub interface
+
+## Common Maintenance Tasks
+
+### When Adding New Features
+
+```bash
+# 1. Update environment section if new variables added
+# 2. Update API endpoints if new routes added  
+# 3. Update troubleshooting if new common errors
+# 4. Update project structure if major file changes
+# 5. Test full setup flow still works
+```
+
+### When Changing Dependencies
+
+```bash
+# 1. Update prerequisites section
+# 2. Update installation commands if needed
+# 3. Update Node.js version requirement if changed
+# 4. Test setup on clean environment
+```
+
+### Monthly Documentation Review
+
+- [ ] Verify all links still work
+- [ ] Check if Node.js/npm version requirements need updating
+- [ ] Validate environment variable examples
+- [ ] Test setup process on fresh machine
+- [ ] Remove any content that became outdated
+- [ ] Check for new common issues in support channels
+
+## Emergency Documentation Standards
+
+If critical setup issues are discovered:
+
+1. **Immediate Fix**: Update README.md troubleshooting section
+2. **Clear Communication**: Use specific error messages users see
+3. **Actionable Solutions**: Provide exact commands/steps to fix
+4. **Validation**: Test the fix before committing
+
+## Examples of Good vs Bad Content
+
+### ✅ Good README Content
+
+```markdown
+### 1. Environment Configuration
+
+Copy the environment template:
+
+```bash
+cp env.template .env
+```
+
+Edit `.env` with your values:
+
+```env
+OPENROUTER_API_KEY=sk-or-v1-your-actual-key-here
+FIREBASE_API_KEY=your-firebase-api-key
+```
+```
+
+### ❌ Bad README Content
+
+```markdown
+## 🌟 Revolutionary Architecture
+
+This groundbreaking application leverages cutting-edge technologies to deliver an unparalleled user experience. Our sophisticated Controller-Service-Repository pattern ensures maximum scalability and maintainability for enterprise-grade deployment scenarios.
+
+### Benefits of Our Approach
+- ✅ Database-Ready: Seamlessly integrates with multiple database providers
+- ✅ Authentication-Ready: Robust middleware integration capabilities
+- ✅ Service Layer: Advanced AI operations abstraction
+```
+
+## Enforcement
+
+- **Every PR touching setup/config must update README.md**
+- **No new documentation files without explicit architectural need**
+- **Regular README.md review during project maintenance**
+- **User feedback drives troubleshooting section updates**
+
+Remember: **If a user can't get the project running from README.md alone, the documentation has failed.** 
