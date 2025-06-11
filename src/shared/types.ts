@@ -259,6 +259,9 @@ export interface HealthResponse {
  * @property hasReasoning - Whether the model supports reasoning capabilities
  * @property reasoningType - Type of reasoning implementation
  * @property reasoningMode - Whether reasoning is forced, optional, or unavailable
+ * @property color - Brand color for the model (hex code)
+ * @property bgColor - Background color for selected state (hex code)
+ * @property textColor - Text color for selected state (hex code)
  */
 export interface ModelConfig {
   name: string;
@@ -266,6 +269,9 @@ export interface ModelConfig {
   hasReasoning: boolean;
   reasoningType: 'thinking' | 'effort' | 'internal';
   reasoningMode: 'forced' | 'optional' | 'none';
+  color: string;
+  bgColor: string;
+  textColor: string;
 }
 
 /**

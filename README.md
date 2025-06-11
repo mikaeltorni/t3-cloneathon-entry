@@ -18,6 +18,10 @@ A modern, full-stack chat application powered by OpenRouter's API with Google's 
 
 ### 🎨 Modern UI/UX
 - **Beautiful Interface** - Clean, responsive design with Tailwind CSS
+- **Model Selector** - Stunning horizontal buttons with brand colors (Google Blue, OpenAI Green, etc.)
+- **One-Click Switching** - Instantly switch between AI models with visual feedback
+- **Reasoning Indicators** - Smart opacity-based reasoning capability indicators
+- **Dynamic Descriptions** - Live model descriptions and capability badges
 - **Real-time Updates** - Instant message delivery and status updates
 - **Sidebar Navigation** - Easy chat thread management and organization
 - **Error Handling** - Comprehensive error boundaries and user feedback
@@ -229,10 +233,10 @@ After building, you should see these output directories:
 dist/
 ├── server/
 │   ├── index.js              # Main Express server
-│   ├── chatStorage.js        # Chat storage service
-│   └── openRouterService.js  # OpenRouter API service
-└── shared/
-    └── types.js              # Shared TypeScript types
+│   │   ├── chatStorage.js        # Chat storage service
+│   │   └── openRouterService.js  # OpenRouter API service
+│   └── shared/
+│       └── types.js              # Shared TypeScript types
 
 # React app build output  
 web-app/dist/

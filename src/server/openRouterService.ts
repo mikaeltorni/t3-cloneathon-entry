@@ -39,6 +39,9 @@ export const AVAILABLE_MODELS = {
     hasReasoning: true, // Supports :thinking variant
     reasoningType: 'thinking', // Uses :thinking suffix
     reasoningMode: 'optional', // Can toggle reasoning on/off
+    color: '#4285F4', // Google Blue
+    bgColor: '#E8F0FE', // Light Google Blue
+    textColor: '#1A73E8', // Darker Google Blue for text
   },
   'openai/gpt-4o': {
     name: 'GPT-4o',
@@ -46,6 +49,9 @@ export const AVAILABLE_MODELS = {
     hasReasoning: false, // No reasoning token support yet
     reasoningType: 'internal', // Internal reasoning only
     reasoningMode: 'none', // No reasoning capabilities
+    color: '#10A37F', // OpenAI Green
+    bgColor: '#F0FDF4', // Light Green
+    textColor: '#065F46', // Dark Green for text
   },
   'openai/o1-preview': {
     name: 'OpenAI o1 Preview',
@@ -53,6 +59,9 @@ export const AVAILABLE_MODELS = {
     hasReasoning: true, // Built-in reasoning
     reasoningType: 'internal', // Uses reasoning internally, no tokens returned
     reasoningMode: 'forced', // Always uses reasoning, can't be disabled
+    color: '#FF6B35', // OpenAI Orange for reasoning models
+    bgColor: '#FFF7ED', // Light Orange
+    textColor: '#C2410C', // Dark Orange for text
   },
   'deepseek/deepseek-r1': {
     name: 'DeepSeek R1',
@@ -60,6 +69,9 @@ export const AVAILABLE_MODELS = {
     hasReasoning: true, // Returns reasoning tokens
     reasoningType: 'effort', // Uses effort configuration
     reasoningMode: 'forced', // Always uses reasoning, can't be disabled
+    color: '#3B82F6', // Tech Blue
+    bgColor: '#EFF6FF', // Light Blue
+    textColor: '#1D4ED8', // Dark Blue for text
   },
   'anthropic/claude-3.7-sonnet': {
     name: 'Claude 3.7 Sonnet',
@@ -67,6 +79,9 @@ export const AVAILABLE_MODELS = {
     hasReasoning: true, // Supports :thinking variant
     reasoningType: 'thinking', // Uses :thinking suffix
     reasoningMode: 'optional', // Can toggle reasoning on/off
+    color: '#FF7A00', // Anthropic Orange
+    bgColor: '#FFF7ED', // Light Orange
+    textColor: '#C2410C', // Dark Orange for text
   }
 } as const;
 
@@ -297,8 +312,6 @@ const makeOpenRouterRequest = async (
     );
   }
 };
-
-
 
 /**
  * Creates an OpenRouter service instance

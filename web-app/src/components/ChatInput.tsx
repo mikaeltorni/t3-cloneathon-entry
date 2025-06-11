@@ -10,7 +10,8 @@
  * Features:
  *   - Auto-resizing textarea with keyboard shortcuts
  *   - Image attachments management
- *   - Model selection with reasoning toggle
+ *   - Beautiful horizontal model selection with brain icons
+ *   - Reasoning toggle for optional models
  *   - Form submission handling
  *   - Fixed positioning with proper spacing
  * 
@@ -18,7 +19,7 @@
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from './ui/Button';
-import { ModelSelector } from './ui/ModelSelector';
+import { ModelSelector } from './ModelSelector';
 import { ReasoningToggle } from './ui/ReasoningToggle';
 import { ImageAttachments } from './ImageAttachments';
 import { useLogger } from '../hooks/useLogger';
@@ -226,39 +227,52 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       className="fixed bottom-0 left-0 md:left-80 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50"
     >
       <div className="max-w-4xl mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Image Attachments */}
           <ImageAttachments 
             images={images}
             onImagesChange={onImagesChange}
           />
 
-          {/* Model Selection and Options */}
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <ModelSelector
-              value={selectedModel}
-              onChange={setSelectedModel}
-              models={availableModels}
-              loading={modelsLoading}
-            />
-            
-            {isReasoningModel(selectedModel) && (
+          {/* Model Selection with Beautiful Buttons */}
+          <ModelSelector
+            value={selectedModel}
+            onChange={setSelectedModel}
+            models={availableModels}
+            loading={modelsLoading}
+          />
+
+          {/* Optional Reasoning Toggle for Models with Optional Reasoning */}
+          {isReasoningModel(selectedModel) && availableModels[selectedModel].reasoningMode === 'optional' && (
+            <div className="flex items-center gap-3">
               <ReasoningToggle
                 enabled={useReasoning}
                 onChange={setUseReasoning}
                 reasoningMode={availableModels[selectedModel].reasoningMode}
                 modelName={availableModels[selectedModel].name}
               />
-            )}
-
-            {/* Subtle image upload hint */}
-            <div className="text-xs text-gray-400 opacity-50 flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-              <span>Drop images anywhere</span>
+              
+              {/* Subtle image upload hint */}
+              <div className="text-xs text-gray-400 opacity-50 flex items-center gap-1 ml-auto">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <span>Drop images anywhere</span>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Image upload hint for non-reasoning models */}
+          {(!isReasoningModel(selectedModel) || availableModels[selectedModel].reasoningMode !== 'optional') && (
+            <div className="flex justify-end">
+              <div className="text-xs text-gray-400 opacity-50 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <span>Drop images anywhere</span>
+              </div>
+            </div>
+          )}
 
           {/* Message Input and Send Button */}
           <div className="flex items-end gap-3">
