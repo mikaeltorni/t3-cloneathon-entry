@@ -20,7 +20,7 @@ import { Button } from './components/ui/Button';
 import { chatApiService } from './services/chatApi';
 import { useLogger } from './hooks/useLogger';
 import { useErrorHandler } from './hooks/useErrorHandler';
-import type { ChatThread, ModelConfig } from '../../src/shared/types';
+import type { ChatThread, ChatMessage, ModelConfig } from '../../src/shared/types';
 
 /**
  * Main application component
@@ -124,7 +124,7 @@ function App() {
   }, [debug, log]);
 
   /**
-   * Handle sending a message
+   * Handle sending a message with streaming
    * 
    * @param content - Message content
    * @param imageUrl - Optional image URL
@@ -135,40 +135,110 @@ function App() {
     setError(null);
 
     try {
-      debug('Sending message...', { content: content.substring(0, 50), hasImage: !!imageUrl });
+      debug('Sending streaming message...', { content: content.substring(0, 50), hasImage: !!imageUrl });
       
-      const response = await chatApiService.sendMessage({
-        threadId: currentThread?.id,
-        content,
-        imageUrl,
+      let tempThread = currentThread;
+      let isNewThread = false;
+
+      // Create a temporary streaming message for the AI response
+      const tempAiMessage: ChatMessage = {
+        id: `temp-${Date.now()}`,
+        content: '',
+        role: 'assistant',
+        timestamp: new Date(),
         modelId
-      });
+      };
 
-      // Update current thread with new messages
-      if (currentThread && currentThread.id === response.threadId) {
-        setCurrentThread({
-          ...currentThread,
-          messages: [...currentThread.messages, response.message, response.assistantResponse],
-          updatedAt: response.assistantResponse.timestamp
-        });
-      } else {
-        // New thread created, load it
-        const newThread = await chatApiService.getChat(response.threadId);
-        setCurrentThread(newThread);
-      }
+      await chatApiService.sendMessageStream(
+        {
+          threadId: currentThread?.id,
+          content,
+          imageUrl,
+          modelId
+        },
+        // onChunk callback - update the streaming message
+        (chunk: string, fullContent: string) => {
+          debug('Received chunk', { chunkLength: chunk.length, totalLength: fullContent.length });
+          
+          // Update the temporary message with the streaming content
+          tempAiMessage.content = fullContent;
+          
+          if (tempThread) {
+            // Find if temp message already exists in thread
+            const existingTempIndex = tempThread.messages.findIndex(msg => msg.id === tempAiMessage.id);
+            
+            if (existingTempIndex >= 0) {
+              // Update existing temp message
+              const updatedMessages = [...tempThread.messages];
+              updatedMessages[existingTempIndex] = { ...tempAiMessage };
+              setCurrentThread({
+                ...tempThread,
+                messages: updatedMessages,
+                updatedAt: new Date()
+              });
+            } else {
+              // Add temp message for the first time
+              setCurrentThread({
+                ...tempThread,
+                messages: [...tempThread.messages, tempAiMessage],
+                updatedAt: new Date()
+              });
+            }
+          }
+        },
+        // onComplete callback - finalize the response
+        async (response) => {
+          debug('Streaming completed', { threadId: response.threadId });
+          
+          // Update current thread with final messages
+          if (tempThread && tempThread.id === response.threadId) {
+            // Replace temp message with final assistant message
+            const messagesWithoutTemp = tempThread.messages.filter(msg => msg.id !== tempAiMessage.id);
+            setCurrentThread({
+              ...tempThread,
+              messages: [...messagesWithoutTemp, response.message, response.assistantResponse],
+              updatedAt: response.assistantResponse.timestamp
+            });
+          } else {
+            // New thread created, load it
+            const newThread = await chatApiService.getChat(response.threadId);
+            setCurrentThread(newThread);
+            isNewThread = true;
+          }
 
-      // Reload threads to update sidebar
-      await loadThreads();
-      log('Message sent successfully');
+          // Reload threads to update sidebar if new thread was created
+          if (isNewThread || !tempThread) {
+            await loadThreads();
+          }
+          
+          log('Streaming message completed successfully');
+        },
+        // onError callback - handle errors
+        (error) => {
+          const errorMessage = error.message || 'Failed to send message';
+          setError(errorMessage);
+          logError('Failed to send streaming message', error);
+          
+          // Remove temp message on error
+          if (tempThread) {
+            const messagesWithoutTemp = tempThread.messages.filter(msg => msg.id !== tempAiMessage.id);
+            setCurrentThread({
+              ...tempThread,
+              messages: messagesWithoutTemp,
+              updatedAt: new Date()
+            });
+          }
+        }
+      );
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-      handleError(err as Error, 'SendMessage');
       setError(errorMessage);
-      logError('Failed to send message', err as Error);
+      logError('Failed to start streaming message', err as Error);
     } finally {
       setLoading(false);
     }
-  }, [currentThread, debug, log, logError, handleError, loadThreads]);
+  }, [currentThread, debug, log, logError, loadThreads]);
 
   /**
    * Handle deleting a thread

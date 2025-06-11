@@ -78,6 +78,7 @@ interface ConversationMessage {
  */
 interface OpenRouterService {
   sendMessage(messages: ConversationMessage[], modelId?: ModelId): Promise<string>;
+  sendMessageStream(messages: ConversationMessage[], modelId?: ModelId): Promise<AsyncIterable<string>>;
   getAvailableModels(): typeof AVAILABLE_MODELS;
 }
 
@@ -323,6 +324,120 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
             : 'Failed to get response from AI: Unknown error'
         );
       }
+    },
+
+    /**
+     * Send messages to OpenRouter API and get AI response stream
+     * 
+     * @param messages - Array of conversation messages
+     * @param modelId - AI model to use (defaults to DEFAULT_MODEL)
+     * @returns Async iterable with AI response stream
+     */
+    async sendMessageStream(messages: ConversationMessage[], modelId: ModelId = DEFAULT_MODEL): Promise<AsyncIterable<string>> {
+      try {
+        // Validate input
+        validateMessages(messages);
+
+        // Validate model
+        if (!AVAILABLE_MODELS[modelId]) {
+          throw new Error(`Invalid model ID: ${modelId}`);
+        }
+
+        console.log(`[OpenRouter] Processing ${messages.length} message(s) with streaming model: ${AVAILABLE_MODELS[modelId].name}`);
+        
+        // Format messages for API
+        const formattedMessages = formatMessagesForAPI(messages);
+
+        // Prepare streaming request
+        const requestData: OpenRouterRequest & { stream: true } = {
+          model: modelId,
+          messages: formattedMessages,
+          stream: true
+        };
+
+        console.log(`[OpenRouter] Making streaming API request`);
+
+        const response = await fetch(OPENROUTER_API_URL, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://your-app.com',
+            'X-Title': 'OpenRouter Chat App',
+          },
+          body: JSON.stringify(requestData),
+        });
+
+        if (!response.ok) {
+          let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+          try {
+            const errorData = await response.json();
+            if (errorData.error?.message) {
+              errorMessage = errorData.error.message;
+            }
+          } catch {
+            // Ignore JSON parse errors
+          }
+          throw new Error(`OpenRouter streaming API error: ${errorMessage}`);
+        }
+
+        if (!response.body) {
+          throw new Error('No response body for streaming');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        return {
+          [Symbol.asyncIterator]: async function* () {
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                
+                if (done) {
+                  console.log('[OpenRouter] Stream completed');
+                  break;
+                }
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n').filter(line => line.trim());
+
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    
+                    if (data === '[DONE]') {
+                      return;
+                    }
+
+                    try {
+                      const parsed = JSON.parse(data);
+                      const content = parsed.choices?.[0]?.delta?.content;
+                      
+                      if (content) {
+                        yield content;
+                      }
+                    } catch (parseError) {
+                      console.warn('[OpenRouter] Failed to parse streaming chunk:', data);
+                    }
+                  }
+                }
+              }
+            } finally {
+              reader.releaseLock();
+            }
+          }
+        };
+
+      } catch (error) {
+        console.error('[OpenRouter] Streaming service error:', error);
+
+        throw new Error(
+          error instanceof Error 
+            ? `Failed to get response stream from AI: ${error.message}`
+            : 'Failed to get response stream from AI: Unknown error'
+        );
+      }
     }
   };
-}; 
+};

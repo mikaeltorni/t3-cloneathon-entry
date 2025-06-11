@@ -282,6 +282,152 @@ app.post('/api/chats/message', async (req: Request, res: Response) => {
 });
 
 /**
+ * Create new message and get AI response stream
+ * 
+ * @route POST /api/chats/message/stream
+ * @body CreateMessageRequest
+ * @returns Server-Sent Events stream with AI response
+ */
+app.post('/api/chats/message/stream', async (req: Request, res: Response) => {
+  try {
+    const { threadId, content, imageUrl, modelId }: CreateMessageRequest = req.body;
+    
+    // Validate request
+    if (!content?.trim() && !imageUrl?.trim()) {
+      return res.status(400).json({ 
+        error: 'Content or image URL is required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Set headers for Server-Sent Events
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
+
+    let thread;
+    let currentThreadId = threadId;
+
+    // Create new thread if none provided
+    if (!currentThreadId) {
+      const title = content?.length > 50 
+        ? content.substring(0, 50) + '...' 
+        : content || 'Image Analysis';
+      
+      console.log(`Creating new thread for streaming: ${title}`);
+      thread = chatStorage.createThread(title);
+      currentThreadId = thread.id;
+    } else {
+      console.log(`Using existing thread for streaming: ${currentThreadId}`);
+      thread = chatStorage.getThread(currentThreadId);
+      if (!thread) {
+        res.write(`data: ${JSON.stringify({ error: 'Thread not found' })}\n\n`);
+        res.end();
+        return;
+      }
+    }
+
+    // Send thread info to client
+    res.write(`data: ${JSON.stringify({ 
+      type: 'thread_info', 
+      threadId: currentThreadId 
+    })}\n\n`);
+
+    // Create user message
+    const userMessage = chatStorage.createMessage(
+      content || 'Analyze this image', 
+      'user', 
+      imageUrl
+    );
+    chatStorage.addMessageToThread(currentThreadId, userMessage);
+
+    // Send user message confirmation
+    res.write(`data: ${JSON.stringify({ 
+      type: 'user_message', 
+      message: userMessage 
+    })}\n\n`);
+
+    // Prepare conversation history for AI
+    const conversationHistory = thread.messages.map(msg => ({
+      role: msg.role,
+      content: msg.content,
+      imageUrl: msg.imageUrl
+    }));
+
+    // Add the new user message to history
+    conversationHistory.push({
+      role: 'user',
+      content: content || 'Analyze this image',
+      imageUrl
+    });
+
+    console.log(`Streaming message to OpenRouter AI (${conversationHistory.length} messages in history)`);
+    
+    // Send start of AI response
+    res.write(`data: ${JSON.stringify({ 
+      type: 'ai_start' 
+    })}\n\n`);
+
+    let fullResponse = '';
+
+    try {
+      // Get AI response stream
+      const responseStream = await openRouterService.sendMessageStream(conversationHistory, modelId as ModelId);
+      
+      for await (const chunk of responseStream) {
+        fullResponse += chunk;
+        
+        // Send chunk to client
+        res.write(`data: ${JSON.stringify({ 
+          type: 'ai_chunk', 
+          content: chunk,
+          fullContent: fullResponse 
+        })}\n\n`);
+      }
+
+      // Create assistant message with full response
+      const assistantMessage = chatStorage.createMessage(fullResponse, 'assistant', undefined, modelId);
+      chatStorage.addMessageToThread(currentThreadId, assistantMessage);
+
+      // Send completion
+      res.write(`data: ${JSON.stringify({ 
+        type: 'ai_complete', 
+        assistantMessage,
+        fullContent: fullResponse 
+      })}\n\n`);
+
+      res.write('data: [DONE]\n\n');
+      res.end();
+
+      console.log(`Successfully streamed message for thread: ${currentThreadId} (${fullResponse.length} characters)`);
+
+    } catch (streamError) {
+      console.error('Error in streaming:', streamError);
+      res.write(`data: ${JSON.stringify({ 
+        type: 'error', 
+        error: streamError instanceof Error ? streamError.message : 'Streaming failed' 
+      })}\n\n`);
+      res.end();
+    }
+
+  } catch (error) {
+    console.error('Error creating streaming message:', error);
+    
+    try {
+      res.write(`data: ${JSON.stringify({ 
+        type: 'error', 
+        error: error instanceof Error ? error.message : 'Failed to create streaming message' 
+      })}\n\n`);
+      res.end();
+    } catch (writeError) {
+      console.error('Error writing error response:', writeError);
+    }
+  }
+});
+
+/**
  * Delete chat thread
  * 
  * @route DELETE /api/chats/:threadId

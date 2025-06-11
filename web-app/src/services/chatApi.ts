@@ -296,6 +296,134 @@ class ChatApiService {
       return false;
     }
   }
+
+  /**
+   * Send a new message to a chat thread with streaming response
+   * 
+   * @param request - Message request data
+   * @param onChunk - Callback for each response chunk
+   * @param onComplete - Callback when streaming is complete
+   * @param onError - Callback for errors
+   * @returns Promise that resolves when streaming starts
+   */
+  async sendMessageStream(
+    request: CreateMessageRequest,
+    onChunk: (chunk: string, fullContent: string) => void,
+    onComplete: (response: CreateMessageResponse) => void,
+    onError: (error: Error) => void
+  ): Promise<void> {
+    if (!request.content?.trim() && !request.imageUrl?.trim()) {
+      throw new Error('Message content or image URL is required');
+    }
+
+    try {
+      logger.info('Starting streaming message to chat', {
+        threadId: request.threadId || 'new',
+        hasContent: !!request.content,
+        hasImage: !!request.imageUrl
+      });
+
+      const url = `${this.baseUrl}/chats/message/stream`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Ignore JSON parse errors
+        }
+        throw new ApiError(response.status, response.statusText, errorMessage);
+      }
+
+      if (!response.body) {
+        throw new Error('No response body for streaming');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let threadId: string | null = null;
+      let userMessage: any = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          logger.info('Streaming completed');
+          break;
+        }
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(line => line.trim());
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            
+            if (data === '[DONE]') {
+              return;
+            }
+
+            try {
+              const parsed = JSON.parse(data);
+              
+              switch (parsed.type) {
+                case 'thread_info':
+                  threadId = parsed.threadId;
+                  logger.debug(`Stream using thread: ${threadId}`);
+                  break;
+                  
+                case 'user_message':
+                  userMessage = parsed.message;
+                  logger.debug('User message confirmed');
+                  break;
+                  
+                case 'ai_start':
+                  logger.debug('AI response started');
+                  break;
+                  
+                case 'ai_chunk':
+                  onChunk(parsed.content, parsed.fullContent);
+                  break;
+                  
+                case 'ai_complete':
+                  const completeResponse: CreateMessageResponse = {
+                    threadId: threadId!,
+                    message: userMessage,
+                    assistantResponse: parsed.assistantMessage
+                  };
+                  onComplete(completeResponse);
+                  logger.info(`Streaming message completed for thread: ${threadId}`);
+                  break;
+                  
+                case 'error':
+                  onError(new Error(parsed.error));
+                  return;
+              }
+            } catch (parseError) {
+              logger.warn('Failed to parse streaming chunk:', data);
+            }
+          }
+        }
+      }
+
+    } catch (error) {
+      logger.error('Failed to stream message', error as Error);
+      onError(
+        error instanceof Error 
+          ? error 
+          : new Error('Failed to stream message. Please try again.')
+      );
+    }
+  }
 }
 
 // Export singleton instance

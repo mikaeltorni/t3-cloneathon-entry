@@ -224,25 +224,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [formatTime]);
 
   /**
-   * Render loading indicator
-   */
-  const renderLoadingIndicator = () => (
-    <div className="flex justify-start mb-4">
-      <div className="order-1 max-w-[70%]">
-        <div className="bg-white border border-gray-200 text-gray-900 px-4 py-3 rounded-2xl">
-          <div className="flex items-center space-x-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-            <span className="text-gray-500">AI is thinking...</span>
-          </div>
-        </div>
-      </div>
-      <div className="order-2 ml-3 w-8 h-8 rounded-full flex items-center justify-center text-sm">
-        🤖
-      </div>
-    </div>
-  );
-
-  /**
    * Render welcome message for new chat
    */
   const renderWelcomeMessage = () => (
@@ -363,7 +344,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           ) : (
             <>
               {currentThread.messages.map(renderMessage)}
-              {loading && renderLoadingIndicator()}
             </>
           )}
           <div ref={messagesEndRef} />
