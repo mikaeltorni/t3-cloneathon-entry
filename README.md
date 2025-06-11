@@ -24,7 +24,7 @@ Edit `.env` with your actual values:
 OPENROUTER_API_KEY=sk-or-v1-your-actual-key-here
 
 # Server Configuration  
-PORT=3001
+PORT=3000
 NODE_ENV=development
 
 # Firebase Configuration (Server-side)
@@ -61,9 +61,9 @@ npm run dev
 ```
 
 The app will be available at:
-- **Frontend**: http://localhost:5174
-- **Backend**: http://localhost:3001
-- **API Docs**: http://localhost:3001/api
+- **Frontend**: http://localhost:5173
+- **Backend**: http://localhost:3000
+- **API Docs**: http://localhost:3000/api
 
 ## 🔐 Authentication
 
@@ -110,6 +110,8 @@ GET    /api/models             # Get available AI models
 GET    /api/health             # System health check
 ```
 
+**Note**: In development, Vite proxies `/api/*` requests from frontend (port 5173) to backend (port 3000).
+
 ## 📁 Project Structure
 
 ```
@@ -141,9 +143,10 @@ GET    /api/health             # System health check
 - Allow popups for localhost in your browser
 - Check Firebase authorized domains include localhost
 
-**Port 5173 already in use**
-- Vite automatically tries the next available port (5174, 5175, etc.)
-- Or kill the process using the port: `npx kill-port 5173`
+**Port conflicts (5173 or 3000 already in use)**
+- Frontend: Vite automatically tries the next available port (5174, 5175, etc.)
+- Backend: Change PORT in `.env` file to use a different port (e.g., 3001, 3002)
+- Or kill the process: `npx kill-port 5173` or `npx kill-port 3000`
 
 ### Getting Help
 

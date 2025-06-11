@@ -31,7 +31,7 @@ import { createModelsController } from './controllers/ModelsController';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Get API key from environment
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
