@@ -10,8 +10,10 @@
  *   - Message display with image support
  *   - Message input with image URL support
  *   - Auto-scrolling to latest messages
+ *   - Auto-focus input field for seamless typing experience
  *   - Loading states and error handling
  *   - Keyboard shortcuts (Enter to send, Shift+Enter for new line)
+ *   - Automatic textarea height adjustment
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from './ui/Button';
@@ -68,6 +70,31 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     scrollToBottom();
   }, [currentThread?.messages, scrollToBottom]);
 
+  // Auto-focus textarea when component mounts or thread changes
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea && !loading) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        textarea.focus();
+      }, 100);
+    }
+  }, [currentThread?.id, loading]);
+
+  // Auto-focus textarea after sending message
+  useEffect(() => {
+    if (!loading) {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        // Reset height and focus
+        textarea.style.height = '48px';
+        setTimeout(() => {
+          textarea.focus();
+        }, 100);
+      }
+    }
+  }, [loading]);
+
   /**
    * Handle form submission
    * 
@@ -88,6 +115,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     // Clear inputs immediately for better UX
     setMessage('');
     setImageUrl('');
+
+    // Reset textarea height immediately
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = '48px';
+    }
 
     try {
       await onSendMessage(messageContent || 'Analyze this image', imageUrlContent || undefined);
