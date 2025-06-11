@@ -146,7 +146,10 @@ npm run preview
 1. Visit [OpenRouter.ai](https://openrouter.ai/)
 2. Create an account
 3. Generate an API key
-4. Set up using your preferred method above
+4. **Important**: Visit [Privacy Settings](https://openrouter.ai/settings/privacy) and enable **"Enable providers that may train on inputs"**
+   - This is required for API access - without it you'll get a 404 error
+   - OpenRouter needs this permission to provide access to AI models
+5. Set up using your preferred method above
 
 ### Environment Variable Setup
 ```bash
