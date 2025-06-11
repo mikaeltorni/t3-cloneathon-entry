@@ -151,27 +151,102 @@ npm run dev
 # Start only the backend server
 npm run server:dev
 
-# Start only the frontend (run from web-app/ directory)
-cd web-app && npm run dev
+# Start only the frontend
+npm run web:dev
 
-# Build for production
+# Build everything for production
 npm run build
 
-# Type checking
-npm run type-check
-```
+# Build only the server (TypeScript compilation)
+npm run server:build
 
-### Production Deployment
-```bash
-# Build the React app for production
-cd web-app
-npm run build
-
-# Build the server
-npm run build
+# Build only the React app
+npm run web:build
 
 # Start production server
 npm start
+```
+
+### Development Scripts (Web App)
+```bash
+# Run from web-app/ directory
+cd web-app
+
+# Start React development server
+npm run dev
+
+# Build React app for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Type checking
+npm run type-check
+
+# Linting
+npm run lint
+npm run lint:fix
+```
+
+### Production Deployment
+
+#### Complete Production Build
+```bash
+# Build everything at once (recommended)
+npm run build
+
+# This runs:
+# 1. npm run server:build - Compiles TypeScript server to dist/
+# 2. npm run web:build - Builds React app to web-app/dist/
+```
+
+#### Manual Build Steps (Alternative)
+```bash
+# Build the server (TypeScript compilation)
+npm run server:build
+
+# Build the React app for production  
+npm run web:build
+
+# Or step by step:
+cd web-app
+npm run build
+cd ..
+npm run server:build
+```
+
+#### Start Production Server
+```bash
+# Start the production server (serves both API and static files)
+npm start
+```
+
+#### Build Verification
+After building, you should see these output directories:
+```bash
+# Server build output
+dist/
+├── server/
+│   ├── index.js              # Main Express server
+│   ├── chatStorage.js        # Chat storage service
+│   └── openRouterService.js  # OpenRouter API service
+└── shared/
+    └── types.js              # Shared TypeScript types
+
+# React app build output  
+web-app/dist/
+├── assets/
+│   ├── index-[hash].css    # Compiled & minified CSS
+│   └── index-[hash].js     # Compiled & minified JavaScript
+└── index.html              # Main HTML file
+
+# Verify builds were successful
+Get-ChildItem -Recurse dist       # Check server build (Windows)
+Get-ChildItem web-app\dist        # Check React app build (Windows)
+# Or on Linux/macOS:
+# find dist -type f              # Check server build
+# ls -la web-app/dist            # Check React app build
 ```
 
 ## 🔑 Environment Variables
