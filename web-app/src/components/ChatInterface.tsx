@@ -22,6 +22,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from './ui/Button';
 import { ModelSelector } from './ui/ModelSelector';
+import { ReasoningToggle } from './ui/ReasoningToggle';
 import { useLogger } from '../hooks/useLogger';
 import { cn } from '../utils/cn';
 import type { ChatThread, ChatMessage, ModelConfig, ImageAttachment } from '../../../src/shared/types';
@@ -39,7 +40,7 @@ import { ImageAttachments } from './ImageAttachments';
  */
 interface ChatInterfaceProps {
   currentThread: ChatThread | null;
-  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string) => Promise<void>;
+  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean) => Promise<void>;
   loading: boolean;
   availableModels: Record<string, ModelConfig>;
   modelsLoading: boolean;
@@ -63,6 +64,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [message, setMessage] = useState('');
   const [images, setImages] = useState<ImageAttachment[]>([]);
   const [selectedModel, setSelectedModel] = useState('google/gemini-2.5-flash-preview-05-20');
+  const [useReasoning, setUseReasoning] = useState(false);
   const [inputBarHeight, setInputBarHeight] = useState(320); // Default height
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -72,19 +74,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const { debug, log } = useLogger('ChatInterface');
 
   /**
-   * Check if a model supports reasoning based on model ID
+   * Check if a model supports reasoning based on model configuration
    * 
    * @param modelId - Model identifier
    * @returns Whether the model supports reasoning
    */
   const isReasoningModel = useCallback((modelId?: string): boolean => {
-    if (!modelId) return false;
-    // Check for reasoning models based on their ID patterns
-    return modelId.includes('deepseek') || 
-           modelId.includes('r1') || 
-           modelId.includes(':thinking') || // For Gemini/Claude thinking models
-           modelId.includes('reasoning');
-  }, []);
+    if (!modelId || !availableModels[modelId]) return false;
+    return availableModels[modelId].hasReasoning;
+  }, [availableModels]);
 
   /**
    * Scroll to the bottom of the messages container
@@ -191,7 +189,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       await onSendMessage(
         messageContent, 
         images.length > 0 ? images : undefined, 
-        selectedModel
+        selectedModel,
+        useReasoning
       );
       log('Message sent successfully');
     } catch (error) {
@@ -439,14 +438,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
    */
   const renderMessageInput = () => (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Model Selector */}
-      <div>
-        <ModelSelector
-          value={selectedModel}
-          onChange={setSelectedModel}
-          models={availableModels}
-          loading={modelsLoading}
-          disabled={loading}
+      {/* Model Selector and Reasoning Toggle */}
+      <div className="flex items-center space-x-3">
+        <div className="flex-1">
+          <ModelSelector
+            value={selectedModel}
+            onChange={setSelectedModel}
+            models={availableModels}
+            loading={modelsLoading}
+            disabled={loading}
+          />
+        </div>
+        <ReasoningToggle
+          enabled={useReasoning}
+          onChange={setUseReasoning}
+          disabled={!isReasoningModel(selectedModel)}
+          modelName={availableModels[selectedModel]?.name}
         />
       </div>
 

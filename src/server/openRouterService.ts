@@ -37,21 +37,36 @@ export const AVAILABLE_MODELS = {
     name: 'Gemini 2.5 Flash',
     description: 'Fast and efficient multimodal model for general tasks',
     type: 'general',
+    hasReasoning: true, // Supports :thinking variant
+    reasoningType: 'thinking', // Uses :thinking suffix
   },
-  'google/gemini-2.5-flash-preview-05-20:thinking': {
-    name: 'Gemini 2.5 Flash (Thinking)',
-    description: 'Advanced reasoning model that returns thinking tokens',
+  'openai/gpt-4o': {
+    name: 'GPT-4o',
+    description: 'Advanced multimodal model from OpenAI',
+    type: 'general',
+    hasReasoning: false, // No reasoning token support yet
+    reasoningType: 'internal', // Internal reasoning only
+  },
+  'openai/o1-preview': {
+    name: 'OpenAI o1 Preview',
+    description: 'Reasoning model that thinks before responding',
     type: 'reasoning',
+    hasReasoning: true, // Built-in reasoning
+    reasoningType: 'internal', // Uses reasoning internally, no tokens returned
   },
   'deepseek/deepseek-r1': {
-    name: 'DeepSeek R1 (Reasoning)',
+    name: 'DeepSeek R1',
     description: 'Open-source reasoning model that returns reasoning tokens',
     type: 'reasoning',
+    hasReasoning: true, // Returns reasoning tokens
+    reasoningType: 'effort', // Uses effort configuration
   },
-  'anthropic/claude-3.7-sonnet:thinking': {
-    name: 'Claude 3.7 Sonnet (Thinking)',
-    description: 'Advanced Claude model with reasoning token support',
-    type: 'reasoning',
+  'anthropic/claude-3.7-sonnet': {
+    name: 'Claude 3.7 Sonnet',
+    description: 'Advanced Claude model with reasoning capabilities',
+    type: 'general',
+    hasReasoning: true, // Supports :thinking variant
+    reasoningType: 'thinking', // Uses :thinking suffix
   }
 } as const;
 
@@ -100,8 +115,8 @@ interface ImageAttachment {
  * OpenRouter service interface
  */
 interface OpenRouterService {
-  sendMessage(messages: ConversationMessage[], modelId?: ModelId): Promise<{ content: string; reasoning?: string }>;
-  sendMessageStream(messages: ConversationMessage[], modelId?: ModelId): Promise<AsyncIterable<string>>;
+  sendMessage(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean): Promise<{ content: string; reasoning?: string }>;
+  sendMessageStream(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean): Promise<AsyncIterable<string>>;
   getAvailableModels(): typeof AVAILABLE_MODELS;
 }
 
@@ -313,9 +328,10 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
      * 
      * @param messages - Array of conversation messages
      * @param modelId - AI model to use (defaults to DEFAULT_MODEL)
+     * @param useReasoning - Whether to enable reasoning for supported models
      * @returns Promise with AI response text
      */
-    async sendMessage(messages: ConversationMessage[], modelId: ModelId = DEFAULT_MODEL): Promise<{ content: string; reasoning?: string }> {
+    async sendMessage(messages: ConversationMessage[], modelId: ModelId = DEFAULT_MODEL, useReasoning: boolean = false): Promise<{ content: string; reasoning?: string }> {
       try {
         // Validate input
         validateMessages(messages);
@@ -325,32 +341,44 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
           throw new Error(`Invalid model ID: ${modelId}`);
         }
 
-        console.log(`[OpenRouter] Processing ${messages.length} message(s) with model: ${AVAILABLE_MODELS[modelId].name}`);
+        const modelConfig = AVAILABLE_MODELS[modelId];
+        
+        // Determine the actual model to use (add :thinking suffix if needed)
+        let actualModelId = modelId;
+        if (useReasoning && modelConfig.hasReasoning && modelConfig.reasoningType === 'thinking') {
+          actualModelId = `${modelId}:thinking` as ModelId;
+        }
+        
+        console.log(`[OpenRouter] Processing ${messages.length} message(s) with model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}`);
         
         // Format messages for API
         const formattedMessages = formatMessagesForAPI(messages);
 
-        // Prepare request with reasoning tokens for reasoning models
+        // Prepare request
         const requestData: OpenRouterRequest = {
-          model: modelId,
+          model: actualModelId,
           messages: formattedMessages,
         };
 
         // Add reasoning configuration for reasoning models
-        if (AVAILABLE_MODELS[modelId].type === 'reasoning') {
-          // Use max_tokens for thinking models (Gemini/Claude), effort for others
-          if (modelId.includes(':thinking')) {
+        if (useReasoning && modelConfig.hasReasoning) {
+          if (modelConfig.reasoningType === 'thinking') {
             requestData.reasoning = {
               max_tokens: 2000, // Specific token limit for thinking models
               exclude: false  // Include reasoning in response
             };
-          } else {
+          } else if (modelConfig.reasoningType === 'effort') {
             requestData.reasoning = {
               effort: 'high', // High effort for DeepSeek models
               exclude: false  // Include reasoning in response
             };
+          } else if (modelConfig.reasoningType === 'internal') {
+            requestData.reasoning = {
+              effort: 'high', // High effort for internal reasoning models
+              exclude: true   // Don't include reasoning in response (internal only)
+            };
           }
-          console.log(`[OpenRouter] Configured reasoning for ${modelId} (${AVAILABLE_MODELS[modelId].name})`);
+          console.log(`[OpenRouter] Configured reasoning for ${actualModelId} (${modelConfig.name}) - type: ${modelConfig.reasoningType}`);
         }
 
         // Make API request
@@ -365,11 +393,13 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         }
 
         // Log reasoning token status
-        if (AVAILABLE_MODELS[modelId].type === 'reasoning') {
+        if (useReasoning && modelConfig.hasReasoning) {
           if (reasoning) {
             console.log(`[OpenRouter] ✅ Reasoning tokens received (${reasoning.length} characters)`);
+          } else if (modelConfig.reasoningType !== 'internal') {
+            console.log(`[OpenRouter] ⚠️  No reasoning tokens received from ${actualModelId} - this model may not return reasoning tokens`);
           } else {
-            console.log(`[OpenRouter] ⚠️  No reasoning tokens received from ${modelId} - this model may not return reasoning tokens`);
+            console.log(`[OpenRouter] ✅ Internal reasoning used (no tokens returned by design)`);
           }
         }
 
@@ -400,9 +430,10 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
      * 
      * @param messages - Array of conversation messages
      * @param modelId - AI model to use (defaults to DEFAULT_MODEL)
+     * @param useReasoning - Whether to enable reasoning for supported models
      * @returns Async iterable with AI response stream
      */
-    async sendMessageStream(messages: ConversationMessage[], modelId: ModelId = DEFAULT_MODEL): Promise<AsyncIterable<string>> {
+    async sendMessageStream(messages: ConversationMessage[], modelId: ModelId = DEFAULT_MODEL, useReasoning: boolean = false): Promise<AsyncIterable<string>> {
       try {
         // Validate input
         validateMessages(messages);
@@ -412,33 +443,45 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
           throw new Error(`Invalid model ID: ${modelId}`);
         }
 
-        console.log(`[OpenRouter] Processing ${messages.length} message(s) with streaming model: ${AVAILABLE_MODELS[modelId].name}`);
+        const modelConfig = AVAILABLE_MODELS[modelId];
+        
+        // Determine the actual model to use (add :thinking suffix if needed)
+        let actualModelId = modelId;
+        if (useReasoning && modelConfig.hasReasoning && modelConfig.reasoningType === 'thinking') {
+          actualModelId = `${modelId}:thinking` as ModelId;
+        }
+        
+        console.log(`[OpenRouter] Processing ${messages.length} message(s) with streaming model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}`);
         
         // Format messages for API
         const formattedMessages = formatMessagesForAPI(messages);
 
         // Prepare streaming request with reasoning tokens
         const requestData: OpenRouterRequest & { stream: true } = {
-          model: modelId,
+          model: actualModelId,
           messages: formattedMessages,
           stream: true
         };
 
         // Add reasoning configuration for reasoning models
-        if (AVAILABLE_MODELS[modelId].type === 'reasoning') {
-          // Use max_tokens for thinking models (Gemini/Claude), effort for others
-          if (modelId.includes(':thinking')) {
+        if (useReasoning && modelConfig.hasReasoning) {
+          if (modelConfig.reasoningType === 'thinking') {
             requestData.reasoning = {
               max_tokens: 2000, // Specific token limit for thinking models
               exclude: false  // Include reasoning in response
             };
-          } else {
+          } else if (modelConfig.reasoningType === 'effort') {
             requestData.reasoning = {
               effort: 'high', // High effort for DeepSeek models
               exclude: false  // Include reasoning in response
             };
+          } else if (modelConfig.reasoningType === 'internal') {
+            requestData.reasoning = {
+              effort: 'high', // High effort for internal reasoning models
+              exclude: true   // Don't include reasoning in response (internal only)
+            };
           }
-          console.log(`[OpenRouter] Configured reasoning for ${modelId} (${AVAILABLE_MODELS[modelId].name})`);
+          console.log(`[OpenRouter] Configured reasoning for ${actualModelId} (${modelConfig.name}) - type: ${modelConfig.reasoningType}`);
         }
 
         console.log(`[OpenRouter] Making streaming API request`);

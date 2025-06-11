@@ -106,6 +106,7 @@ export interface UserChats {
  * @property imageUrl - Optional single image URL (deprecated, use images)
  * @property images - Optional array of image attachments
  * @property modelId - AI model to use for processing the message
+ * @property useReasoning - Whether to enable reasoning for supported models
  */
 export interface CreateMessageRequest {
   threadId?: string; // If not provided, creates new thread
@@ -113,6 +114,7 @@ export interface CreateMessageRequest {
   imageUrl?: string; // Deprecated, use images
   images?: ImageAttachment[]; // Multiple image support
   modelId?: string; // AI model identifier
+  useReasoning?: boolean; // Enable reasoning for supported models
 }
 
 /**
@@ -254,11 +256,15 @@ export interface HealthResponse {
  * @property name - Human-readable model name
  * @property description - Model description and capabilities
  * @property type - Model type category
+ * @property hasReasoning - Whether the model supports reasoning capabilities
+ * @property reasoningType - Type of reasoning implementation
  */
 export interface ModelConfig {
   name: string;
   description: string;
   type: 'general' | 'reasoning' | 'creative' | 'coding';
+  hasReasoning: boolean;
+  reasoningType: 'thinking' | 'effort' | 'internal';
 }
 
 /**

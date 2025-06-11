@@ -311,7 +311,7 @@ app.post('/api/chats/message', async (req: Request, res: Response) => {
  */
 app.post('/api/chats/message/stream', async (req: Request, res: Response) => {
   try {
-    const { threadId, content, imageUrl, images, modelId }: CreateMessageRequest = req.body;
+    const { threadId, content, imageUrl, images, modelId, useReasoning }: CreateMessageRequest = req.body;
     
     // Log payload info for debugging
     console.log(`[Streaming] Request payload size: ${JSON.stringify(req.body).length} bytes`);
@@ -412,7 +412,7 @@ app.post('/api/chats/message/stream', async (req: Request, res: Response) => {
     let hasContent = false; // Track if we received any content
     
     try {
-      const responseStream = await openRouterService.sendMessageStream(conversationHistory, modelId as ModelId);
+      const responseStream = await openRouterService.sendMessageStream(conversationHistory, modelId as ModelId, useReasoning || false);
       
       for await (const chunk of responseStream) {
         // Handle reasoning and content chunks with prefixes from OpenRouter
