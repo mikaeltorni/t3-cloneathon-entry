@@ -255,8 +255,8 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="h-screen flex bg-gray-100">
-        {/* Sidebar */}
+      <div className="h-screen bg-gray-100">
+        {/* Fixed Sidebar */}
         <ChatSidebar
           threads={threads}
           currentThreadId={currentThread?.id || null}
@@ -266,8 +266,8 @@ function App() {
           loading={threadsLoading}
         />
 
-        {/* Main Chat */}
-        <div className="flex-1 flex flex-col">
+        {/* Main Chat - offset by sidebar width on desktop */}
+        <div className="ml-0 md:ml-80 h-full flex flex-col">
           {/* Error Banner */}
           {error && renderErrorBanner()}
 
@@ -281,8 +281,6 @@ function App() {
               modelsLoading={modelsLoading}
             />
           </div>
-
-
         </div>
       </div>
     </ErrorBoundary>

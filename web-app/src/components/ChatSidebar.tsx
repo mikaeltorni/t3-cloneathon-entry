@@ -1,18 +1,20 @@
 /**
  * ChatSidebar.tsx
  * 
- * Sidebar component for chat thread navigation and management
+ * Fixed positioned sidebar component for chat thread management
+ * Anchored to the left side of viewport with responsive behavior
  * 
  * Components:
  *   ChatSidebar
  * 
  * Features:
- *   - Thread list display
- *   - Thread selection and highlighting
- *   - New chat creation
+ *   - Fixed positioning that stays anchored during scrolling
+ *   - Thread list with search and management
  *   - Thread deletion with confirmation
+ *   - New chat creation
  *   - Loading states and empty states
- *   - Responsive design
+ *   - Responsive design (hidden on mobile, fixed on desktop)
+ *   - Real-time thread count and connection status
  */
 import { useState, useCallback } from 'react';
 import { Button } from './ui/Button';
@@ -289,7 +291,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   );
 
   return (
-    <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col h-full">
+    <div className="hidden md:flex fixed left-0 top-0 w-80 bg-gray-50 border-r border-gray-200 flex-col h-full z-40">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-3">
