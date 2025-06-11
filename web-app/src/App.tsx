@@ -35,8 +35,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<Record<string, ModelConfig>>({});
   const [modelsLoading, setModelsLoading] = useState(true);
-  const [reasoningTimers, setReasoningTimers] = useState<Map<string, number>>(new Map());
-  const [lastReasoningUpdate, setLastReasoningUpdate] = useState<Map<string, number>>(new Map());
+
 
   const { log, debug, warn, error: logError } = useLogger('App');
   const { handleError } = useErrorHandler();
@@ -203,34 +202,12 @@ function App() {
           
           // IMPORTANT: If we're receiving content chunks, reasoning has definitely ended
           if (tempAiMessage.metadata?.isReasoning === true) {
-            const lastReasoningTime = lastReasoningUpdate.get(tempAiMessage.id);
-            const reasoningStartTime = reasoningTimers.get(tempAiMessage.id);
+            debug('🔄 Reasoning ended (content streaming started)');
             
-            if (lastReasoningTime && reasoningStartTime) {
-              // Reasoning has ended, calculate duration
-              const duration = lastReasoningTime - reasoningStartTime;
-              debug(`🔄 Reasoning ended after ${duration}ms (content streaming started)`);
-              
-              tempAiMessage.metadata = {
-                ...tempAiMessage.metadata,
-                isReasoning: false,
-                reasoningDuration: duration
-              };
-              
-              // Clean up reasoning tracking
-              setLastReasoningUpdate(prev => {
-                const newMap = new Map(prev);
-                newMap.delete(tempAiMessage.id);
-                return newMap;
-              });
-            } else {
-              debug('⚠️ Missing timing data for reasoning end detection');
-              // Even without timing data, we know reasoning has ended
-              tempAiMessage.metadata = {
-                ...tempAiMessage.metadata,
-                isReasoning: false
-              };
-            }
+            tempAiMessage.metadata = {
+              ...tempAiMessage.metadata,
+              isReasoning: false
+            };
           }
           
           // Update the temporary message with the streaming content
@@ -269,19 +246,12 @@ function App() {
           
           // Final cleanup of reasoning state if not already done
           if (tempAiMessage.metadata?.isReasoning === true) {
-            const reasoningStartTime = reasoningTimers.get(tempAiMessage.id);
-            const lastReasoningTime = lastReasoningUpdate.get(tempAiMessage.id);
+            debug('Final reasoning cleanup');
             
-            if (reasoningStartTime && lastReasoningTime) {
-              const duration = lastReasoningTime - reasoningStartTime;
-              debug(`Final reasoning cleanup: ${duration}ms`);
-              
-              tempAiMessage.metadata = { 
-                ...tempAiMessage.metadata, 
-                reasoningDuration: duration,
-                isReasoning: false
-              };
-            }
+            tempAiMessage.metadata = { 
+              ...tempAiMessage.metadata, 
+              isReasoning: false
+            };
           }
           
           // Get the final thread from server to ensure consistency
@@ -296,18 +266,6 @@ function App() {
           }
           
           setCurrentThread(finalThread);
-
-          // Clean up timers
-          setReasoningTimers(prev => {
-            const newMap = new Map(prev);
-            newMap.delete(tempAiMessage.id);
-            return newMap;
-          });
-          setLastReasoningUpdate(prev => {
-            const newMap = new Map(prev);
-            newMap.delete(tempAiMessage.id);
-            return newMap;
-          });
 
           // Reload threads to update sidebar if new thread was created
           if (isNewThread || !currentThread) {
@@ -340,15 +298,6 @@ function App() {
         // onReasoningChunk callback - update the reasoning in real-time
         (reasoningChunk: string, fullReasoning: string) => {
           debug('🧠 Received reasoning chunk', { chunkLength: reasoningChunk.length, totalLength: fullReasoning.length });
-          
-          // Start timing on first reasoning chunk
-          if (!reasoningTimers.has(tempAiMessage.id) && reasoningChunk.length > 0) {
-            setReasoningTimers(prev => new Map(prev).set(tempAiMessage.id, Date.now()));
-            debug('⏱️ Started reasoning timer for message:', tempAiMessage.id);
-          }
-          
-          // Update last reasoning activity timestamp
-          setLastReasoningUpdate(prev => new Map(prev).set(tempAiMessage.id, Date.now()));
           
           // Update the temporary message with the streaming reasoning
           tempAiMessage.reasoning = fullReasoning;
