@@ -135,46 +135,42 @@ function App() {
     setError(null);
 
     try {
-      debug('Sending streaming message...', { content: content.substring(0, 50), hasImages: !!images });
-      
+      // Check server connectivity first
+      const isHealthy = await chatApiService.checkHealth();
+      if (!isHealthy) {
+        setError('Server is not running. Start it with: npm run dev');
+        return;
+      }
+
       let tempThread = currentThread;
       let isNewThread = false;
 
-      // Create user message immediately and show it in UI
+      // Create user message immediately for instant feedback
       const userMessage: ChatMessage = {
         id: `user-${Date.now()}`,
-        content: content,
+        content,
         role: 'user',
         timestamp: new Date(),
-        imageUrl: images && images.length > 1 ? undefined : images?.[0]?.url, // Only set imageUrl for single image
-        images: images || undefined
+        images: images,
+        imageUrl: images && images.length === 1 ? images[0].url : undefined // For backward compatibility
       };
 
-      // Immediately add user message to current thread or create new thread
-      if (tempThread) {
-        // Add to existing thread
-        setCurrentThread({
-          ...tempThread,
-          messages: [...tempThread.messages, userMessage],
-          updatedAt: new Date()
-        });
+      // If no current thread, create a temporary one
+      if (!currentThread) {
         tempThread = {
-          ...tempThread,
-          messages: [...tempThread.messages, userMessage],
-          updatedAt: new Date()
-        };
-      } else {
-        // Create new temporary thread for immediate UI feedback
-        const tempThreadId = `temp-${Date.now()}`;
-        const title = content?.length > 50 
-          ? content.substring(0, 50) + '...' 
-          : content || 'Image Analysis';
-        
-        tempThread = {
-          id: tempThreadId,
-          title,
+          id: `temp-${Date.now()}`,
+          title: content.length > 50 ? content.substring(0, 50) + '...' : content,
           messages: [userMessage],
           createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        setCurrentThread(tempThread);
+        isNewThread = true;
+      } else {
+        // Add user message to existing thread immediately
+        tempThread = {
+          ...currentThread,
+          messages: [...currentThread.messages, userMessage],
           updatedAt: new Date()
         };
         setCurrentThread(tempThread);
@@ -248,13 +244,13 @@ function App() {
           
           log('Streaming message completed successfully');
         },
-        // onError callback - handle errors
+        // onError callback - handle errors and clean up
         (error) => {
           const errorMessage = error.message || 'Failed to send message';
           setError(errorMessage);
           logError('Failed to send streaming message', error);
           
-          // Remove temp AI message on error, keep user message
+          // Always remove temp AI message on error to prevent empty messages
           if (tempThread) {
             const messagesWithoutTempAi = tempThread.messages.filter(msg => msg.id !== tempAiMessage.id);
             setCurrentThread({
@@ -262,6 +258,11 @@ function App() {
               messages: messagesWithoutTempAi,
               updatedAt: tempThread.updatedAt
             });
+          }
+          
+          // Also show a user-friendly error message
+          if (error.message.includes('Failed to fetch') || error.message.includes('TypeError')) {
+            setError('Cannot connect to server. Make sure the server is running with: npm run dev');
           }
         },
         // onReasoningChunk callback - update the reasoning in real-time
