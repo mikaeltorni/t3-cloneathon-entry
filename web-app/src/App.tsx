@@ -187,7 +187,8 @@ function App() {
         content: '',
         role: 'assistant',
         timestamp: new Date(),
-        modelId
+        modelId,
+        reasoning: '' // Initialize reasoning for reasoning models
       };
 
       await chatApiService.sendMessageStream(
@@ -198,9 +199,9 @@ function App() {
           images: images,
           modelId
         },
-        // onChunk callback - update the streaming message
+        // onChunk callback - update the streaming message content
         (chunk: string, fullContent: string) => {
-          debug('Received chunk', { chunkLength: chunk.length, totalLength: fullContent.length });
+          debug('Received content chunk', { chunkLength: chunk.length, totalLength: fullContent.length });
           
           // Update the temporary message with the streaming content
           tempAiMessage.content = fullContent;
@@ -261,6 +262,40 @@ function App() {
               messages: messagesWithoutTempAi,
               updatedAt: tempThread.updatedAt
             });
+          }
+        },
+        // onReasoningChunk callback - update the reasoning in real-time
+        (reasoningChunk: string, fullReasoning: string) => {
+          debug('Received reasoning chunk', { chunkLength: reasoningChunk.length, totalLength: fullReasoning.length });
+          
+          // Update the temporary message with the streaming reasoning
+          tempAiMessage.reasoning = fullReasoning;
+          
+          if (tempThread) {
+            // Find if temp message already exists in thread
+            const existingTempIndex = tempThread.messages.findIndex(msg => msg.id === tempAiMessage.id);
+            
+            if (existingTempIndex >= 0) {
+              // Update existing temp message
+              const updatedMessages = [...tempThread.messages];
+              updatedMessages[existingTempIndex] = { ...tempAiMessage };
+              const updatedThread = {
+                ...tempThread,
+                messages: updatedMessages,
+                updatedAt: new Date()
+              };
+              setCurrentThread(updatedThread);
+              tempThread = updatedThread;
+            } else {
+              // Add temp message for the first time (this shouldn't happen for reasoning)
+              const updatedThread = {
+                ...tempThread,
+                messages: [...tempThread.messages, tempAiMessage],
+                updatedAt: new Date()
+              };
+              setCurrentThread(updatedThread);
+              tempThread = updatedThread;
+            }
           }
         }
       );

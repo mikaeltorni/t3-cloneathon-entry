@@ -22,7 +22,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from './ui/Button';
 import { ModelSelector } from './ui/ModelSelector';
-import { ReasoningDisplay } from './ReasoningDisplay';
 import { useLogger } from '../hooks/useLogger';
 import { cn } from '../utils/cn';
 import type { ChatThread, ChatMessage, ModelConfig, ImageAttachment } from '../../../src/shared/types';
@@ -68,19 +67,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const inputBarRef = useRef<HTMLDivElement>(null);
+  const [expandedReasoning, setExpandedReasoning] = useState<Set<string>>(new Set());
 
   const { debug, log } = useLogger('ChatInterface');
 
   /**
-   * Check if a model is a reasoning model
+   * Check if a model supports reasoning based on model ID
    * 
    * @param modelId - Model identifier
-   * @returns True if the model has reasoning capabilities
+   * @returns Whether the model supports reasoning
    */
   const isReasoningModel = useCallback((modelId?: string): boolean => {
-    if (!modelId || !availableModels[modelId]) return false;
-    return availableModels[modelId].type === 'reasoning';
-  }, [availableModels]);
+    if (!modelId) return false;
+    // Check for reasoning models based on their ID patterns
+    return modelId.includes('deepseek') || modelId.includes('r1') || modelId.includes('reasoning');
+  }, []);
 
   /**
    * Scroll to the bottom of the messages container
@@ -229,6 +230,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, []);
 
   /**
+   * Toggle reasoning expansion for a message
+   */
+  const toggleReasoning = useCallback((messageId: string) => {
+    setExpandedReasoning(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  /**
    * Render individual message component
    * 
    * @param msg - Message to render
@@ -237,6 +253,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const renderMessage = useCallback((msg: ChatMessage) => {
     const isUser = msg.role === 'user';
     const showReasoning = !isUser && isReasoningModel(msg.modelId) && msg.reasoning;
+    const isReasoningExpanded = expandedReasoning.has(msg.id);
     
     return (
       <div key={msg.id} className={cn('flex mb-4', isUser ? 'justify-end' : 'justify-start')}>
@@ -288,12 +305,37 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </div>
             ) : null}
             
-            <div className="whitespace-pre-wrap break-words">{msg.content}</div>
-            
-            {/* Reasoning Display for reasoning models */}
-            {showReasoning && (
-              <ReasoningDisplay reasoning={msg.reasoning} />
-            )}
+            {/* Message content with reasoning toggle */}
+            <div className="space-y-2">
+              {/* Reasoning toggle button for reasoning models */}
+              {showReasoning && (
+                <button
+                  onClick={() => toggleReasoning(msg.id)}
+                  className="inline-flex items-center space-x-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <span>💭</span>
+                  <span className="font-medium">Reasoned</span>
+                  <span className={cn(
+                    'transform transition-transform duration-200',
+                    isReasoningExpanded ? 'rotate-180' : 'rotate-0'
+                  )}>
+                    ▼
+                  </span>
+                </button>
+              )}
+              
+              {/* Collapsible reasoning display */}
+              {showReasoning && isReasoningExpanded && (
+                <div className="bg-gray-50 bg-opacity-70 border-l-2 border-gray-300 pl-3 py-2 text-xs text-gray-600 animate-in slide-in-from-top-2 duration-200">
+                  <div className="whitespace-pre-wrap font-mono leading-relaxed opacity-80 text-xs">
+                    {msg.reasoning}
+                  </div>
+                </div>
+              )}
+              
+              {/* Main message content */}
+              <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+            </div>
           </div>
           <div className={cn(
             'text-xs text-gray-500 mt-1',
@@ -310,7 +352,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
     );
-  }, [formatTime, isReasoningModel]);
+  }, [formatTime, isReasoningModel, expandedReasoning, toggleReasoning]);
 
   /**
    * Render welcome message for new chat

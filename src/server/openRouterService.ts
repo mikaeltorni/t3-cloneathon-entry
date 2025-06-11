@@ -50,17 +50,17 @@ export type ModelId = keyof typeof AVAILABLE_MODELS;
 const DEFAULT_MODEL: ModelId = 'google/gemini-2.5-flash-preview-05-20';
 
 /**
- * OpenRouter API error class for structured error handling
+ * Custom error class for OpenRouter API errors
  */
 class OpenRouterError extends Error {
-  constructor(
-    public statusCode: number,
-    public statusText: string,
-    message: string,
-    public response?: any
-  ) {
+  public statusCode: number;
+  public statusText: string;
+
+  constructor(statusCode: number, statusText: string, message: string) {
     super(message);
     this.name = 'OpenRouterError';
+    this.statusCode = statusCode;
+    this.statusText = statusText;
   }
 }
 
@@ -86,20 +86,10 @@ interface ImageAttachment {
 }
 
 /**
- * Reasoning trace structure (matches shared types)
- */
-interface ReasoningTrace {
-  id: string;
-  step: number;
-  content: string;
-  type: 'thinking' | 'analysis' | 'conclusion' | 'verification';
-}
-
-/**
  * OpenRouter service interface
  */
 interface OpenRouterService {
-  sendMessage(messages: ConversationMessage[], modelId?: ModelId): Promise<{ content: string; reasoning?: ReasoningTrace[] }>;
+  sendMessage(messages: ConversationMessage[], modelId?: ModelId): Promise<{ content: string; reasoning?: string }>;
   sendMessageStream(messages: ConversationMessage[], modelId?: ModelId): Promise<AsyncIterable<string>>;
   getAvailableModels(): typeof AVAILABLE_MODELS;
 }
@@ -246,8 +236,7 @@ const makeOpenRouterRequest = async (
       throw new OpenRouterError(
         response.status,
         response.statusText,
-        errorMessage,
-        errorData
+        errorMessage
       );
     }
 
@@ -283,55 +272,7 @@ const makeOpenRouterRequest = async (
   }
 };
 
-/**
- * Generate mock reasoning traces for reasoning models
- * 
- * @param modelId - AI model identifier
- * @param userContent - User's message content
- * @returns Array of reasoning traces
- */
-const generateMockReasoning = (modelId: ModelId, userContent: string): ReasoningTrace[] => {
-  // Only generate reasoning for reasoning models
-  if (AVAILABLE_MODELS[modelId].type !== 'reasoning') {
-    return [];
-  }
 
-  const traces: ReasoningTrace[] = [];
-  
-  // Step 1: Initial thinking
-  traces.push({
-    id: `reasoning-${Date.now()}-1`,
-    step: 1,
-    content: `Let me analyze this request: "${userContent.substring(0, 100)}${userContent.length > 100 ? '...' : ''}"\n\nI need to break this down systematically to provide a comprehensive response.`,
-    type: 'thinking'
-  });
-
-  // Step 2: Analysis
-  traces.push({
-    id: `reasoning-${Date.now()}-2`,
-    step: 2,
-    content: `Analyzing the key components:\n- Understanding the context and requirements\n- Identifying relevant information needed\n- Considering multiple perspectives or approaches\n- Evaluating potential implications`,
-    type: 'analysis'
-  });
-
-  // Step 3: Conclusion formation
-  traces.push({
-    id: `reasoning-${Date.now()}-3`,
-    step: 3,
-    content: `Based on my analysis, I can formulate a structured response that addresses:\n- The core question or request\n- Supporting details and explanations\n- Practical applications or next steps\n- Any relevant caveats or considerations`,
-    type: 'conclusion'
-  });
-
-  // Step 4: Verification
-  traces.push({
-    id: `reasoning-${Date.now()}-4`,
-    step: 4,
-    content: `Verifying my response:\n- Checking for accuracy and completeness\n- Ensuring logical consistency\n- Confirming relevance to the original question\n- Ready to provide comprehensive answer`,
-    type: 'verification'
-  });
-
-  return traces;
-};
 
 /**
  * Creates an OpenRouter service instance
@@ -363,7 +304,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
      * @param modelId - AI model to use (defaults to DEFAULT_MODEL)
      * @returns Promise with AI response text
      */
-    async sendMessage(messages: ConversationMessage[], modelId: ModelId = DEFAULT_MODEL): Promise<{ content: string; reasoning?: ReasoningTrace[] }> {
+    async sendMessage(messages: ConversationMessage[], modelId: ModelId = DEFAULT_MODEL): Promise<{ content: string; reasoning?: string }> {
       try {
         // Validate input
         validateMessages(messages);
@@ -378,32 +319,36 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         // Format messages for API
         const formattedMessages = formatMessagesForAPI(messages);
 
-        // Prepare request
+        // Prepare request with reasoning tokens for reasoning models
         const requestData: OpenRouterRequest = {
           model: modelId,
           messages: formattedMessages,
         };
+
+        // Add reasoning configuration for reasoning models
+        if (AVAILABLE_MODELS[modelId].type === 'reasoning') {
+          requestData.reasoning = {
+            effort: 'high', // Request high effort reasoning
+            exclude: false  // Include reasoning in response
+          };
+        }
 
         // Make API request
         const response = await makeOpenRouterRequest(apiKey, requestData);
 
         // Extract response content
         const aiResponse = response.choices[0]?.message?.content;
+        const reasoning = response.choices[0]?.message?.reasoning; // Real reasoning from API
         
         if (!aiResponse?.trim()) {
           throw new Error('Empty response received from OpenRouter API');
         }
 
-        console.log(`[OpenRouter] Response received (${aiResponse.length} characters)`);
-        
-        // Generate reasoning traces for reasoning models
-        const reasoning = AVAILABLE_MODELS[modelId].type === 'reasoning' 
-          ? generateMockReasoning(modelId, messages[messages.length - 1]?.content || '')
-          : undefined;
+        console.log(`[OpenRouter] Response received (${aiResponse.length} characters)${reasoning ? ` with reasoning (${reasoning.length} characters)` : ''}`);
           
         return {
           content: aiResponse.trim(),
-          reasoning
+          reasoning: reasoning || undefined // Real reasoning tokens from OpenRouter
         };
 
       } catch (error) {
@@ -443,12 +388,20 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         // Format messages for API
         const formattedMessages = formatMessagesForAPI(messages);
 
-        // Prepare streaming request
+        // Prepare streaming request with reasoning tokens
         const requestData: OpenRouterRequest & { stream: true } = {
           model: modelId,
           messages: formattedMessages,
           stream: true
         };
+
+        // Add reasoning configuration for reasoning models
+        if (AVAILABLE_MODELS[modelId].type === 'reasoning') {
+          requestData.reasoning = {
+            effort: 'high', // Request high effort reasoning
+            exclude: false  // Include reasoning in response
+          };
+        }
 
         console.log(`[OpenRouter] Making streaming API request`);
 
@@ -457,80 +410,81 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
           headers: {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://your-app.com',
-            'X-Title': 'OpenRouter Chat App',
+            'HTTP-Referer': 'https://localhost:3001',
+            'X-Title': 'OpenRouter Chat App'
           },
           body: JSON.stringify(requestData),
         });
 
         if (!response.ok) {
-          let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-          try {
-            const errorData = await response.json();
-            if (errorData.error?.message) {
-              errorMessage = errorData.error.message;
-            }
-          } catch {
-            // Ignore JSON parse errors
-          }
-          throw new Error(`OpenRouter streaming API error: ${errorMessage}`);
+          const errorText = await response.text();
+          throw new OpenRouterError(
+            response.status,
+            response.statusText,
+            `HTTP ${response.status}: ${errorText}`
+          );
         }
 
         if (!response.body) {
           throw new Error('No response body for streaming');
         }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+        // Return async generator for streaming
+        return (async function* () {
+          const reader = response.body!.getReader();
+          const decoder = new TextDecoder();
 
-        return {
-          [Symbol.asyncIterator]: async function* () {
-            try {
-              while (true) {
-                const { done, value } = await reader.read();
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split('\n').filter(line => line.trim().startsWith('data: '));
+
+              for (const line of lines) {
+                const data = line.slice(6); // Remove 'data: ' prefix
                 
-                if (done) {
-                  console.log('[OpenRouter] Stream completed');
-                  break;
+                if (data === '[DONE]') {
+                  return;
                 }
 
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split('\n').filter(line => line.trim());
+                try {
+                  const parsed = JSON.parse(data);
+                  const delta = parsed.choices?.[0]?.delta;
 
-                for (const line of lines) {
-                  if (line.startsWith('data: ')) {
-                    const data = line.slice(6);
-                    
-                    if (data === '[DONE]') {
-                      return;
+                  if (delta) {
+                    // Handle reasoning tokens - yield with special prefix
+                    if (delta.reasoning) {
+                      yield `reasoning:${delta.reasoning}`;
                     }
-
-                    try {
-                      const parsed = JSON.parse(data);
-                      const content = parsed.choices?.[0]?.delta?.content;
-                      
-                      if (content) {
-                        yield content;
-                      }
-                    } catch (parseError) {
-                      console.warn('[OpenRouter] Failed to parse streaming chunk:', data);
+                    
+                    // Handle content tokens
+                    if (delta.content) {
+                      yield `content:${delta.content}`;
                     }
                   }
+                } catch (parseError) {
+                  console.warn('[OpenRouter] Failed to parse streaming chunk:', data);
                 }
               }
-            } finally {
-              reader.releaseLock();
             }
+          } finally {
+            reader.releaseLock();
           }
-        };
+        })();
 
       } catch (error) {
-        console.error('[OpenRouter] Streaming service error:', error);
-
+        console.error('[OpenRouter] Streaming error:', error);
+        
+        if (error instanceof OpenRouterError) {
+          throw new Error(`OpenRouter streaming error: ${error.statusCode} - ${error.message}`);
+        }
+        
         throw new Error(
           error instanceof Error 
-            ? `Failed to get response stream from AI: ${error.message}`
-            : 'Failed to get response stream from AI: Unknown error'
+            ? `Failed to start streaming: ${error.message}`
+            : 'Failed to start streaming: Unknown error'
         );
       }
     }

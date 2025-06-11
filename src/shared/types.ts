@@ -24,7 +24,7 @@
  * @property imageUrl - Optional image URL for analysis (deprecated, use images)
  * @property images - Optional array of image attachments
  * @property modelId - AI model used for processing (for assistant messages)
- * @property reasoning - Optional reasoning traces for reasoning models
+ * @property reasoning - Optional reasoning content for reasoning models (raw text)
  */
 export interface ChatMessage {
   id: string;
@@ -34,7 +34,7 @@ export interface ChatMessage {
   imageUrl?: string; // For image analysis messages (deprecated, use images)
   images?: ImageAttachment[]; // Multiple image support
   modelId?: string; // AI model used (for assistant messages)
-  reasoning?: ReasoningTrace[]; // Chain of thought for reasoning models
+  reasoning?: string; // Raw reasoning content for reasoning models
 }
 
 /**
@@ -139,8 +139,10 @@ export interface GetChatsResponse {
  * OpenRouter API request structure
  * 
  * @interface OpenRouterRequest
- * @property model - AI model identifier (e.g., 'google/gemini-2.5-flash-preview-05-20')
- * @property messages - Array of conversation messages in OpenRouter format
+ * @property model - AI model identifier
+ * @property messages - Array of conversation messages
+ * @property stream - Enable streaming responses
+ * @property reasoning - Reasoning tokens configuration
  */
 export interface OpenRouterRequest {
   model: string;
@@ -154,20 +156,39 @@ export interface OpenRouterRequest {
       };
     }>;
   }>;
+  stream?: boolean;
+  reasoning?: {
+    effort?: 'high' | 'medium' | 'low';
+    max_tokens?: number;
+    exclude?: boolean;
+    enabled?: boolean;
+  };
 }
 
 /**
  * OpenRouter API response structure
  * 
  * @interface OpenRouterResponse
- * @property choices - Array of response choices from the AI model
+ * @property choices - Array of response choices
+ * @property usage - Token usage information
  */
 export interface OpenRouterResponse {
   choices: Array<{
-    message: {
+    message?: {
       content: string;
+      reasoning?: string; // Real reasoning tokens from OpenRouter
     };
+    delta?: {
+      content?: string;
+      reasoning?: string; // Streaming reasoning tokens
+    };
+    finish_reason?: string;
   }>;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
 }
 
 // ===== Error Response Types =====
@@ -273,20 +294,4 @@ export type ContentType = 'text' | 'image_url';
 /**
  * Server environment enumeration
  */
-export type Environment = 'development' | 'production' | 'test';
-
-/**
- * Reasoning trace structure for chain of thought display
- * 
- * @interface ReasoningTrace
- * @property id - Unique trace identifier
- * @property step - Step number in reasoning chain
- * @property content - Reasoning step content
- * @property type - Type of reasoning step
- */
-export interface ReasoningTrace {
-  id: string;
-  step: number;
-  content: string;
-  type: 'thinking' | 'analysis' | 'conclusion' | 'verification';
-} 
+export type Environment = 'development' | 'production' | 'test'; 

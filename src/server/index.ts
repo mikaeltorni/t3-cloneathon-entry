@@ -404,76 +404,90 @@ app.post('/api/chats/message/stream', async (req: Request, res: Response) => {
 
     console.log(`Streaming message to OpenRouter AI (${conversationHistory.length} messages in history)`);
     
-    // Send start of AI response
-    res.write(`data: ${JSON.stringify({ 
-      type: 'ai_start' 
-    })}\n\n`);
-
-    let fullResponse = '';
-
+    // Stream the AI response
+    res.write(`data: ${JSON.stringify({ type: 'ai_start' })}\n\n`);
+    
+    let fullContent = '';
+    let fullReasoning = '';
+    let hasContent = false; // Track if we received any content
+    
     try {
-      // Get AI response stream
       const responseStream = await openRouterService.sendMessageStream(conversationHistory, modelId as ModelId);
       
       for await (const chunk of responseStream) {
-        fullResponse += chunk;
+        // Handle reasoning and content chunks with prefixes from OpenRouter
+        if (chunk.startsWith('reasoning:')) {
+          // Extract reasoning content
+          const reasoningChunk = chunk.slice(10); // Remove 'reasoning:' prefix
+          fullReasoning += reasoningChunk;
+          hasContent = true;
+          
+          // Stream reasoning in real-time
+          res.write(`data: ${JSON.stringify({ 
+            type: 'reasoning_chunk', 
+            content: reasoningChunk,
+            fullReasoning: fullReasoning 
+          })}\n\n`);
+        } else if (chunk.startsWith('content:')) {
+          // Extract content chunk
+          const contentChunk = chunk.slice(8); // Remove 'content:' prefix
+          fullContent += contentChunk;
+          hasContent = true;
+          
+          // Stream content chunk
+          res.write(`data: ${JSON.stringify({ 
+            type: 'ai_chunk', 
+            content: contentChunk, 
+            fullContent: fullContent 
+          })}\n\n`);
+        } else {
+          // Fallback for chunks without prefix (backward compatibility)
+          fullContent += chunk;
+          hasContent = true;
+          
+          res.write(`data: ${JSON.stringify({ 
+            type: 'ai_chunk', 
+            content: chunk, 
+            fullContent: fullContent 
+          })}\n\n`);
+        }
+      }
+
+      // Only create and save message if we actually received content
+      if (hasContent && (fullContent.trim() || fullReasoning.trim())) {
+        // Create assistant message with full response
+        const assistantMessage = chatStorage.createMessage(
+          fullContent || 'No content received', 
+          'assistant', 
+          undefined, 
+          modelId as ModelId
+        );
         
-        // Send chunk to client
+        // Add real reasoning from OpenRouter if we collected any
+        if (fullReasoning) {
+          assistantMessage.reasoning = fullReasoning;
+        }
+        
+        chatStorage.addMessageToThread(currentThreadId, assistantMessage);
+
+        // Send completion
         res.write(`data: ${JSON.stringify({ 
-          type: 'ai_chunk', 
-          content: chunk,
-          fullContent: fullResponse 
+          type: 'ai_complete', 
+          assistantMessage,
+          fullContent: fullContent 
+        })}\n\n`);
+      } else {
+        // No content received, send error
+        res.write(`data: ${JSON.stringify({ 
+          type: 'error', 
+          error: 'No response received from AI model. Check API configuration.' 
         })}\n\n`);
       }
-
-      // Create assistant message with full response
-      const assistantMessage = chatStorage.createMessage(fullResponse, 'assistant', undefined, modelId);
-      
-      // Add reasoning traces for reasoning models
-      const { AVAILABLE_MODELS } = await import('./openRouterService');
-      if (AVAILABLE_MODELS[modelId as keyof typeof AVAILABLE_MODELS]?.type === 'reasoning') {
-        // Generate mock reasoning for demonstration
-        assistantMessage.reasoning = [
-          {
-            id: `reasoning-${Date.now()}-1`,
-            step: 1,
-            content: `Analyzing the user's request: "${(content || 'Image analysis').substring(0, 100)}${(content || '').length > 100 ? '...' : ''}"\n\nBreaking down the problem systematically to provide a comprehensive response.`,
-            type: 'thinking' as const
-          },
-          {
-            id: `reasoning-${Date.now()}-2`,
-            step: 2,
-            content: `Examining key aspects:\n- Context understanding\n- Information requirements\n- Multiple perspectives\n- Potential implications and nuances`,
-            type: 'analysis' as const
-          },
-          {
-            id: `reasoning-${Date.now()}-3`,
-            step: 3,
-            content: `Synthesizing findings into structured response:\n- Core answer addressing the request\n- Supporting details and explanations\n- Practical applications\n- Relevant considerations`,
-            type: 'conclusion' as const
-          },
-          {
-            id: `reasoning-${Date.now()}-4`,
-            step: 4,
-            content: `Final verification:\n- Accuracy and completeness check\n- Logical consistency validation\n- Relevance confirmation\n- Response ready for delivery`,
-            type: 'verification' as const
-          }
-        ];
-      }
-      
-      chatStorage.addMessageToThread(currentThreadId, assistantMessage);
-
-      // Send completion
-      res.write(`data: ${JSON.stringify({ 
-        type: 'ai_complete', 
-        assistantMessage,
-        fullContent: fullResponse 
-      })}\n\n`);
 
       res.write('data: [DONE]\n\n');
       res.end();
 
-      console.log(`Successfully streamed message for thread: ${currentThreadId} (${fullResponse.length} characters)`);
+      console.log(`Successfully streamed message for thread: ${currentThreadId} (${fullContent.length} characters content, ${fullReasoning.length} characters reasoning)`);
 
     } catch (streamError) {
       console.error('Error in streaming:', streamError);

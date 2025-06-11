@@ -304,13 +304,15 @@ class ChatApiService {
    * @param onChunk - Callback for each response chunk
    * @param onComplete - Callback when streaming is complete
    * @param onError - Callback for errors
+   * @param onReasoningChunk - Optional callback for reasoning chunks
    * @returns Promise that resolves when streaming starts
    */
   async sendMessageStream(
     request: CreateMessageRequest,
     onChunk: (chunk: string, fullContent: string) => void,
     onComplete: (response: CreateMessageResponse) => void,
-    onError: (error: Error) => void
+    onError: (error: Error) => void,
+    onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void
   ): Promise<void> {
     if (!request.content?.trim() && !request.imageUrl?.trim()) {
       throw new Error('Message content or image URL is required');
@@ -388,6 +390,12 @@ class ChatApiService {
                   
                 case 'ai_start':
                   logger.debug('AI response started');
+                  break;
+                  
+                case 'reasoning_chunk':
+                  if (onReasoningChunk) {
+                    onReasoningChunk(parsed.content, parsed.fullReasoning);
+                  }
                   break;
                   
                 case 'ai_chunk':
