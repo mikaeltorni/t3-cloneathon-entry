@@ -83,11 +83,10 @@ function App() {
       warn(errorMessage);
       // Set default model if loading fails
       setAvailableModels({
-        'google/gemini-2.0-flash-exp:free': {
-          name: 'Gemini 2.0 Flash (Experimental)',
-          description: 'Latest experimental Gemini model',
+        'google/gemini-2.5-flash-preview-05-20': {
+          name: 'Gemini 2.5 Flash',
+          description: 'Fast and efficient multimodal model for general tasks',
           type: 'general',
-          free: true
         }
       });
     } finally {

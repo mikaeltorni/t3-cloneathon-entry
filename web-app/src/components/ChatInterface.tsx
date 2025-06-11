@@ -49,7 +49,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [message, setMessage] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [selectedModel, setSelectedModel] = useState('google/gemini-2.0-flash-exp:free');
+  const [selectedModel, setSelectedModel] = useState('google/gemini-2.5-flash-preview-05-20');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 

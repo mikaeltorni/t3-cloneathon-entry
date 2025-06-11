@@ -115,7 +115,7 @@ export interface GetChatsResponse {
  * OpenRouter API request structure
  * 
  * @interface OpenRouterRequest
- * @property model - AI model identifier (e.g., 'google/gemini-2.0-flash-exp:free')
+ * @property model - AI model identifier (e.g., 'google/gemini-2.5-flash-preview-05-20')
  * @property messages - Array of conversation messages in OpenRouter format
  */
 export interface OpenRouterRequest {
@@ -203,13 +203,11 @@ export interface HealthResponse {
  * @property name - Human-readable model name
  * @property description - Model description and capabilities
  * @property type - Model type category
- * @property free - Whether the model is free to use
  */
 export interface ModelConfig {
   name: string;
   description: string;
   type: 'general' | 'reasoning' | 'creative' | 'coding';
-  free: boolean;
 }
 
 /**

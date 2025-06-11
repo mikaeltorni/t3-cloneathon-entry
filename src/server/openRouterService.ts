@@ -27,36 +27,27 @@ const RETRY_DELAY = 1000; // 1 second
  * Available AI models configuration
  */
 export const AVAILABLE_MODELS = {
-  'google/gemini-2.0-flash-exp:free': {
-    name: 'Gemini 2.0 Flash (Experimental)',
-    description: 'Latest experimental Gemini model with multimodal capabilities',
-    type: 'general',
-    free: true
-  },
   'google/gemini-2.5-flash-preview-05-20': {
     name: 'Gemini 2.5 Flash',
     description: 'Fast and efficient multimodal model for general tasks',
     type: 'general',
-    free: false
   },
   'google/gemini-2.5-pro-preview': {
     name: 'Gemini 2.5 Pro (Reasoning)',
     description: 'Advanced reasoning model for complex problem solving',
     type: 'reasoning',
-    free: false
   },
-  'deepseek/deepseek-r1-0528:free': {
+  'deepseek/deepseek-r1-0528': {
     name: 'DeepSeek R1 (Reasoning)',
     description: 'Open-source reasoning model with advanced logical capabilities',
     type: 'reasoning',
-    free: true
   }
 } as const;
 
 export type ModelId = keyof typeof AVAILABLE_MODELS;
 
 // Default model
-const DEFAULT_MODEL: ModelId = 'google/gemini-2.0-flash-exp:free';
+const DEFAULT_MODEL: ModelId = 'google/gemini-2.5-flash-preview-05-20';
 
 /**
  * OpenRouter API error class for structured error handling

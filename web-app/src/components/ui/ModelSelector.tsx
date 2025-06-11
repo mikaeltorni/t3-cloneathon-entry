@@ -9,7 +9,6 @@
  * Features:
  *   - Dropdown selection of available AI models
  *   - Model descriptions and type indicators
- *   - Free/paid model indicators
  *   - Reasoning model badges
  * 
  * Usage: <ModelSelector value={selectedModel} onChange={handleModelChange} models={availableModels} />
@@ -99,7 +98,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       >
         {Object.entries(models).map(([modelId, config]) => (
           <option key={modelId} value={modelId}>
-            {config.name} {config.free ? '(Free)' : ''} - {config.type}
+            {config.name} - {config.type}
           </option>
         ))}
       </select>
@@ -111,11 +110,6 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             <span className="text-sm font-medium text-gray-900">
               {selectedModel.name}
             </span>
-            {selectedModel.free && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                FREE
-              </span>
-            )}
             <span className={cn(
               'inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium',
               getTypeColor(selectedModel.type)
