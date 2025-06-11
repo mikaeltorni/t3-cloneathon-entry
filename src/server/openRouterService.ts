@@ -28,8 +28,8 @@ const RETRY_DELAY = 1000; // 1 second
  * 
  * Note: According to OpenRouter docs, reasoning token support varies by model:
  * - OpenAI o-series: Use reasoning internally but do NOT return tokens
- * - Gemini models: Must use ":thinking" variant to return reasoning tokens
- * - DeepSeek R1 and Anthropic Claude models: DO return reasoning tokens
+ * - Gemini/Claude models: Must use ":thinking" variant to return reasoning tokens
+ * - DeepSeek R1: Returns reasoning tokens with effort configuration
  * - See: https://openrouter.ai/docs/use-cases/reasoning-tokens
  */
 export const AVAILABLE_MODELS = {
@@ -48,8 +48,8 @@ export const AVAILABLE_MODELS = {
     description: 'Open-source reasoning model that returns reasoning tokens',
     type: 'reasoning',
   },
-  'anthropic/claude-3.7-sonnet': {
-    name: 'Claude 3.7 Sonnet (Reasoning)',
+  'anthropic/claude-3.7-sonnet:thinking': {
+    name: 'Claude 3.7 Sonnet (Thinking)',
     description: 'Advanced Claude model with reasoning token support',
     type: 'reasoning',
   }
@@ -338,15 +338,15 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
 
         // Add reasoning configuration for reasoning models
         if (AVAILABLE_MODELS[modelId].type === 'reasoning') {
-          // Use max_tokens for Gemini thinking models, effort for others
-          if (modelId.includes('gemini') && modelId.includes(':thinking')) {
+          // Use max_tokens for thinking models (Gemini/Claude), effort for others
+          if (modelId.includes(':thinking')) {
             requestData.reasoning = {
-              max_tokens: 2000, // Specific token limit for Gemini thinking models
+              max_tokens: 2000, // Specific token limit for thinking models
               exclude: false  // Include reasoning in response
             };
           } else {
             requestData.reasoning = {
-              effort: 'high', // High effort for DeepSeek/Anthropic models
+              effort: 'high', // High effort for DeepSeek models
               exclude: false  // Include reasoning in response
             };
           }
@@ -426,15 +426,15 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
 
         // Add reasoning configuration for reasoning models
         if (AVAILABLE_MODELS[modelId].type === 'reasoning') {
-          // Use max_tokens for Gemini thinking models, effort for others
-          if (modelId.includes('gemini') && modelId.includes(':thinking')) {
+          // Use max_tokens for thinking models (Gemini/Claude), effort for others
+          if (modelId.includes(':thinking')) {
             requestData.reasoning = {
-              max_tokens: 2000, // Specific token limit for Gemini thinking models
+              max_tokens: 2000, // Specific token limit for thinking models
               exclude: false  // Include reasoning in response
             };
           } else {
             requestData.reasoning = {
-              effort: 'high', // High effort for DeepSeek/Anthropic models
+              effort: 'high', // High effort for DeepSeek models
               exclude: false  // Include reasoning in response
             };
           }
