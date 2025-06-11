@@ -389,7 +389,10 @@ class ChatApiService {
                   
                 case 'user_message':
                   userMessage = parsed.message;
-                  logger.debug('User message confirmed');
+                  logger.debug('User message confirmed', { 
+                    messageId: userMessage.id, 
+                    imageCount: userMessage.imageCount 
+                  });
                   break;
                   
                 case 'ai_start':

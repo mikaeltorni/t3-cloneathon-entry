@@ -179,6 +179,9 @@ export const useChat = (): UseChatReturn => {
         reasoning: '' // Initialize reasoning for reasoning models
       };
 
+      // Clear images immediately after creating user message to prevent duplication
+      setImages([]);
+
       await chatApiService.sendMessageStream(
         {
           threadId: currentThread?.id, // Use original thread ID for server

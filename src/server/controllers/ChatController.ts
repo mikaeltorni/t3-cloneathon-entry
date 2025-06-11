@@ -352,10 +352,16 @@ export class ChatController {
       // Add user message to thread
       await chatRepository.addMessageToThread(currentThread.id, userMessage);
 
-      // Send user message confirmation
+      // Send user message confirmation (simplified to avoid large JSON issues)
       res.write(`data: ${JSON.stringify({ 
         type: 'user_message', 
-        message: userMessage 
+        message: {
+          id: userMessage.id,
+          role: userMessage.role,
+          content: userMessage.content,
+          timestamp: userMessage.timestamp,
+          imageCount: images?.length || (imageUrl ? 1 : 0)
+        }
       })}\n\n`);
 
       // Get conversation history for AI
