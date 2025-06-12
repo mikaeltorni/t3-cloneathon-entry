@@ -79,7 +79,11 @@ class ChatApiService {
       if (authToken) {
         logger.debug(`Auth token obtained: ${authToken.substring(0, 20)}...`);
       } else {
-        logger.warn('No auth token available for request');
+        logger.warn('No auth token available for request', {
+          hasGetAuthToken: !!this.getAuthToken,
+          endpoint,
+          method: options.method || 'GET'
+        });
       }
       
       const headers: Record<string, string> = {

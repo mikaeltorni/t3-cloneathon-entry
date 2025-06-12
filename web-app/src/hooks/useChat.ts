@@ -71,14 +71,41 @@ export const useChat = (): UseChatReturn => {
     const getAuthToken = async () => {
       if (user) {
         try {
-          // Get fresh ID token from Firebase
-          debug('Getting auth token for API request...');
-          const token = await user.getIdToken();
+          // Get fresh ID token from Firebase with force refresh periodically
+          debug('Getting auth token for API request...', { 
+            userId: user.uid, 
+            userEmail: user.email 
+          });
+          
+          // Check if user is still valid before trying to get token
+          if (!user.uid) {
+            debug('User object exists but has no UID');
+            return null;
+          }
+          
+          const token = await user.getIdToken(false); // Don't force refresh every time
           debug(`Auth token obtained: ${token ? 'Yes' : 'No'}`);
+          
+          // Validate token is not empty
+          if (!token || token.trim().length === 0) {
+            debug('Token is empty, trying force refresh...');
+            const freshToken = await user.getIdToken(true);
+            debug(`Fresh auth token obtained: ${freshToken ? 'Yes' : 'No'}`);
+            return freshToken;
+          }
+          
           return token;
         } catch (error) {
-          debug('Failed to get auth token', error);
-          return null;
+          debug('Failed to get auth token, trying force refresh...', error);
+          // If normal token fails, try force refresh
+          try {
+            const freshToken = await user.getIdToken(true);
+            debug(`Fresh auth token obtained: ${freshToken ? 'Yes' : 'No'}`);
+            return freshToken;
+          } catch (refreshError) {
+            debug('Failed to get fresh auth token', refreshError);
+            return null;
+          }
         }
       }
       debug('No user available for auth token');
@@ -124,18 +151,31 @@ export const useChat = (): UseChatReturn => {
    */
   const handleThreadSelect = useCallback(async (threadId: string) => {
     try {
-      debug(`Selecting thread: ${threadId}`);
+      debug(`Selecting thread: ${threadId}`, { 
+        hasUser: !!user, 
+        userId: user?.uid,
+        userEmail: user?.email 
+      });
+      
+      // Check if user is still authenticated
+      if (!user) {
+        throw new Error('User not authenticated. Please sign in again.');
+      }
+      
       const thread = await chatApiService.getChat(threadId);
       setCurrentThread(thread);
       setError(null);
       log(`Thread selected: ${thread.title}`);
     } catch (err) {
-      const errorMessage = 'Failed to load chat thread';
+      const errorMessage = err instanceof Error && err.message.includes('not authenticated') 
+        ? 'Please sign in again to access your chat history'
+        : 'Failed to load chat thread. Please try again.';
+      
       handleError(err as Error, 'ThreadSelect');
       setError(errorMessage);
       warn(errorMessage);
     }
-  }, [debug, log, warn, handleError]);
+  }, [chatApiService, user, debug, log, warn, handleError]);
 
   /**
    * Handle creating a new chat
@@ -374,7 +414,7 @@ export const useChat = (): UseChatReturn => {
     } finally {
       setLoading(false);
     }
-  }, [currentThread, debug, log, logError, loadThreads]);
+  }, [currentThread, chatApiService, debug, log, logError, loadThreads]);
 
   /**
    * Handle deleting a thread
@@ -402,7 +442,7 @@ export const useChat = (): UseChatReturn => {
       setError(errorMessage);
       warn(errorMessage);
     }
-  }, [threads, currentThread?.id, debug, log, warn, handleError]);
+  }, [threads, currentThread?.id, chatApiService, debug, log, warn, handleError]);
 
   /**
    * Clear the current error state
