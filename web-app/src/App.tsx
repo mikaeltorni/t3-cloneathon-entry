@@ -163,8 +163,10 @@ function App() {
           onClose={sidebar.close}
         />
 
-        {/* Main Chat Area - Offset by sidebar width */}
-        <div className="ml-0 md:ml-80 h-full flex flex-col">
+        {/* Main Chat Area - Offset by sidebar width when open */}
+        <div className={`h-full flex flex-col transition-all duration-300 ${
+          sidebar.isOpen ? 'ml-80' : 'ml-0'
+        }`}>
           {/* Error Banner */}
           {chat.error && !chat.error.includes('server') && !chat.error.includes('running') && (
             renderErrorBanner()

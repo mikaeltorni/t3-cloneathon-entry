@@ -43,7 +43,6 @@ export const SidebarToggle: React.FC<SidebarToggleProps> = ({
         'fixed left-4 top-4 z-50 p-2 bg-white border border-gray-300 rounded-lg shadow-lg',
         'hover:bg-gray-50 hover:border-gray-400 transition-all duration-200',
         'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-        'md:hidden', // Only show on mobile/small screens
         className
       )}
       aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}

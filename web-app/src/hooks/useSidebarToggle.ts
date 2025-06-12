@@ -16,7 +16,13 @@
 import { useState, useCallback, useEffect } from 'react';
 
 export function useSidebarToggle() {
-  const [isOpen, setIsOpen] = useState(false);
+  // Default to open on larger screens, closed on mobile
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768; // md breakpoint
+    }
+    return false;
+  });
 
   /**
    * Toggle sidebar open/closed
@@ -40,14 +46,12 @@ export function useSidebarToggle() {
   }, []);
 
   /**
-   * Handle window resize - close sidebar on larger screens
+   * Handle window resize - no auto-close behavior since sidebar is toggleable on all screen sizes
    */
   useEffect(() => {
     const handleResize = () => {
-      // Close mobile sidebar when screen becomes large enough
-      if (window.innerWidth >= 768) { // md breakpoint
-        setIsOpen(false);
-      }
+      // No automatic behavior on resize - let user control sidebar state
+      // on all screen sizes
     };
 
     window.addEventListener('resize', handleResize);

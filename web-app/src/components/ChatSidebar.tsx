@@ -296,7 +296,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Mobile overlay - only show on small screens */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
@@ -309,11 +309,10 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
       <div 
         className={cn(
           'fixed left-0 top-0 w-80 bg-gray-50 border-r border-gray-200 flex-col h-full z-40 transition-transform duration-300',
-          // Desktop: always visible
-          'hidden md:flex',
-          // Mobile: slide in/out based on isOpen state
-          'md:translate-x-0',
-          isOpen ? 'flex translate-x-0' : 'flex -translate-x-full'
+          // Always show as flex, but use transform to hide/show
+          'flex',
+          // Transform based on isOpen state for all screen sizes
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         data-no-drop="true"
       >
