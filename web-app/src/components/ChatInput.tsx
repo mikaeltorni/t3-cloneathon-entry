@@ -37,6 +37,7 @@ interface ChatInputProps {
   onHeightChange?: (height: number) => void;
   images: ImageAttachment[];
   onImagesChange: (images: ImageAttachment[]) => void;
+  sidebarOpen?: boolean;
 }
 
 /**
@@ -62,7 +63,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   modelsLoading,
   onHeightChange,
   images,
-  onImagesChange
+  onImagesChange,
+  sidebarOpen = false
 }) => {
   const [message, setMessage] = useState('');
   const [selectedModel, setSelectedModel] = useState('google/gemini-2.5-flash-preview-05-20');
@@ -224,7 +226,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <div 
       ref={inputBarRef}
-      className="fixed bottom-0 left-0 md:left-80 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50"
+      className={cn(
+        'fixed bottom-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50 transition-all duration-300',
+        sidebarOpen ? 'left-80' : 'left-0'
+      )}
     >
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-4">

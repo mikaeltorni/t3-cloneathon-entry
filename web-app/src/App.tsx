@@ -20,6 +20,7 @@ import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { SidebarToggle } from './components/ui/SidebarToggle';
 import { Button } from './components/ui/Button';
+import { cn } from './utils/cn';
 import { SignInForm } from './components/auth/SignInForm';
 import { useChat } from './hooks/useChat';
 import { useModels } from './hooks/useModels';
@@ -167,9 +168,15 @@ function App() {
         />
 
         {/* Main Chat Area - Offset by sidebar width when open */}
-        <div className={`h-full flex flex-col transition-all duration-300 ${
-          sidebar.isOpen ? 'ml-80' : 'ml-0'
-        }`}>
+        <div 
+          className={cn(
+            'h-full flex flex-col transition-all duration-300',
+            {
+              'ml-80': sidebar.isOpen,
+              'ml-0': !sidebar.isOpen
+            }
+          )}
+        >
           {/* Error Banner */}
           {chat.error && !chat.error.includes('server') && !chat.error.includes('running') && (
             renderErrorBanner()
@@ -185,6 +192,7 @@ function App() {
               modelsLoading={models.modelsLoading}
               images={chat.images}
               onImagesChange={chat.handleImagesChange}
+              sidebarOpen={sidebar.isOpen}
             />
           </div>
         </div>

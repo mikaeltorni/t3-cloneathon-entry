@@ -34,6 +34,7 @@ interface ChatInterfaceProps {
   modelsLoading: boolean;
   images: ImageAttachment[];
   onImagesChange: (images: ImageAttachment[]) => void;
+  sidebarOpen?: boolean;
 }
 
 /**
@@ -58,7 +59,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   availableModels,
   modelsLoading,
   images,
-  onImagesChange
+  onImagesChange,
+  sidebarOpen = false
 }) => {
   const [expandedReasoningIds, setExpandedReasoningIds] = useState<Set<string>>(new Set());
   const [inputBarHeight, setInputBarHeight] = useState(200); // Default height for initial render
@@ -158,6 +160,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         images={images}
         onImagesChange={onImagesChange}
         onHeightChange={handleInputBarHeightChange}
+        sidebarOpen={sidebarOpen}
       />
     </div>
   );
