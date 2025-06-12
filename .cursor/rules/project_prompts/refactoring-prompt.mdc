@@ -20,21 +20,6 @@ This document outlines a systematic refactoring plan for the OpenRouter Chat App
 
 ## 📊 Current Project Analysis
 
-### Project Structure
-```
-├── src/                    # Server-side code
-│   ├── server/             # Express server and API routes
-│   └── shared/             # Shared types and utilities
-├── web-app/               # React frontend application
-│   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── hooks/         # Custom React hooks
-│   │   ├── services/      # API and external services
-│   │   ├── utils/         # Utility functions
-│   │   └── assets/        # Static assets
-└── data/                  # Application data storage
-```
-
 ### Key Areas for Refactoring
 
 #### 1. **Component Architecture** 🏗️
