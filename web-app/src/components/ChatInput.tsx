@@ -182,16 +182,62 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           {/* Optional Reasoning Toggle for Models with Optional Reasoning */}
           {isReasoningModel() && availableModels[selectedModel]?.reasoningMode === 'optional' && (
             <div className="space-y-3">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 <ReasoningToggle
                   enabled={useReasoning}
                   onChange={setUseReasoning}
                   reasoningMode={availableModels[selectedModel]?.reasoningMode || 'none'}
                   modelName={availableModels[selectedModel]?.name}
                 />
+                
+                {/* Inline Effort Level Display - only show if model supports effort control */}
+                {supportsEffortControl() && (
+                  <div className={cn(
+                    'flex items-center space-x-2 px-2 py-1 rounded-md text-sm transition-all duration-200',
+                    useReasoning 
+                      ? 'opacity-100 bg-blue-50 border border-blue-200' 
+                      : 'opacity-30 bg-gray-50 border border-gray-200'
+                  )}>
+                    <span className="text-xs font-medium text-gray-600">effort:</span>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-base">
+                        {reasoningEffort === 'low' ? '⚡' : reasoningEffort === 'medium' ? '⚖️' : '🧠'}
+                      </span>
+                      <span className={cn(
+                        'text-xs font-medium',
+                        reasoningEffort === 'low' && 'text-green-600',
+                        reasoningEffort === 'medium' && 'text-yellow-600',
+                        reasoningEffort === 'high' && 'text-blue-600'
+                      )}>
+                        {reasoningEffort}
+                      </span>
+                    </div>
+                    
+                    {/* Small dropdown button to change effort */}
+                    {useReasoning && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          // Cycle through effort levels
+                          const levels: ('low' | 'medium' | 'high')[] = ['low', 'medium', 'high'];
+                          const currentIndex = levels.indexOf(reasoningEffort);
+                          const nextIndex = (currentIndex + 1) % levels.length;
+                          setReasoningEffort(levels[nextIndex]);
+                        }}
+                        className="ml-1 text-gray-400 hover:text-gray-600 transition-colors duration-150"
+                        title="Click to cycle through effort levels"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
               
-              {/* Reasoning Effort Selector - only show if reasoning is enabled and model supports effort control */}
+              {/* Full Reasoning Effort Selector - only show if reasoning is enabled and model supports effort control */}
               {useReasoning && supportsEffortControl() && (
                 <div className="ml-6">
                   <ReasoningEffortSelector
