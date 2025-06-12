@@ -74,7 +74,43 @@ A modern, full-stack chat application built with React + TypeScript + Tailwind C
    - Create a Firebase project
    - Enable Authentication and Firestore
    - Download service account key
-   - **IMPORTANT**: After running `firebase init`, use our cleanup script:
+   - Run: `firebase init`
+     - y
+     - select all but the App Hosting
+     - y
+     - select both React and Angular
+     - y
+     - y to genkit functions
+     - y to eslint
+     - y to deps
+     - select globally
+     - select None
+     - x2 select Set if unset 
+     - y for sample flow
+     - n for telemetry
+     - overwrite
+     - TypeScript
+     - y for ESLink again
+     - x3 y
+     - Just press enter for the public dir
+     - n for single page app
+     - n for GitHub automation
+     - storage.rules, default, just press enter
+     - select all but App Hosting Emulator
+     - x9 for the default ports, just keep pressing enter
+     - y for persistent Postgres data
+     - 9499 (default) for the tasks emulator port
+     - y for Emulator UI
+     - Leave empty for the emulator port
+     - y to download the emulators
+     - select default remote config template
+     - y to overwrite
+     - default for the database.rules.json
+     - n for the realitime database initilization (we use firestore!)
+     - Finished
+
+   
+   , use our cleanup script:
      ```bash
      npm run setup:firebase
      ```
