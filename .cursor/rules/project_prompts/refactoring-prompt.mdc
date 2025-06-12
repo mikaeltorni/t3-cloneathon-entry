@@ -16,7 +16,7 @@ This document outlines a systematic refactoring plan for the OpenRouter Chat App
 - **Security posture and flaw detection**
 
 > **Security Monitoring:**  
-> Throughout the refactoring process, continuously check the codebase for security flaws. If any vulnerabilities or insecure patterns are detected, immediately mention them in the chat, specifying the file and nature of the issue.
+> Throughout the refactoring process, continuously check the codebase for security flaws. If any vulnerabilities or insecure patterns are detected, immediately mention them in the chat, specifying the file and nature of the issue. However do not create classes like security.ts or such. We will implement them after you are done refactoring the code yourself. Just mention them with warning sign at the end of the job.
 
 ## 📊 Current Project Analysis
 
