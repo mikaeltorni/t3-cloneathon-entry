@@ -72,25 +72,37 @@ export const useChat = (): UseChatReturn => {
       if (user) {
         try {
           // Get fresh ID token from Firebase
-          return await user.getIdToken();
+          debug('Getting auth token for API request...');
+          const token = await user.getIdToken();
+          debug(`Auth token obtained: ${token ? 'Yes' : 'No'}`);
+          return token;
         } catch (error) {
-          console.error('Failed to get auth token:', error);
+          debug('Failed to get auth token', error);
           return null;
         }
       }
+      debug('No user available for auth token');
       return null;
     };
 
+    debug('Creating new ChatApiService', { hasUser: !!user });
     return createChatApiService(getAuthToken);
-  }, [user]);
+  }, [user, debug]);
 
   /**
    * Load all chat threads from the server
    */
   const loadThreads = useCallback(async () => {
+    // Ensure user is available before loading threads
+    if (!user) {
+      debug('Cannot load threads: no user authenticated');
+      setThreadsLoading(false);
+      return;
+    }
+
     try {
       setThreadsLoading(true);
-      debug('Loading threads from server...');
+      debug('Loading threads from server...', { userId: user.uid });
       const allThreads = await chatApiService.getAllChats();
       setThreads(allThreads);
       setError(null);
@@ -103,7 +115,7 @@ export const useChat = (): UseChatReturn => {
     } finally {
       setThreadsLoading(false);
     }
-  }, [debug, log, warn, handleError]);
+  }, [user, chatApiService, debug, log, warn, handleError]);
 
   /**
    * Handle thread selection from sidebar
