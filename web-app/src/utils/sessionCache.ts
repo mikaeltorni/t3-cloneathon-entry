@@ -92,7 +92,7 @@ export function setCachedThreads(threads: ChatThread[]): void {
 }
 
 /**
- * Add a new thread to the cached threads list
+ * Add a new thread to the cached threads list or move existing thread to top
  * 
  * @param newThread - New thread to add to cache
  */
@@ -100,19 +100,14 @@ export function addThreadToCache(newThread: ChatThread): void {
   try {
     const cachedThreads = getCachedThreads() || [];
     
-    // Check if thread already exists (avoid duplicates)
-    const existingIndex = cachedThreads.findIndex(t => t.id === newThread.id);
-    if (existingIndex >= 0) {
-      // Update existing thread
-      cachedThreads[existingIndex] = newThread;
-      logger.debug(`Updated existing thread in cache: ${newThread.id}`);
-    } else {
-      // Add new thread to the beginning of the list (most recent first)
-      cachedThreads.unshift(newThread);
-      logger.debug(`Added new thread to cache: ${newThread.id}`);
-    }
+    // Remove existing thread if it exists (we'll add it to the top)
+    const filteredThreads = cachedThreads.filter(t => t.id !== newThread.id);
     
-    setCachedThreads(cachedThreads);
+    // Add thread to the beginning of the list (most recent activity first)
+    const updatedThreads = [newThread, ...filteredThreads];
+    
+    setCachedThreads(updatedThreads);
+    logger.debug(`Moved thread to top of cache: ${newThread.id} (${newThread.title})`);
   } catch (error) {
     logger.error('Failed to add thread to cache', error as Error);
   }

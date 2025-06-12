@@ -119,6 +119,7 @@ tsc -b && vite build         # Direct TypeScript + Vite build
 - **Instant Response**: Cached threads load instantly on app restart
 - **Manual Refresh**: Refresh button in sidebar to sync with server when needed
 - **Auto Fallback**: Falls back to cache if server is unavailable
+- **Smart Ordering**: Recently active conversations automatically move to the top
 
 ## 🤖 Supported AI Models
 

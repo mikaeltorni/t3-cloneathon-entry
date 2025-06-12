@@ -25,7 +25,6 @@ import {
   getCachedThreads, 
   setCachedThreads, 
   addThreadToCache, 
-  updateThreadInCache, 
   removeThreadFromCache,
   hasCachedThreads 
 } from '../utils/sessionCache';
@@ -378,30 +377,16 @@ export const useChat = (): UseChatReturn => {
           
           setCurrentThread(finalThread);
 
-          // Update cache and local state for new threads instead of reloading
-          if (isNewThread || !currentThread) {
-            // Add/update thread in cache
-            addThreadToCache(finalThread);
-            
-            // Update local threads list without server request
-            setThreads(prevThreads => {
-              const existingIndex = prevThreads.findIndex(t => t.id === finalThread.id);
-              if (existingIndex >= 0) {
-                // Update existing thread
-                const updated = [...prevThreads];
-                updated[existingIndex] = finalThread;
-                return updated;
-              } else {
-                // Add new thread at the beginning (most recent first)
-                return [finalThread, ...prevThreads];
-              }
-            });
-            
-            debug(`Updated threads list with ${isNewThread ? 'new' : 'existing'} thread: ${finalThread.id}`);
-          } else {
-            // Update existing thread in cache
-            updateThreadInCache(finalThread);
-          }
+          // Always update cache and move thread to top of list (most recent activity)
+          addThreadToCache(finalThread);
+          
+          // Update local threads list - always move updated thread to top
+          setThreads(prevThreads => {
+            const filteredThreads = prevThreads.filter(t => t.id !== finalThread.id);
+            return [finalThread, ...filteredThreads];
+          });
+          
+          debug(`Moved thread to top of list: ${finalThread.title} (${isNewThread ? 'new' : 'existing'} thread)`)
 
           // Clear images after successful message send
           setImages([]);
