@@ -15,6 +15,7 @@
  *   - Performance optimized with React.memo and reasoning state management
  *   - Global drag-and-drop zone for images (excluding sidebar)
  *   - Dynamic spacing to prevent messages from hiding behind input bar
+ *   - Persistent reasoning visibility: Reasoning remains expanded after message completion
  */
 import React, { useState, useCallback, useMemo } from 'react';
 import { MessageList } from './MessageList';
@@ -115,6 +116,53 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   const messages = useMemo(() => {
     return currentThread?.messages || [];
   }, [currentThread?.messages]);
+
+  /**
+   * Effect to preserve reasoning visibility when message IDs change
+   * (e.g., when temp messages get replaced with server messages)
+   */
+  React.useEffect(() => {
+    if (!currentThread?.messages) return;
+
+    // Check if we have any temp message IDs in expandedReasoningIds
+    const tempIds = Array.from(expandedReasoningIds).filter(id => id.startsWith('temp-'));
+    
+    if (tempIds.length > 0) {
+      debug('Checking for temp message ID updates...', { tempIds });
+      
+      // For each temp ID, try to find the corresponding server message
+      const updates = new Map<string, string>();
+      
+      tempIds.forEach(tempId => {
+        // Find the message that was recently created and has reasoning
+        const latestAssistantWithReasoning = currentThread.messages
+          .filter(msg => msg.role === 'assistant' && msg.reasoning && !msg.id.startsWith('temp-'))
+          .slice(-1)[0]; // Get the most recent one
+        
+        if (latestAssistantWithReasoning) {
+          updates.set(tempId, latestAssistantWithReasoning.id);
+          debug(`Mapping temp ID ${tempId} to server ID ${latestAssistantWithReasoning.id}`);
+        }
+      });
+      
+      // Update expandedReasoningIds if we found any mappings
+      if (updates.size > 0) {
+        setExpandedReasoningIds(prev => {
+          const newSet = new Set(prev);
+          
+          updates.forEach((newId, oldId) => {
+            if (newSet.has(oldId)) {
+              newSet.delete(oldId);
+              newSet.add(newId);
+              debug(`Updated reasoning visibility: ${oldId} -> ${newId}`);
+            }
+          });
+          
+          return newSet;
+        });
+      }
+    }
+  }, [currentThread?.messages, expandedReasoningIds, debug]);
 
   return (
     <div 
