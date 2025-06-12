@@ -2,25 +2,18 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can only access their own data under /users/{userId}
-    match /users/{userId} {
-      // Basic user document access
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      // User's chat threads under /users/{userId}/chats/{chatId}
-      match /chats/{chatId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-        
-        // Messages within chats under /users/{userId}/chats/{chatId}/messages/{messageId}
-        match /messages/{messageId} {
-          allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
-      }
-    }
-    
-    // Explicitly deny all other access to any documents not matching above patterns
+
+    // This rule allows anyone with your Firestore database reference to view, edit,
+    // and delete all data in your Firestore database. It is useful for getting
+    // started, but it is configured to expire after 30 days because it
+    // leaves your app open to attackers. At that time, all client
+    // requests to your Firestore database will be denied.
+    //
+    // Make sure to write security rules for your app before that time, or else
+    // all client requests to your Firestore database will be denied until you Update
+    // your rules
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if request.time < timestamp.date(2025, 7, 12);
     }
   }
-} 
+}
