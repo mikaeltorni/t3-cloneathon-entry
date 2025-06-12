@@ -88,6 +88,8 @@ class FirestoreChatStorageService implements ChatStorageService {
 
   /**
    * Convert Firestore document to ChatMessage
+   * 
+   * Note: Includes reasoning field for AI models that provide reasoning tokens
    */
   private documentToChatMessage(doc: FirebaseFirestore.DocumentSnapshot): ChatMessage | null {
     if (!doc.exists) return null;
@@ -102,6 +104,7 @@ class FirestoreChatStorageService implements ChatStorageService {
       timestamp: data.timestamp?.toDate() || new Date(),
       ...(data.imageUrl && { imageUrl: data.imageUrl }),
       ...(data.modelId && { modelId: data.modelId }),
+      ...(data.reasoning && { reasoning: data.reasoning }), // Reasoning tokens from AI models
     };
   }
 
@@ -438,6 +441,7 @@ class FirestoreChatStorageService implements ChatStorageService {
         timestamp: message.timestamp,
         ...(message.imageUrl && { imageUrl: message.imageUrl }),
         ...(message.modelId && { modelId: message.modelId }),
+        ...(message.reasoning && { reasoning: message.reasoning }), // Save reasoning tokens for supported AI models
       });
 
       // Update thread's updatedAt timestamp
