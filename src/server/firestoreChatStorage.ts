@@ -105,6 +105,7 @@ class FirestoreChatStorageService implements ChatStorageService {
       ...(data.imageUrl && { imageUrl: data.imageUrl }),
       ...(data.modelId && { modelId: data.modelId }),
       ...(data.reasoning && { reasoning: data.reasoning }), // Reasoning tokens from AI models
+      ...(data.images && { images: data.images }), // Multiple image attachments
     };
   }
 
@@ -428,8 +429,8 @@ class FirestoreChatStorageService implements ChatStorageService {
         throw new Error('Thread ID is required');
       }
 
-      if (!message?.content?.trim() && !message?.imageUrl?.trim()) {
-        throw new Error('Message must have content or image URL');
+      if (!message?.content?.trim() && !message?.imageUrl?.trim() && (!message?.images || message.images.length === 0)) {
+        throw new Error('Message must have content, image URL, or images');
       }
 
       console.log(`[Firestore] Adding ${message.role} message to thread ${threadId} for user: ${userId}`);
@@ -442,6 +443,7 @@ class FirestoreChatStorageService implements ChatStorageService {
         ...(message.imageUrl && { imageUrl: message.imageUrl }),
         ...(message.modelId && { modelId: message.modelId }),
         ...(message.reasoning && { reasoning: message.reasoning }), // Save reasoning tokens for supported AI models
+        ...(message.images && { images: message.images }), // Save multiple image attachments
       });
 
       // Update thread's updatedAt timestamp
