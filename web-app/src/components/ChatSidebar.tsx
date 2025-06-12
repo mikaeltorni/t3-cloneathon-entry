@@ -326,7 +326,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
           </Button>
         </div>
         <p className="text-xs text-gray-500">
-          OpenRouter Chat • Powered by Gemini 2.5 Flash
+          OpenRouter Chat
         </p>
       </div>
 
