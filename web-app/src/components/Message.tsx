@@ -20,6 +20,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { ChatMessage } from '../../../src/shared/types';
+import { CopyButton } from './ui/CopyButton';
 
 interface MessageProps {
   message: ChatMessage;
@@ -174,16 +175,24 @@ const Message: React.FC<MessageProps> = React.memo(({
                   h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
                   strong: ({ children }) => <strong className="font-bold">{children}</strong>,
                   em: ({ children }) => <em className="italic">{children}</em>,
-                  code: ({ children }) => (
-                    <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
-                      {children}
-                    </code>
-                  ),
-                  pre: ({ children }) => (
-                    <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto mb-4">
-                      {children}
-                    </pre>
-                  ),
+                  code: ({ children, inline, ...props }: any) => {
+                    const codeString = Array.isArray(children) ? children.join('') : String(children);
+                    if (inline) {
+                      return (
+                        <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
+                          {children}
+                        </code>
+                      );
+                    }
+                    return (
+                      <div className="relative group">
+                        <CopyButton value={codeString} />
+                        <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto mb-4">
+                          <code className="text-sm font-mono">{codeString}</code>
+                        </pre>
+                      </div>
+                    );
+                  },
                 }}
               >
                 {message.content}
@@ -224,16 +233,24 @@ const Message: React.FC<MessageProps> = React.memo(({
                 h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
                 strong: ({ children }) => <strong className="font-bold">{children}</strong>,
                 em: ({ children }) => <em className="italic">{children}</em>,
-                code: ({ children }) => (
-                  <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
-                    {children}
-                  </code>
-                ),
-                pre: ({ children }) => (
-                  <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto mb-4">
-                    {children}
-                  </pre>
-                ),
+                code: ({ children, inline, ...props }: any) => {
+                  const codeString = Array.isArray(children) ? children.join('') : String(children);
+                  if (inline) {
+                    return (
+                      <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
+                        {children}
+                      </code>
+                    );
+                  }
+                  return (
+                    <div className="relative group">
+                      <CopyButton value={codeString} />
+                      <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto mb-4">
+                        <code className="text-sm font-mono">{codeString}</code>
+                      </pre>
+                    </div>
+                  );
+                },
               }}
             >
               {message.content}
