@@ -129,7 +129,7 @@ export class ChatController {
         return;
       }
 
-      const { threadId, content, imageUrl, images, modelId }: CreateMessageRequest = req.body;
+      const { threadId, content, imageUrl, images, modelId, useReasoning, reasoningEffort }: CreateMessageRequest = req.body;
 
       // Validate request
       if (!content?.trim()) {
@@ -192,11 +192,12 @@ export class ChatController {
       }
 
       // Generate AI response
-      console.log(`[ChatController] Generating AI response with model: ${modelId}`);
+      console.log(`[ChatController] Generating AI response with model: ${modelId}${useReasoning ? ' (with reasoning)' : ''}`);
       const aiResponse = await this.aiService.generateResponse(
         updatedThread.messages,
         modelId as any, // Type assertion - could be improved with proper typing
-        false // useReasoning - could be extracted from request
+        useReasoning || false, // Use reasoning from request
+        reasoningEffort || 'high' // Use reasoning effort from request
       );
 
       // Create assistant message
@@ -206,6 +207,11 @@ export class ChatController {
         undefined,
         modelId
       );
+
+      // Add reasoning if provided
+      if (aiResponse.reasoning) {
+        assistantMessage.reasoning = aiResponse.reasoning;
+      }
 
       // Add assistant message to thread
       await firestoreChatStorage.addMessageToThread(req.user.uid, currentThread.id, assistantMessage);
@@ -342,7 +348,7 @@ export class ChatController {
         return;
       }
 
-      const { threadId, content, imageUrl, images, modelId, useReasoning }: any = req.body;
+      const { threadId, content, imageUrl, images, modelId, useReasoning, reasoningEffort }: any = req.body;
 
       // Validate request
       if (!content?.trim() && (!imageUrl?.trim()) && (!images || images.length === 0)) {
@@ -446,7 +452,8 @@ export class ChatController {
         const responseStream = await openRouterService.sendMessageStream(
           conversationHistory, 
           modelId as any, 
-          useReasoning || false
+          useReasoning || false,
+          reasoningEffort || 'high'
         );
         
         for await (const chunk of responseStream) {

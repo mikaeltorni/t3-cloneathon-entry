@@ -21,6 +21,7 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import { Button } from './ui/Button';
 import { ModelSelector } from './ModelSelector';
 import { ReasoningToggle } from './ui/ReasoningToggle';
+import { ReasoningEffortSelector } from './ui/ReasoningEffortSelector';
 import { ImageAttachments } from './ImageAttachments';
 import { useLogger } from '../hooks/useLogger';
 import { useMessageForm } from '../hooks/useMessageForm';
@@ -31,7 +32,7 @@ import type { ModelConfig, ImageAttachment } from '../../../src/shared/types';
  * Props for the ChatInput component
  */
 interface ChatInputProps {
-  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean) => Promise<void>;
+  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high') => Promise<void>;
   loading: boolean;
   availableModels: Record<string, ModelConfig>;
   modelsLoading: boolean;
@@ -81,12 +82,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     message,
     selectedModel,
     useReasoning,
+    reasoningEffort,
     setSelectedModel,
     setUseReasoning,
+    setReasoningEffort,
     handleSubmit,
     handleKeyPress,
     handleMessageChange,
     isReasoningModel,
+    supportsEffortControl,
     isSubmitDisabled,
     textareaRef
   } = useMessageForm({
@@ -177,13 +181,26 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
           {/* Optional Reasoning Toggle for Models with Optional Reasoning */}
           {isReasoningModel() && availableModels[selectedModel]?.reasoningMode === 'optional' && (
-            <div className="flex items-center space-x-2">
-              <ReasoningToggle
-                enabled={useReasoning}
-                onChange={setUseReasoning}
-                reasoningMode={availableModels[selectedModel]?.reasoningMode || 'none'}
-                modelName={availableModels[selectedModel]?.name}
-              />
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <ReasoningToggle
+                  enabled={useReasoning}
+                  onChange={setUseReasoning}
+                  reasoningMode={availableModels[selectedModel]?.reasoningMode || 'none'}
+                  modelName={availableModels[selectedModel]?.name}
+                />
+              </div>
+              
+              {/* Reasoning Effort Selector - only show if reasoning is enabled and model supports effort control */}
+              {useReasoning && supportsEffortControl() && (
+                <div className="ml-6">
+                  <ReasoningEffortSelector
+                    value={reasoningEffort}
+                    onChange={setReasoningEffort}
+                    modelName={availableModels[selectedModel]?.name}
+                  />
+                </div>
+              )}
             </div>
           )}
 

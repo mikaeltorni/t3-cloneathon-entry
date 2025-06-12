@@ -108,6 +108,7 @@ export interface UserChats {
  * @property images - Optional array of image attachments
  * @property modelId - AI model to use for processing the message
  * @property useReasoning - Whether to enable reasoning for supported models
+ * @property reasoningEffort - Reasoning effort level for supported models
  */
 export interface CreateMessageRequest {
   threadId?: string; // If not provided, creates new thread
@@ -116,6 +117,7 @@ export interface CreateMessageRequest {
   images?: ImageAttachment[]; // Multiple image support
   modelId?: string; // AI model identifier
   useReasoning?: boolean; // Enable reasoning for supported models
+  reasoningEffort?: 'low' | 'medium' | 'high'; // Reasoning effort level
 }
 
 /**
@@ -259,6 +261,7 @@ export interface HealthResponse {
  * @property hasReasoning - Whether the model supports reasoning capabilities
  * @property reasoningType - Type of reasoning implementation
  * @property reasoningMode - Whether reasoning is forced, optional, or unavailable
+ * @property supportsEffortControl - Whether model supports effort level control
  * @property color - Brand color for the model (hex code)
  * @property bgColor - Background color for selected state (hex code)
  * @property textColor - Text color for selected state (hex code)
@@ -270,6 +273,7 @@ export interface ModelConfig {
   hasReasoning: boolean;
   reasoningType: 'thinking' | 'effort' | 'internal';
   reasoningMode: 'forced' | 'optional' | 'none';
+  supportsEffortControl?: boolean; // Whether model supports effort level control
   color: string;
   bgColor: string;
   textColor: string;

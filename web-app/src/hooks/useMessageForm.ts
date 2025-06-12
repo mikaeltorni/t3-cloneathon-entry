@@ -24,7 +24,7 @@ import type { ModelConfig, ImageAttachment } from '../../../src/shared/types';
  * Message form hook configuration
  */
 interface UseMessageFormConfig {
-  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean) => Promise<void>;
+  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high') => Promise<void>;
   availableModels: Record<string, ModelConfig>;
   loading: boolean;
   images: ImageAttachment[];
@@ -39,17 +39,20 @@ interface UseMessageFormReturn {
   message: string;
   selectedModel: string;
   useReasoning: boolean;
+  reasoningEffort: 'low' | 'medium' | 'high';
   
   // Form handlers
   setMessage: (message: string) => void;
   setSelectedModel: (modelId: string) => void;
   setUseReasoning: (useReasoning: boolean) => void;
+  setReasoningEffort: (effort: 'low' | 'medium' | 'high') => void;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
   handleKeyPress: (e: React.KeyboardEvent) => void;
   handleMessageChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   
   // Utilities
   isReasoningModel: (modelId?: string) => boolean;
+  supportsEffortControl: (modelId?: string) => boolean;
   isSubmitDisabled: boolean;
   resetForm: () => void;
   
@@ -75,6 +78,7 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
   const [message, setMessage] = useState('');
   const [selectedModel, setSelectedModel] = useState(defaultModel);
   const [useReasoning, setUseReasoning] = useState(false);
+  const [reasoningEffort, setReasoningEffort] = useState<'low' | 'medium' | 'high'>('high');
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { debug, log } = useLogger('useMessageForm');
@@ -89,6 +93,18 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
     const targetModel = modelId || selectedModel;
     if (!targetModel || !availableModels[targetModel]) return false;
     return availableModels[targetModel].hasReasoning;
+  }, [availableModels, selectedModel]);
+
+  /**
+   * Check if a model supports reasoning effort control
+   * 
+   * @param modelId - Model ID to check (uses selected model if not provided)
+   * @returns Whether the model supports effort level control
+   */
+  const supportsEffortControl = useCallback((modelId?: string): boolean => {
+    const targetModel = modelId || selectedModel;
+    if (!targetModel || !availableModels[targetModel]) return false;
+    return availableModels[targetModel].supportsEffortControl === true;
   }, [availableModels, selectedModel]);
 
   /**
@@ -135,7 +151,8 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
         trimmedMessage, 
         images, 
         selectedModel, 
-        useReasoning && isReasoningModel() // Only use reasoning if model supports it
+        useReasoning && isReasoningModel(), // Only use reasoning if model supports it
+        reasoningEffort // Pass reasoning effort level
       );
 
       // Reset form after successful submission
@@ -199,17 +216,20 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
     message,
     selectedModel,
     useReasoning,
+    reasoningEffort,
     
     // Form handlers
     setMessage,
     setSelectedModel,
     setUseReasoning,
+    setReasoningEffort,
     handleSubmit,
     handleKeyPress,
     handleMessageChange,
     
     // Utilities
     isReasoningModel,
+    supportsEffortControl,
     isSubmitDisabled: isSubmitDisabled(),
     resetForm,
     
