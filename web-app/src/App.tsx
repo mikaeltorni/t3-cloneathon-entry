@@ -18,6 +18,7 @@ import { useEffect } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
+import { SidebarToggle } from './components/ui/SidebarToggle';
 import { Button } from './components/ui/Button';
 import { SignInForm } from './components/auth/SignInForm';
 import { useChat } from './hooks/useChat';
@@ -144,6 +145,14 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="h-screen bg-gray-50">
+        {/* Floating Toggle Button - Only visible when sidebar is closed */}
+        {!sidebar.isOpen && (
+          <SidebarToggle 
+            isOpen={sidebar.isOpen}
+            onToggle={sidebar.toggle}
+          />
+        )}
+
         {/* Fixed Chat Sidebar */}
         <ChatSidebar
           threads={chat.threads}
