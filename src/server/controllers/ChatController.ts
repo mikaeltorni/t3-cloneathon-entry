@@ -18,8 +18,9 @@
  * Usage: app.use('/api/chats', chatController.getRoutes());
  */
 import { Request, Response, NextFunction, Router } from 'express';
-import { chatRepository } from '../repositories/ChatRepository';
+import { firestoreChatStorage } from '../firestoreChatStorage';
 import { createAIService } from '../services/AIService';
+import { authenticateUser, type AuthenticatedRequest } from '../middleware/auth';
 import type { 
   CreateMessageRequest, 
   CreateMessageResponse, 
@@ -46,11 +47,19 @@ export class ChatController {
    * 
    * @route GET /api/chats
    */
-  getAllThreads = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getAllThreads = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      console.log('[ChatController] Fetching all chat threads...');
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      console.log(`[ChatController] Fetching all chat threads for user: ${req.user.uid}`);
       
-      const threads = await chatRepository.getAllThreads();
+      const threads = await firestoreChatStorage.getAllThreads(req.user.uid);
       const response: GetChatsResponse = { threads };
       
       console.log(`[ChatController] Successfully fetched ${threads.length} chat threads`);
@@ -66,8 +75,16 @@ export class ChatController {
    * 
    * @route GET /api/chats/:threadId
    */
-  getThread = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getThread = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
       const { threadId } = req.params;
       
       if (!threadId?.trim()) {
@@ -78,8 +95,8 @@ export class ChatController {
         return;
       }
       
-      console.log(`[ChatController] Fetching chat thread: ${threadId}`);
-      const thread = await chatRepository.getThread(threadId);
+      console.log(`[ChatController] Fetching chat thread: ${threadId} for user: ${req.user.uid}`);
+      const thread = await firestoreChatStorage.getThread(req.user.uid, threadId);
       
       if (!thread) {
         res.status(404).json({ 
@@ -102,8 +119,16 @@ export class ChatController {
    * 
    * @route POST /api/chats/message
    */
-  createMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  createMessage = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
       const { threadId, content, imageUrl, images, modelId }: CreateMessageRequest = req.body;
 
       // Validate request
@@ -123,13 +148,13 @@ export class ChatController {
         return;
       }
 
-      console.log(`[ChatController] Creating message for thread: ${threadId || 'new'}`);
+      console.log(`[ChatController] Creating message for thread: ${threadId || 'new'} for user: ${req.user.uid}`);
 
       let currentThread: ChatThread | null = null;
 
       // Get or create thread
       if (threadId) {
-        currentThread = await chatRepository.getThread(threadId);
+        currentThread = await firestoreChatStorage.getThread(req.user.uid, threadId);
         if (!currentThread) {
           res.status(404).json({ 
             error: 'Thread not found',
@@ -140,12 +165,12 @@ export class ChatController {
       } else {
         // Create new thread with the message content as title (truncated)
         const title = content.length > 50 ? content.substring(0, 50) + '...' : content;
-        currentThread = await chatRepository.createThread(title);
+        currentThread = await firestoreChatStorage.createThread(req.user.uid, title);
         console.log(`[ChatController] Created new thread: ${currentThread.id}`);
       }
 
       // Create user message with multiple images support
-      const userMessage = await chatRepository.createMessage(
+      const userMessage = firestoreChatStorage.createMessage(
         content.trim(),
         'user',
         imageUrl // Keep backward compatibility for single imageUrl
@@ -158,10 +183,10 @@ export class ChatController {
       }
 
       // Add user message to thread
-      await chatRepository.addMessageToThread(currentThread.id, userMessage);
+      await firestoreChatStorage.addMessageToThread(req.user.uid, currentThread.id, userMessage);
 
       // Get conversation history for AI
-      const updatedThread = await chatRepository.getThread(currentThread.id);
+      const updatedThread = await firestoreChatStorage.getThread(req.user.uid, currentThread.id);
       if (!updatedThread) {
         throw new Error('Failed to retrieve updated thread');
       }
@@ -175,7 +200,7 @@ export class ChatController {
       );
 
       // Create assistant message
-      const assistantMessage = await chatRepository.createMessage(
+      const assistantMessage = firestoreChatStorage.createMessage(
         aiResponse.content,
         'assistant',
         undefined,
@@ -183,7 +208,7 @@ export class ChatController {
       );
 
       // Add assistant message to thread
-      await chatRepository.addMessageToThread(currentThread.id, assistantMessage);
+      await firestoreChatStorage.addMessageToThread(req.user.uid, currentThread.id, assistantMessage);
 
       // Prepare response
       const response: CreateMessageResponse = {
@@ -206,8 +231,16 @@ export class ChatController {
    * 
    * @route DELETE /api/chats/:threadId
    */
-  deleteThread = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  deleteThread = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
       const { threadId } = req.params;
       
       if (!threadId?.trim()) {
@@ -218,8 +251,8 @@ export class ChatController {
         return;
       }
       
-      console.log(`[ChatController] Deleting thread: ${threadId}`);
-      const deleted = await chatRepository.deleteThread(threadId);
+      console.log(`[ChatController] Deleting thread: ${threadId} for user: ${req.user.uid}`);
+      const deleted = await firestoreChatStorage.deleteThread(req.user.uid, threadId);
       
       if (!deleted) {
         res.status(404).json({ 
@@ -246,8 +279,16 @@ export class ChatController {
    * 
    * @route PUT /api/chats/:threadId/title
    */
-  updateThreadTitle = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  updateThreadTitle = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
       const { threadId } = req.params;
       const { title } = req.body;
       
@@ -267,8 +308,8 @@ export class ChatController {
         return;
       }
       
-      console.log(`[ChatController] Updating thread title: ${threadId}`);
-      const updatedThread = await chatRepository.updateThreadTitle(threadId, title.trim());
+      console.log(`[ChatController] Updating thread title: ${threadId} for user: ${req.user.uid}`);
+      const updatedThread = await firestoreChatStorage.updateThreadTitle(req.user.uid, threadId, title.trim());
       
       if (!updatedThread) {
         res.status(404).json({ 
@@ -291,8 +332,16 @@ export class ChatController {
    * 
    * @route POST /api/chats/message/stream
    */
-  createMessageStream = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  createMessageStream = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
       const { threadId, content, imageUrl, images, modelId, useReasoning }: any = req.body;
 
       // Validate request
@@ -311,13 +360,13 @@ export class ChatController {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
 
-      console.log(`[ChatController] Starting streaming message for thread: ${threadId || 'new'}`);
+      console.log(`[ChatController] Starting streaming message for thread: ${threadId || 'new'} for user: ${req.user.uid}`);
 
       let currentThread: any = null;
 
       // Get or create thread
       if (threadId) {
-        currentThread = await chatRepository.getThread(threadId);
+        currentThread = await firestoreChatStorage.getThread(req.user.uid, threadId);
         if (!currentThread) {
           res.write(`data: ${JSON.stringify({ error: 'Thread not found' })}\n\n`);
           res.end();
@@ -326,7 +375,7 @@ export class ChatController {
       } else {
         // Create new thread with the message content as title (truncated)
         const title = content?.length > 50 ? content.substring(0, 50) + '...' : content || 'Image Analysis';
-        currentThread = await chatRepository.createThread(title);
+        currentThread = await firestoreChatStorage.createThread(req.user.uid, title);
         console.log(`[ChatController] Created new thread for streaming: ${currentThread.id}`);
       }
 
@@ -337,7 +386,7 @@ export class ChatController {
       })}\n\n`);
 
       // Create user message with multiple images support
-      const userMessage = await chatRepository.createMessage(
+      const userMessage = firestoreChatStorage.createMessage(
         content || 'Analyze this image',
         'user',
         imageUrl // Keep backward compatibility for single imageUrl
@@ -350,7 +399,7 @@ export class ChatController {
       }
 
       // Add user message to thread
-      await chatRepository.addMessageToThread(currentThread.id, userMessage);
+      await firestoreChatStorage.addMessageToThread(req.user.uid, currentThread.id, userMessage);
 
       // Send user message confirmation (simplified to avoid large JSON issues)
       res.write(`data: ${JSON.stringify({ 
@@ -365,7 +414,7 @@ export class ChatController {
       })}\n\n`);
 
       // Get conversation history for AI
-      const updatedThread = await chatRepository.getThread(currentThread.id);
+      const updatedThread = await firestoreChatStorage.getThread(req.user.uid, currentThread.id);
       if (!updatedThread) {
         res.write(`data: ${JSON.stringify({ error: 'Failed to retrieve updated thread' })}\n\n`);
         res.end();
@@ -442,7 +491,7 @@ export class ChatController {
         // Only create and save message if we actually received content
         if (hasContent && (fullContent.trim() || fullReasoning.trim())) {
           // Create assistant message with full response
-          const assistantMessage = await chatRepository.createMessage(
+          const assistantMessage = firestoreChatStorage.createMessage(
             fullContent || 'No content received',
             'assistant',
             undefined,
@@ -454,7 +503,7 @@ export class ChatController {
             assistantMessage.reasoning = fullReasoning;
           }
           
-          await chatRepository.addMessageToThread(currentThread.id, assistantMessage);
+          await firestoreChatStorage.addMessageToThread(req.user.uid, currentThread.id, assistantMessage);
 
           // Send completion
           res.write(`data: ${JSON.stringify({ 
@@ -530,9 +579,12 @@ export class ChatController {
   getRoutes(): Router {
     const router = Router();
 
-    // Define routes
-    router.get('/', this.getAllThreads);
+    // Public routes (no authentication required)
     router.get('/health', this.healthCheck);
+
+    // Protected routes (authentication required)
+    router.use(authenticateUser); // Apply authentication to all routes below
+    router.get('/', this.getAllThreads);
     router.get('/:threadId', this.getThread);
     router.post('/message', this.createMessage);
     router.post('/message/stream', this.createMessageStream);

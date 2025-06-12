@@ -135,7 +135,3 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .cursor/rules/global_prompts
-
-openrouterkey.txt
-
-data/userChats.json

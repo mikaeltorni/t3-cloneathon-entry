@@ -18,9 +18,11 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { Button } from './components/ui/Button';
+import { SignInForm } from './components/auth/SignInForm';
 import { useChat } from './hooks/useChat';
 import { useModels } from './hooks/useModels';
 import { useLogger } from './hooks/useLogger';
+import { useAuth } from './hooks/useAuth';
 
 /**
  * Main application component
@@ -31,14 +33,37 @@ function App() {
   // Use custom hooks for state management
   const chat = useChat();
   const models = useModels();
+  const { user, loading: authLoading } = useAuth();
   const { debug } = useLogger('App');
 
-  // Load all threads and models on app start
+  // Load models on app start (no auth required)
   useEffect(() => {
-    debug('App mounted, loading threads and models...');
-    chat.loadThreads();
+    debug('App mounted, loading models...');
     models.loadModels();
-  }, [debug, chat.loadThreads, models.loadModels]);
+  }, [debug, models.loadModels]);
+
+  // Load threads only after user is authenticated
+  useEffect(() => {
+    if (user && !authLoading) {
+      debug('User authenticated, loading chat threads...');
+      // Add a small delay to ensure Firebase token is ready
+      const loadWithDelay = async () => {
+        try {
+          // Wait for token to be available
+          await user.getIdToken();
+          chat.loadThreads();
+        } catch (error) {
+          console.error('Failed to get auth token, retrying in 1 second...', error);
+          // Retry after a short delay if token isn't ready
+          setTimeout(() => {
+            chat.loadThreads();
+          }, 1000);
+        }
+      };
+      
+      loadWithDelay();
+    }
+  }, [user, authLoading, debug, chat.loadThreads]);
 
   /**
    * Render server connection error UI
@@ -102,20 +127,29 @@ function App() {
     return renderConnectionError();
   }
 
+  // Show sign-in form if user is not authenticated
+  if (!authLoading && !user) {
+    return (
+      <ErrorBoundary>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <SignInForm />
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <div className="h-screen flex bg-gray-50">
         {/* Chat Sidebar */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col" data-no-drop="true">
-          <ChatSidebar
-            threads={chat.threads}
-            currentThreadId={chat.currentThread?.id || null}
-            onThreadSelect={chat.handleThreadSelect}
-            onNewChat={chat.handleNewChat}
-            onDeleteThread={chat.handleDeleteThread}
-            loading={chat.threadsLoading}
-          />
-        </div>
+        <ChatSidebar
+          threads={chat.threads}
+          currentThreadId={chat.currentThread?.id || null}
+          onThreadSelect={chat.handleThreadSelect}
+          onNewChat={chat.handleNewChat}
+          onDeleteThread={chat.handleDeleteThread}
+          loading={chat.threadsLoading}
+        />
 
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col">

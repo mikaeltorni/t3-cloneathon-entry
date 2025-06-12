@@ -23,11 +23,15 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
+import dotenv from 'dotenv';
 import { createChatController } from './controllers/ChatController';
 import { createModelsController } from './controllers/ModelsController';
 
+// Load environment variables from .env file
+dotenv.config();
+
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 // Get API key from environment
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
@@ -121,6 +125,37 @@ app.get('/api/health', (req: Request, res: Response) => {
 });
 
 /**
+ * Firebase configuration endpoint
+ * 
+ * @route GET /api/config/firebase
+ */
+app.get('/api/config/firebase', (req: Request, res: Response) => {
+  const firebaseConfig = {
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID
+  };
+
+  // Check if all required Firebase config is present
+  const missingKeys = Object.entries(firebaseConfig)
+    .filter(([_, value]) => !value)
+    .map(([key, _]) => key);
+
+  if (missingKeys.length > 0) {
+    return res.status(500).json({
+      error: 'Firebase configuration incomplete',
+      missingKeys,
+      message: 'Please check your environment variables'
+    });
+  }
+
+  res.json(firebaseConfig);
+});
+
+/**
  * API information endpoint
  * 
  * @route GET /api
@@ -133,7 +168,8 @@ app.get('/api', (req: Request, res: Response) => {
     endpoints: {
       chats: '/api/chats',
       models: '/api/models',
-      health: '/api/health'
+      health: '/api/health',
+      'config/firebase': '/api/config/firebase'
     },
     documentation: {
       chats: {
@@ -152,6 +188,9 @@ app.get('/api', (req: Request, res: Response) => {
         'GET /api/models/health': 'Models service health check',
         'GET /api/models/stats': 'Get model statistics',
         'POST /api/models/validate': 'Validate model configuration'
+      },
+      config: {
+        'GET /api/config/firebase': 'Get Firebase configuration for frontend'
       }
     },
     timestamp: new Date().toISOString()

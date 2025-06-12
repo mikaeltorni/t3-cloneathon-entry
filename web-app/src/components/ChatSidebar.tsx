@@ -18,7 +18,7 @@
  */
 import { useState, useCallback } from 'react';
 import { Button } from './ui/Button';
-
+import { UserProfile } from './UserProfile';
 import { useLogger } from '../hooks/useLogger';
 import { cn } from '../utils/cn';
 import type { ChatThread } from '../../../src/shared/types';
@@ -318,16 +318,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         )}
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200 bg-white">
-        <div className="text-xs text-gray-500 text-center">
-          <div className="flex items-center justify-center space-x-1 mb-1">
-            <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-            <span>Connected</span>
-          </div>
-          <p>{threads.length} conversation{threads.length !== 1 ? 's' : ''}</p>
-        </div>
-      </div>
+      {/* User Profile Footer */}
+      <UserProfile />
     </div>
   );
 }; 

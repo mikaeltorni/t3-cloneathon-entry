@@ -509,7 +509,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
           headers: {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://localhost:3001',
+            'HTTP-Referer': 'https://localhost:3000',
             'X-Title': 'OpenRouter Chat App'
           },
           body: JSON.stringify(requestData),

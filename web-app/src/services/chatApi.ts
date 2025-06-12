@@ -24,7 +24,7 @@ import type {
 } from '../../../src/shared/types';
 
 // Base API URL - defaults to localhost for development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 /**
  * API Error class for structured error handling
@@ -50,9 +50,11 @@ class ApiError extends Error {
  */
 class ChatApiService {
   private baseUrl: string;
+  private getAuthToken?: () => Promise<string | null>;
 
-  constructor(baseUrl: string = API_BASE_URL) {
+  constructor(baseUrl: string = API_BASE_URL, getAuthToken?: () => Promise<string | null>) {
     this.baseUrl = baseUrl;
+    this.getAuthToken = getAuthToken;
     logger.info(`ChatApiService initialized with base URL: ${baseUrl}`);
   }
 
@@ -70,11 +72,28 @@ class ChatApiService {
     try {
       logger.debug(`API Request: ${options.method || 'GET'} ${endpoint}`);
 
+      // Get auth token if available
+      const authToken = this.getAuthToken ? await this.getAuthToken() : null;
+      
+      // Debug logging for auth token
+      if (authToken) {
+        logger.debug(`Auth token obtained: ${authToken.substring(0, 20)}...`);
+      } else {
+        logger.warn('No auth token available for request');
+      }
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...options.headers as Record<string, string>,
+      };
+
+      // Add authorization header if token is available
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+
       const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
+        headers,
         ...options,
       });
 
@@ -331,11 +350,21 @@ class ChatApiService {
 
       const url = `${this.baseUrl}/chats/message/stream`;
       
+      // Get auth token if available
+      const authToken = this.getAuthToken ? await this.getAuthToken() : null;
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add authorization header if token is available
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+      
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(request),
       });
 
@@ -441,5 +470,10 @@ class ChatApiService {
   }
 }
 
-// Export singleton instance
+// Export factory function and singleton
+export const createChatApiService = (getAuthToken?: () => Promise<string | null>) => {
+  return new ChatApiService(API_BASE_URL, getAuthToken);
+};
+
+// Default singleton instance (for backwards compatibility)
 export const chatApiService = new ChatApiService(); 

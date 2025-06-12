@@ -15,8 +15,9 @@
  * 
  * Usage: const chat = useChat();
  */
-import { useState, useCallback } from 'react';
-import { chatApiService } from '../services/chatApi';
+import { useState, useCallback, useMemo } from 'react';
+import { createChatApiService } from '../services/chatApi';
+import { useAuth } from './useAuth';
 import { useLogger } from './useLogger';
 import { useErrorHandler } from './useErrorHandler';
 import type { ChatThread, ChatMessage, ImageAttachment } from '../../../src/shared/types';
@@ -61,16 +62,47 @@ export const useChat = (): UseChatReturn => {
   const [error, setError] = useState<string | null>(null);
   const [images, setImages] = useState<ImageAttachment[]>([]);
 
+  const { user } = useAuth();
   const { log, debug, warn, error: logError } = useLogger('useChat');
   const { handleError } = useErrorHandler();
+
+  // Create authenticated API service
+  const chatApiService = useMemo(() => {
+    const getAuthToken = async () => {
+      if (user) {
+        try {
+          // Get fresh ID token from Firebase
+          debug('Getting auth token for API request...');
+          const token = await user.getIdToken();
+          debug(`Auth token obtained: ${token ? 'Yes' : 'No'}`);
+          return token;
+        } catch (error) {
+          debug('Failed to get auth token', error);
+          return null;
+        }
+      }
+      debug('No user available for auth token');
+      return null;
+    };
+
+    debug('Creating new ChatApiService', { hasUser: !!user });
+    return createChatApiService(getAuthToken);
+  }, [user, debug]);
 
   /**
    * Load all chat threads from the server
    */
   const loadThreads = useCallback(async () => {
+    // Ensure user is available before loading threads
+    if (!user) {
+      debug('Cannot load threads: no user authenticated');
+      setThreadsLoading(false);
+      return;
+    }
+
     try {
       setThreadsLoading(true);
-      debug('Loading threads from server...');
+      debug('Loading threads from server...', { userId: user.uid });
       const allThreads = await chatApiService.getAllChats();
       setThreads(allThreads);
       setError(null);
@@ -83,7 +115,7 @@ export const useChat = (): UseChatReturn => {
     } finally {
       setThreadsLoading(false);
     }
-  }, [debug, log, warn, handleError]);
+  }, [user, chatApiService, debug, log, warn, handleError]);
 
   /**
    * Handle thread selection from sidebar
@@ -236,7 +268,7 @@ export const useChat = (): UseChatReturn => {
           }
         },
         // onComplete callback - finalize the response
-        async (response) => {
+        async (response: any) => {
           debug('Streaming completed', { threadId: response.threadId });
           
           // Final cleanup of reasoning state if not already done
@@ -273,7 +305,7 @@ export const useChat = (): UseChatReturn => {
           log('Streaming message completed successfully');
         },
         // onError callback - handle errors and clean up
-        (error) => {
+        (error: Error) => {
           const errorMessage = error.message || 'Failed to send message';
           setError(errorMessage);
           logError('Failed to send streaming message', error);
