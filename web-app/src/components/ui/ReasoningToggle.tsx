@@ -70,6 +70,7 @@ export const ReasoningToggle: React.FC<ReasoningToggleProps> = ({
   return (
     <div className={cn('relative group', className)}>
       <button
+        type="button"
         onClick={handleClick}
         disabled={isDisabled}
         className={cn(
