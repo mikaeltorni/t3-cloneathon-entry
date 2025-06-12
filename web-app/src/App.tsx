@@ -12,17 +12,20 @@
  *   - Custom hooks for chat and model operations
  *   - Enhanced error handling with ErrorBoundary
  *   - Responsive design
+ *   - Mobile sidebar toggle functionality
  */
 import { useEffect } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
+import { SidebarToggle } from './components/ui/SidebarToggle';
 import { Button } from './components/ui/Button';
 import { SignInForm } from './components/auth/SignInForm';
 import { useChat } from './hooks/useChat';
 import { useModels } from './hooks/useModels';
 import { useLogger } from './hooks/useLogger';
 import { useAuth } from './hooks/useAuth';
+import { useSidebarToggle } from './hooks/useSidebarToggle';
 
 /**
  * Main application component
@@ -34,6 +37,7 @@ function App() {
   const chat = useChat();
   const models = useModels();
   const { user, loading: authLoading } = useAuth();
+  const sidebar = useSidebarToggle();
   const { debug } = useLogger('App');
 
   // Load models on app start (no auth required)
@@ -141,6 +145,12 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="h-screen bg-gray-50">
+        {/* Mobile Sidebar Toggle Button */}
+        <SidebarToggle 
+          isOpen={sidebar.isOpen}
+          onToggle={sidebar.toggle}
+        />
+
         {/* Fixed Chat Sidebar */}
         <ChatSidebar
           threads={chat.threads}
@@ -149,6 +159,8 @@ function App() {
           onNewChat={chat.handleNewChat}
           onDeleteThread={chat.handleDeleteThread}
           loading={chat.threadsLoading}
+          isOpen={sidebar.isOpen}
+          onClose={sidebar.close}
         />
 
         {/* Main Chat Area - Offset by sidebar width */}

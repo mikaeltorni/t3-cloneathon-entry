@@ -30,6 +30,8 @@ interface ChatSidebarProps {
   onNewChat: () => void;
   onDeleteThread: (threadId: string) => void;
   loading: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 /**
@@ -49,7 +51,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onThreadSelect,
   onNewChat,
   onDeleteThread,
-  loading
+  loading,
+  isOpen = false,
+  onClose
 }) => {
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -291,10 +295,28 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   );
 
   return (
-    <div 
-      className="hidden md:flex fixed left-0 top-0 w-80 bg-gray-50 border-r border-gray-200 flex-col h-full z-40"
-      data-no-drop="true"
-    >
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div 
+        className={cn(
+          'fixed left-0 top-0 w-80 bg-gray-50 border-r border-gray-200 flex-col h-full z-40 transition-transform duration-300',
+          // Desktop: always visible
+          'hidden md:flex',
+          // Mobile: slide in/out based on isOpen state
+          'md:translate-x-0',
+          isOpen ? 'flex translate-x-0' : 'flex -translate-x-full'
+        )}
+        data-no-drop="true"
+      >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-3">
@@ -324,5 +346,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
       {/* User Profile Footer */}
       <UserProfile />
     </div>
+    </>
   );
 }; 
