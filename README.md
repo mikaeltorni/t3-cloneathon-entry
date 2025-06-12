@@ -120,7 +120,7 @@ tsc -b && vite build         # Direct TypeScript + Vite build
 - **Manual Refresh**: Refresh button in sidebar to sync with server when needed
 - **Auto Fallback**: Falls back to cache if server is unavailable
 - **Smart Ordering**: Recently active conversations automatically move to the top
-- **Security**: Cache is automatically cleared when users sign out to prevent data leakage between users
+- **Security**: Cache is automatically cleared on both sign-in and sign-out to ensure complete privacy between user sessions
 
 ## 🤖 Supported AI Models
 

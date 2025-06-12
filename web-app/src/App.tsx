@@ -13,6 +13,7 @@
  *   - Enhanced error handling with ErrorBoundary
  *   - Responsive design
  *   - Mobile sidebar toggle functionality
+ *   - Cache security: Clears session cache on both login and logout
  */
 import { useEffect } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -27,6 +28,7 @@ import { useModels } from './hooks/useModels';
 import { useLogger } from './hooks/useLogger';
 import { useAuth } from './hooks/useAuth';
 import { useSidebarToggle } from './hooks/useSidebarToggle';
+import { clearThreadsCache } from './utils/sessionCache';
 
 /**
  * Main application component
@@ -50,7 +52,12 @@ function App() {
   // Load threads only after user is authenticated
   useEffect(() => {
     if (user && !authLoading) {
-      debug('User authenticated, loading chat threads...');
+      debug('User authenticated, clearing any existing cache and loading fresh data...');
+      
+      // Clear any existing cache to ensure clean state for this user session
+      clearThreadsCache();
+      debug('🗑️ Previous session cache cleared for security');
+      
       // Add a small delay to ensure Firebase token is ready
       const loadWithDelay = async () => {
         try {
