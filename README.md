@@ -49,8 +49,8 @@ A modern, full-stack chat application built with React + TypeScript + Tailwind C
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
-   cd openrouter-chat-app
+   git clone https://github.com/mikaeltorni/t3-cloneathon-entry
+   cd t3-cloneathon-entry
    ```
 
 2. **Install dependencies:**
