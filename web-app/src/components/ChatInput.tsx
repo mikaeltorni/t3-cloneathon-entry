@@ -21,7 +21,6 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import { Button } from './ui/Button';
 import { ModelSelector } from './ModelSelector';
 import { ReasoningToggle } from './ui/ReasoningToggle';
-import { ReasoningEffortSelector } from './ui/ReasoningEffortSelector';
 import { ImageAttachments } from './ImageAttachments';
 import { useLogger } from '../hooks/useLogger';
 import { useMessageForm } from '../hooks/useMessageForm';
@@ -213,40 +212,49 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       </span>
                     </div>
                     
-                    {/* Small dropdown button to change effort */}
+                    {/* Left/Right arrows to adjust effort level */}
                     {useReasoning && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          // Cycle through effort levels
-                          const levels: ('low' | 'medium' | 'high')[] = ['low', 'medium', 'high'];
-                          const currentIndex = levels.indexOf(reasoningEffort);
-                          const nextIndex = (currentIndex + 1) % levels.length;
-                          setReasoningEffort(levels[nextIndex]);
-                        }}
-                        className="ml-1 text-gray-400 hover:text-gray-600 transition-colors duration-150"
-                        title="Click to cycle through effort levels"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
+                      <div className="flex items-center space-x-0.5 ml-1">
+                        {/* Left arrow - decrease effort */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const levels: ('low' | 'medium' | 'high')[] = ['low', 'medium', 'high'];
+                            const currentIndex = levels.indexOf(reasoningEffort);
+                            const prevIndex = currentIndex === 0 ? levels.length - 1 : currentIndex - 1;
+                            setReasoningEffort(levels[prevIndex]);
+                          }}
+                          className="text-gray-400 hover:text-gray-600 transition-colors duration-150 p-0.5"
+                          title="Decrease effort level"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+                        
+                        {/* Right arrow - increase effort */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const levels: ('low' | 'medium' | 'high')[] = ['low', 'medium', 'high'];
+                            const currentIndex = levels.indexOf(reasoningEffort);
+                            const nextIndex = (currentIndex + 1) % levels.length;
+                            setReasoningEffort(levels[nextIndex]);
+                          }}
+                          className="text-gray-400 hover:text-gray-600 transition-colors duration-150 p-0.5"
+                          title="Increase effort level"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}
               </div>
-              
-              {/* Full Reasoning Effort Selector - only show if reasoning is enabled and model supports effort control */}
-              {useReasoning && supportsEffortControl() && (
-                <div className="ml-6">
-                  <ReasoningEffortSelector
-                    value={reasoningEffort}
-                    onChange={setReasoningEffort}
-                    modelName={availableModels[selectedModel]?.name}
-                  />
-                </div>
-              )}
             </div>
           )}
 
