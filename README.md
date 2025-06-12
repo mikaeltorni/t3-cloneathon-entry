@@ -55,7 +55,7 @@ A modern, full-stack chat application built with React + TypeScript + Tailwind C
 
 2. **Install dependencies:**
    ```bash
-   npm install
+   npm install  # Installs server packages and, via a postinstall hook, the web-app dependencies too
    ```
 
 3. **Set up environment variables:**

@@ -12,7 +12,8 @@
     "web:build": "cd web-app && npm run build",
     "start": "node dist/server/index.js",
     "setup:firebase": "node scripts/setup-firebase.js",
-    "setup:firebase:windows": "powershell -ExecutionPolicy Bypass -File scripts/setup-firebase.ps1"
+    "setup:firebase:windows": "powershell -ExecutionPolicy Bypass -File scripts/setup-firebase.ps1",
+    "postinstall": "npm install --prefix web-app"
   },
   "keywords": [
     "typescript",
