@@ -15,8 +15,9 @@
  * 
  * Usage: const chat = useChat();
  */
-import { useState, useCallback } from 'react';
-import { chatApiService } from '../services/chatApi';
+import { useState, useCallback, useMemo } from 'react';
+import { createChatApiService } from '../services/chatApi';
+import { useAuth } from './useAuth';
 import { useLogger } from './useLogger';
 import { useErrorHandler } from './useErrorHandler';
 import type { ChatThread, ChatMessage, ImageAttachment } from '../../../src/shared/types';
@@ -61,8 +62,27 @@ export const useChat = (): UseChatReturn => {
   const [error, setError] = useState<string | null>(null);
   const [images, setImages] = useState<ImageAttachment[]>([]);
 
+  const { user } = useAuth();
   const { log, debug, warn, error: logError } = useLogger('useChat');
   const { handleError } = useErrorHandler();
+
+  // Create authenticated API service
+  const chatApiService = useMemo(() => {
+    const getAuthToken = async () => {
+      if (user) {
+        try {
+          // Get fresh ID token from Firebase
+          return await user.getIdToken();
+        } catch (error) {
+          console.error('Failed to get auth token:', error);
+          return null;
+        }
+      }
+      return null;
+    };
+
+    return createChatApiService(getAuthToken);
+  }, [user]);
 
   /**
    * Load all chat threads from the server
@@ -236,7 +256,7 @@ export const useChat = (): UseChatReturn => {
           }
         },
         // onComplete callback - finalize the response
-        async (response) => {
+        async (response: any) => {
           debug('Streaming completed', { threadId: response.threadId });
           
           // Final cleanup of reasoning state if not already done
@@ -273,7 +293,7 @@ export const useChat = (): UseChatReturn => {
           log('Streaming message completed successfully');
         },
         // onError callback - handle errors and clean up
-        (error) => {
+        (error: Error) => {
           const errorMessage = error.message || 'Failed to send message';
           setError(errorMessage);
           logError('Failed to send streaming message', error);

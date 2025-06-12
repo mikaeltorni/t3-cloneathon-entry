@@ -36,12 +36,19 @@ function App() {
   const { user, loading: authLoading } = useAuth();
   const { debug } = useLogger('App');
 
-  // Load all threads and models on app start
+  // Load models on app start (no auth required)
   useEffect(() => {
-    debug('App mounted, loading threads and models...');
-    chat.loadThreads();
+    debug('App mounted, loading models...');
     models.loadModels();
-  }, [debug, chat.loadThreads, models.loadModels]);
+  }, [debug, models.loadModels]);
+
+  // Load threads only after user is authenticated
+  useEffect(() => {
+    if (user && !authLoading) {
+      debug('User authenticated, loading chat threads...');
+      chat.loadThreads();
+    }
+  }, [user, authLoading, debug, chat.loadThreads]);
 
   /**
    * Render server connection error UI
