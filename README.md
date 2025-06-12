@@ -62,6 +62,8 @@ A modern, full-stack chat application built with React + TypeScript + Tailwind C
    ```bash
    cp env.template .env
    # Edit .env with your configuration
+
+   [ADD INSTRUCTIONS HERE HOW TO SETUP THE ENV FILE PROPERLY]
    ```
 
 4. **Configure Firebase:**
