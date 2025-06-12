@@ -1,227 +1,269 @@
 # OpenRouter Chat App
 
-A modern chat application with AI integration using OpenRouter API, Google Authentication, and React + TypeScript.
+A modern, full-stack chat application built with React + TypeScript + Tailwind CSS, featuring AI chat capabilities powered by OpenRouter's API with comprehensive Firebase authentication and security.
 
-## Quick Setup
+## 🚀 Features
 
-1. **Clone and install dependencies:**
+### Core Functionality
+- **Multi-Model AI Chat**: Switch between different AI models from OpenRouter
+- **Real-time Streaming**: Live message streaming with reasoning display
+- **Image Analysis**: Upload and analyze images with AI models
+- **Persistent Chat History**: Firebase-backed conversation storage
+- **Reasoning Models**: Advanced AI models with visible thinking process
+
+### Security & Authentication
+- **Firebase Authentication**: Secure Google Sign-In integration
+- **Database-Level Security**: Firestore security rules for user data isolation
+- **Comprehensive Cache Management**: Multi-layer cache clearing for privacy
+- **Server-Side Validation**: Enhanced authentication middleware with user verification
+- **Resource Ownership Validation**: Ensures users can only access their own data
+
+### Modern Architecture
+- **Component-Based Design**: Extracted and reusable UI components
+- **Custom Hooks**: Organized state management with specialized hooks
+- **Error Handling**: Comprehensive error boundaries and user feedback
+- **Responsive Design**: Mobile-first approach with sidebar management
+- **Performance Optimized**: React.memo, memoized callbacks, and efficient re-renders
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **React 18+** with TypeScript for type safety
+- **Tailwind CSS 3+** for responsive styling
+- **Vite** for fast development and optimized builds
+- **Custom Hooks** for state management and business logic
+
+### Backend & Services
+- **Express.js** server with TypeScript
+- **Firebase Admin SDK** for server-side operations
+- **Firestore** for persistent chat storage
+- **OpenRouter API** for AI model integration
+
+### Security & Infrastructure
+- **Firebase Authentication** with ID token verification
+- **Firestore Security Rules** for database-level protection
+- **CORS Protection** and request validation
+- **Comprehensive Logging** for debugging and monitoring
+
+## 📦 Installation
+
+1. **Clone the repository:**
    ```bash
-   git clone <your-repo-url>
-   cd t3-cloneathon-entry
-   npm install
-   cd web-app && npm install && cd ..
+   git clone <repository-url>
+   cd openrouter-chat-app
    ```
 
-2. **Set up environment variables:**
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables:**
    ```bash
    cp env.template .env
-   ```
-   Edit `.env` with your actual values:
-   - `OPENROUTER_API_KEY` - Your OpenRouter API key
-   - Firebase configuration variables
-   - `PORT=3000` (server port)
-
-3. **Build the application:**
-   ```bash
-   npm run build
+   # Edit .env with your configuration
    ```
 
-4. **Start development:**
-   ```bash
-   npm run dev
-   ```
-   - Server runs on: http://localhost:3000
-   - Frontend dev server: http://localhost:5173
-   - API endpoints: http://localhost:3000/api
+4. **Configure Firebase:**
+   - Create a Firebase project
+   - Enable Authentication and Firestore
+   - Download service account key
+   - Deploy security rules: `firebase deploy --only firestore:rules`
 
-5. **Start production:**
-   ```bash
-   npm start
-   ```
-   - Full app runs on: http://localhost:3000
+## 🚀 Development
 
-## Port Configuration
-
-- **Backend Server**: PORT=3000 (configurable via .env)
-- **Frontend Dev Server**: 5173 (Vite default)
-- **Frontend Proxy**: `/api/*` requests → `http://localhost:3000`
-- **Production**: Single server on PORT=3000 serving both API and static files
-
-## Architecture
-
-- **Frontend**: React 18 + TypeScript + Tailwind CSS + Vite
-- **Backend**: Express.js + TypeScript
-- **Authentication**: Firebase Google Auth (server-side config)
-- **AI Integration**: OpenRouter API with multiple model support
-- **Build System**: TypeScript compilation + Vite bundling
-
-## Available Scripts
-
-- `npm run dev` - Start both server and frontend in development
-- `npm run build` - Build both server and frontend for production
-- `npm run server:dev` - Start only the backend server
-- `npm run web:dev` - Start only the frontend dev server
-- `npm start` - Start production server
-
-## Environment Variables
-
-All environment variables are server-side only for security:
-
+### Start Development Servers
 ```bash
-# OpenRouter API Configuration
-OPENROUTER_API_KEY=sk-or-v1-your-key-here
+# Start both frontend and backend
+npm run dev
 
-# Server Configuration  
-PORT=3000
-NODE_ENV=development
-
-# Firebase Configuration (Server-side)
-FIREBASE_API_KEY=your-firebase-api-key
-FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
-FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
-FIREBASE_APP_ID=your-firebase-app-id
+# Or start individually
+npm run server:dev  # Backend server on port 3000
+npm run web:dev     # Frontend on port 5173
 ```
 
-## API Endpoints
+### Firebase Setup
+```bash
+# Deploy security rules
+firebase deploy --only firestore:rules
 
-- `GET /api/health` - Server health check
-- `GET /api/config/firebase` - Firebase configuration for frontend
-- `POST /api/chats/message` - Send chat message
-- `GET /api/models` - Available AI models
+# Start Firebase emulators (optional)
+firebase emulators:start
+```
 
-## Production Build Commands
+## 🔧 Available Scripts
+
+- `npm run dev` - Start both frontend and backend servers
+- `npm run server:dev` - Start Express server with hot reload
+- `npm run web:dev` - Start Vite development server
+- `npm run build` - Build both frontend and backend for production
+- `npm run server:build` - Compile TypeScript server code
+- `npm run web:build` - Build frontend with Vite
+- `npm run lint` - Run ESLint on all files
+- `npm run type-check` - Run TypeScript compiler checks
+
+## 🏗️ Production Build
+
+For production deployment:
 
 ```bash
-# Full build process
+# Full production build
 npm run build
 
 # Individual builds
 npm run server:build  # TypeScript compilation
 npm run web:build     # Vite build
 
-# Alternative build commands
+# Alternative build commands for complex setups
 cd web-app && npm run build  # Build from web-app directory
 tsc -b && vite build         # Direct TypeScript + Vite build
 ```
 
-## 🔐 Authentication
-
-- **Google Sign-In**: Users must authenticate before accessing chat
-- **Server-Side Config**: All Firebase configuration served securely from `/api/config/firebase`
-- **Protected Routes**: Chat interface only accessible when signed in
-
-## 💾 Session Caching
-
-- **Smart Caching**: Chat threads are cached in browser session storage
-- **No Unnecessary Reloads**: Eliminates awkward reloading after sending messages
-- **Instant Response**: Cached threads load instantly on app restart
-- **Manual Refresh**: Refresh button in sidebar to sync with server when needed
-- **Auto Fallback**: Falls back to cache if server is unavailable
-- **Smart Ordering**: Recently active conversations automatically move to the top
-- **Comprehensive Clearing**: ALL cache layers (session storage, HTTP client, localStorage) are cleared on sign-in/sign-out
-- **Cross-Device Sync**: Fresh login always shows clean state from server, preventing stale data from other devices
-
-## 🤖 Supported AI Models
-
-- Google Gemini 2.5 Flash Preview
-- OpenAI GPT-4o
-- OpenAI o1-Preview (reasoning)
-- DeepSeek R1 (reasoning)
-- Claude 3.7 Sonnet
-
-## 🛠️ Development
-
-### Available Commands
-
-```bash
-# Development
-npm run dev              # Start both frontend and backend
-npm run server:dev       # Backend only
-npm run web:dev         # Frontend only
-
-# Production
-npm run build           # Build both
-npm run server:build    # Build backend
-npm run web:build       # Build frontend
-
-# Utilities
-npm run lint           # Lint frontend code
-npm run type-check     # TypeScript validation
-```
-
-### API Endpoints
-
-```
-GET    /api/config/firebase     # Firebase configuration
-GET    /api/chats              # Get all chat threads
-POST   /api/chats/message      # Send message & get AI response
-DELETE /api/chats/:threadId    # Delete thread
-GET    /api/models             # Get available AI models
-GET    /api/health             # System health check
-```
-
-**Note**: In development, Vite proxies `/api/*` requests from frontend (port 5173) to backend (port 3000).
-
 ## 📁 Project Structure
 
 ```
-├── .env                    # Environment variables (create from env.template)
-├── src/server/            # Express backend
-│   ├── controllers/       # API endpoints
-│   ├── services/         # Business logic
-│   └── repositories/     # Data access
-├── web-app/              # React frontend
-│   ├── src/components/   # React components
-│   ├── src/hooks/        # Custom hooks (useAuth, useChat)
-│   └── src/config/       # Firebase configuration
-└── data/                 # JSON storage (development)
+├── src/                    # Backend server code
+│   ├── server/            # Express server and API routes
+│   │   ├── controllers/   # Route controllers
+│   │   ├── middleware/    # Authentication and validation
+│   │   ├── services/      # Business logic services
+│   │   └── config/        # Configuration files
+│   └── shared/            # Shared types and utilities
+├── web-app/               # React frontend application
+│   ├── src/
+│   │   ├── components/    # React components
+│   │   │   ├── auth/      # Authentication components
+│   │   │   ├── error/     # Error handling components
+│   │   │   └── ui/        # Reusable UI components
+│   │   ├── hooks/         # Custom React hooks
+│   │   │   ├── useAuth.ts        # Authentication management
+│   │   │   ├── useChat.ts        # Chat state and operations
+│   │   │   ├── useModels.ts      # AI model management
+│   │   │   ├── useMessageForm.ts # Form handling
+│   │   │   └── useReasoningState.ts # Reasoning UI state
+│   │   ├── services/      # API and external services
+│   │   ├── utils/         # Utility functions and helpers
+│   │   └── config/        # Configuration files
+├── functions/             # Firebase Cloud Functions
+├── firestore.rules       # Firestore security rules
+├── firebase.json          # Firebase project configuration
+└── README.md              # This file
 ```
 
-## 🔧 Troubleshooting
+## 🎨 Component Architecture
+
+### Custom Hooks
+- **`useAuth`** - Firebase authentication management
+- **`useChat`** - Chat operations and state management
+- **`useModels`** - AI model selection and configuration
+- **`useMessageForm`** - Form handling with validation
+- **`useReasoningState`** - Reasoning display state management
+- **`useInputBarHeight`** - Dynamic UI spacing calculations
+
+### Key Components
+- **`ChatInterface`** - Main chat layout and orchestration
+- **`ChatInput`** - Message composition with auto-resize
+- **`MessageList`** - Optimized message rendering
+- **`ChatSidebar`** - Thread management and navigation
+- **`ConnectionError`** - Server connection error handling
+- **`ErrorBanner`** - Dismissible error notifications
+
+## 🔐 Security Features
+
+### Firebase Security Rules
+```javascript
+// users/{userId}/chats/{chatId} - User can only access own chats
+// users/{userId}/chats/{chatId}/messages/{messageId} - Message access control
+```
+
+### Authentication Flow
+1. **Client Authentication**: Google Sign-In with Firebase
+2. **Token Verification**: Server-side ID token validation
+3. **Resource Ownership**: User ID verification for all operations
+4. **Cache Security**: Comprehensive cache clearing on login/logout
+
+### Data Protection
+- **User Isolation**: Firestore collections scoped by user ID
+- **Server-Side Validation**: All requests authenticated and authorized
+- **Privacy Controls**: Multi-layer cache clearing prevents data leakage
+
+## 🌐 API Endpoints
+
+### Authentication Required
+- `GET /api/chats` - Get all user chat threads
+- `GET /api/chats/:threadId` - Get specific chat thread
+- `POST /api/chats/message` - Send new message
+- `DELETE /api/chats/:threadId` - Delete chat thread
+
+### Public Endpoints
+- `GET /api/health` - Server health check
+- `GET /api/config/firebase` - Firebase client configuration
+- `GET /api/models` - Available AI models
+
+## 🎯 Performance Optimizations
+
+- **React.memo** for component memoization
+- **useCallback** and **useMemo** for expensive operations
+- **Virtualization-ready** message list structure
+- **Optimized re-renders** with targeted state updates
+- **Efficient caching** with selective invalidation
+
+## 🚀 Deployment
+
+### Firebase Hosting
+```bash
+firebase deploy
+```
+
+### Manual Deployment
+1. Build the application: `npm run build`
+2. Deploy server to your hosting platform
+3. Configure environment variables
+4. Deploy Firestore security rules
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Follow the existing code patterns and architecture
+4. Add comprehensive tests for new functionality
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+## 📝 Development Guidelines
+
+- **TypeScript First**: All new code must be properly typed
+- **Component Patterns**: Follow existing hook and component patterns
+- **Error Handling**: Implement comprehensive error boundaries
+- **Performance**: Use React optimization patterns (memo, callbacks)
+- **Security**: Validate all user inputs and authenticate all requests
+- **Documentation**: Update README and add JSDoc comments
+
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-**Server exits with "OPENROUTER_API_KEY environment variable is required"**
-- Ensure you've created `.env` from `env.template`
-- Add your actual OpenRouter API key to `.env`
+**Build Errors:**
+- Ensure all TypeScript types are properly defined
+- Check for missing dependencies in package.json
 
-**"Firebase configuration incomplete"**
-- Check all `FIREBASE_*` variables are set in `.env`
-- Verify your Firebase project configuration is correct
+**Authentication Issues:**
+- Verify Firebase configuration in environment variables
+- Check Firestore security rules deployment
 
-**Google sign-in popup blocked**
-- Allow popups for localhost in your browser
-- Check Firebase authorized domains include localhost
+**Server Connection:**
+- Ensure backend server is running on port 3000
+- Verify OpenRouter API key configuration
 
-**Port conflicts (5173 or 3000 already in use)**
-- Frontend: Vite automatically tries the next available port (5174, 5175, etc.)
-- Backend: Change PORT in `.env` file to use a different port (e.g., 3001, 3002)
-- Or kill the process: `npx kill-port 5173` or `npx kill-port 3000`
+**Cache Issues:**
+- Clear browser cache and localStorage
+- Restart development servers
 
-### Getting Help
+## 📄 License
 
-1. Check browser console for detailed error messages
-2. Verify all environment variables are set correctly
-3. Ensure Firebase project has Google authentication enabled
-4. Check that your OpenRouter API key is valid
-
-## 🏗️ Architecture
-
-This application uses a **Controller → Service → Repository** pattern:
-
-- **Controllers**: Handle HTTP requests/responses
-- **Services**: Contain business logic and AI operations
-- **Repositories**: Manage data access (currently file-based, easily replaceable with database)
-- **Frontend**: React with TypeScript, Firebase Auth, Tailwind CSS
-
-## 📝 License
-
-MIT License - see LICENSE.md for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 
-**Ready to chat with AI models!** 🎉
-
-After setup, sign in with Google and start chatting with multiple AI models in a modern, responsive interface.
+**Built with ❤️ using React, Tailwind, TypeScript, and Firebase**
