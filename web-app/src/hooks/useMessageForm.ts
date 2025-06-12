@@ -100,11 +100,12 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
 
   /**
    * Reset form to initial state
+   * Note: Preserves useReasoning state to maintain user preference
    */
   const resetForm = useCallback(() => {
     setMessage('');
-    setUseReasoning(false);
-    debug('Form reset to initial state');
+    // Preserve useReasoning state - user shouldn't have to re-enable it for each message
+    debug('Form reset to initial state (preserving reasoning preference)');
   }, [debug]);
 
   /**
