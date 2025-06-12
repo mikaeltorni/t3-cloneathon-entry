@@ -15,7 +15,7 @@
  * 
  * Usage: const chat = useChat();
  */
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { createChatApiService } from '../services/chatApi';
 import { useAuth } from './useAuth';
 import { useLogger } from './useLogger';
@@ -72,6 +72,24 @@ export const useChat = (): UseChatReturn => {
   const { user } = useAuth();
   const { log, debug, warn, error: logError } = useLogger('useChat');
   const { handleError } = useErrorHandler();
+
+  // Reset all chat state when user changes (including logout)
+  useEffect(() => {
+    debug('User state changed, resetting chat state', { 
+      userId: user?.uid || 'null',
+      userEmail: user?.email || 'null'
+    });
+    
+    // Clear all local state
+    setThreads([]);
+    setCurrentThread(null);
+    setLoading(false);
+    setError(null);
+    setImages([]);
+    
+    // Reset loading state appropriately
+    setThreadsLoading(!!user); // Only set loading if user exists
+  }, [user?.uid, debug]); // Use user.uid to detect actual user changes
 
   // Create authenticated API service
   const chatApiService = useMemo(() => {

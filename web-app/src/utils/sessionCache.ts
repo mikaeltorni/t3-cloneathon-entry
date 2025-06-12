@@ -2,17 +2,19 @@
  * sessionCache.ts
  * 
  * Session storage utilities for caching chat data
+ * Enhanced with comprehensive cache management across all layers
  * 
  * Functions:
- *   getCachedThreads, setCachedThreads, addThreadToCache, updateThreadInCache, removeThreadFromCache, clearThreadsCache
+ *   getCachedThreads, setCachedThreads, addThreadToCache, updateThreadInCache, removeThreadFromCache, clearThreadsCache, clearAllCaches
  * 
  * Features:
  *   - Session-based caching (cleared on browser close)
  *   - Thread management utilities
  *   - Automatic cache validation
  *   - Type-safe operations
+ *   - Comprehensive cache clearing across all layers
  * 
- * Usage: import { getCachedThreads, setCachedThreads } from './utils/sessionCache'
+ * Usage: import { getCachedThreads, setCachedThreads, clearAllCaches } from './utils/sessionCache'
  */
 import type { ChatThread } from '../../../src/shared/types';
 import { logger } from './logger';
@@ -20,6 +22,17 @@ import { logger } from './logger';
 const THREADS_CACHE_KEY = 'chat_threads_cache';
 const CACHE_VERSION_KEY = 'chat_threads_cache_version';
 const CURRENT_CACHE_VERSION = '1.0';
+
+// Keep reference to HTTP client for cache clearing
+let httpClientInstance: any = null;
+
+/**
+ * Set HTTP client instance for comprehensive cache clearing
+ */
+export function setHttpClientInstance(client: any): void {
+  httpClientInstance = client;
+  logger.debug('HTTP client instance set for comprehensive cache clearing');
+}
 
 /**
  * Get cached chat threads from session storage
@@ -155,7 +168,7 @@ export function removeThreadFromCache(threadId: string): void {
 }
 
 /**
- * Clear all cached threads
+ * Clear all cached threads from session storage
  */
 export function clearThreadsCache(): void {
   try {
@@ -214,5 +227,92 @@ export function getCacheStats(): {
       cacheVersion: null,
       cacheSize: 0
     };
+  }
+}
+
+/**
+ * Clear ALL cache layers for complete security
+ * 
+ * This clears:
+ * - Session storage cache (threads)
+ * - HTTP client in-memory cache 
+ * - React component states will be reset on re-render
+ */
+export function clearAllCaches(): void {
+  try {
+    logger.info('🧹 Clearing ALL cache layers for security...');
+    
+    // 1. Clear session storage cache
+    clearThreadsCache();
+    logger.debug('✅ Session storage cache cleared');
+    
+    // 2. Clear HTTP client cache if available
+    if (httpClientInstance && typeof httpClientInstance.clearCache === 'function') {
+      httpClientInstance.clearCache();
+      logger.debug('✅ HTTP client cache cleared');
+    } else {
+      logger.warn('HTTP client instance not available for cache clearing');
+    }
+    
+    // 3. Clear any other browser storage that might contain user data
+    try {
+      // Clear any localStorage that might exist (defensive)
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (
+          key.includes('chat') || 
+          key.includes('thread') || 
+          key.includes('message') ||
+          key.includes('firebase') ||
+          key.includes('auth')
+        )) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        logger.debug(`Removed localStorage key: ${key}`);
+      });
+      
+      if (keysToRemove.length > 0) {
+        logger.debug(`✅ Cleared ${keysToRemove.length} localStorage entries`);
+      }
+    } catch (error) {
+      logger.warn('Failed to clear localStorage entries:', error);
+    }
+    
+    // 4. Clear any other session storage entries that might contain user data
+    try {
+      const sessionKeysToRemove: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && key !== THREADS_CACHE_KEY && key !== CACHE_VERSION_KEY && (
+          key.includes('chat') || 
+          key.includes('thread') || 
+          key.includes('message') ||
+          key.includes('user') ||
+          key.includes('firebase')
+        )) {
+          sessionKeysToRemove.push(key);
+        }
+      }
+      
+      sessionKeysToRemove.forEach(key => {
+        sessionStorage.removeItem(key);
+        logger.debug(`Removed sessionStorage key: ${key}`);
+      });
+      
+      if (sessionKeysToRemove.length > 0) {
+        logger.debug(`✅ Cleared ${sessionKeysToRemove.length} sessionStorage entries`);
+      }
+    } catch (error) {
+      logger.warn('Failed to clear sessionStorage entries:', error);
+    }
+    
+    logger.info('🎉 All cache layers cleared successfully');
+  } catch (error) {
+    logger.error('Failed to clear all caches:', error as Error);
   }
 } 

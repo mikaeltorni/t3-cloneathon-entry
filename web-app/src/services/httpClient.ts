@@ -14,6 +14,7 @@
  *   - Request timeouts and cancellation
  *   - Performance monitoring
  *   - Request deduplication
+ *   - Comprehensive cache management integration
  * 
  * Usage: const client = new EnhancedHttpClient(baseUrl);
  */
@@ -24,6 +25,7 @@ import {
   transformErrorResponse 
 } from './types/api';
 import type { ApiRequestConfig } from './types/api';
+import { setHttpClientInstance } from '../utils/sessionCache';
 
 /**
  * Cache entry structure
@@ -61,6 +63,10 @@ export class EnhancedHttpClient {
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
     logger.info(`EnhancedHttpClient initialized with base URL: ${baseUrl}`);
+    
+    // Register this instance for comprehensive cache clearing
+    setHttpClientInstance(this);
+    logger.debug('HTTP client registered for comprehensive cache management');
   }
 
   /**

@@ -24,7 +24,7 @@ import {
   type Auth
 } from 'firebase/auth';
 import { initializeFirebaseAuth } from '../config/firebase';
-import { clearThreadsCache } from '../utils/sessionCache';
+import { clearAllCaches } from '../utils/sessionCache';
 
 interface AuthState {
   user: User | null;
@@ -125,9 +125,9 @@ export function useAuth(): UseAuthReturn {
     try {
       console.log('🔒 Signing out user and clearing cache...');
       
-      // Clear session cache before signing out for security
-      clearThreadsCache();
-      console.log('🗑️ Session cache cleared');
+      // Clear ALL cache layers before signing out for security
+      clearAllCaches();
+      console.log('🗑️ All cache layers cleared');
       
       await firebaseSignOut(authInstance);
       console.log('✅ User signed out successfully');

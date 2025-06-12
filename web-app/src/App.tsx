@@ -28,7 +28,7 @@ import { useModels } from './hooks/useModels';
 import { useLogger } from './hooks/useLogger';
 import { useAuth } from './hooks/useAuth';
 import { useSidebarToggle } from './hooks/useSidebarToggle';
-import { clearThreadsCache } from './utils/sessionCache';
+import { clearAllCaches } from './utils/sessionCache';
 
 /**
  * Main application component
@@ -55,8 +55,8 @@ function App() {
       debug('User authenticated, clearing any existing cache and loading fresh data...');
       
       // Clear any existing cache to ensure clean state for this user session
-      clearThreadsCache();
-      debug('🗑️ Previous session cache cleared for security');
+      clearAllCaches();
+      debug('🗑️ All cache layers cleared for security');
       
       // Add a small delay to ensure Firebase token is ready
       const loadWithDelay = async () => {
