@@ -55,7 +55,11 @@ A modern, full-stack chat application built with React + TypeScript + Tailwind C
 
 2. **Install dependencies:**
    ```bash
-   npm install  # Installs server packages and, via a postinstall hook, the web-app dependencies too
+   npm run install:all  # Installs both server and client packages
+   
+   # Or install separately:
+   # npm install              # Server dependencies only
+   # npm install --prefix web-app  # Client dependencies only
    ```
 
 3. **Set up environment variables:**
@@ -103,6 +107,7 @@ firebase emulators:start
 
 ## 🔧 Available Scripts
 
+- `npm run install:all` - Install both server and client dependencies
 - `npm run dev` - Start both frontend and backend servers
 - `npm run server:dev` - Start Express server with hot reload
 - `npm run web:dev` - Start Vite development server
@@ -460,6 +465,11 @@ Wait 1-2 minutes after deployment, then verify in Firebase Console
 ## 🐛 Troubleshooting
 
 ### Common Issues
+
+**Windows Installation Errors:**
+- If you see infinite NPM loops or "EPERM" errors, the `postinstall` hook was causing recursion
+- Solution: Use `npm run install:all` instead of `npm install`
+- This installs server packages first, then client packages separately
 
 **Build Errors:**
 - Ensure all TypeScript types are properly defined
