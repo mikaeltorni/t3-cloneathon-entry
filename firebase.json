@@ -2,8 +2,8 @@
   "firestore": {
     "database": "(default)",
     "location": "eur3",
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
+    "rules": "firebase_config/firestore.rules",
+    "indexes": "firebase_config/firestore.indexes.json"
   },
   "emulators": {
     "dataconnect": {
@@ -71,13 +71,13 @@
     ]
   },
   "storage": {
-    "rules": "storage.rules"
+    "rules": "firebase_config/storage.rules"
   },
   "remoteconfig": {
-    "template": "remoteconfig.template.json"
+    "template": "firebase_config/remoteconfig.template.json"
   },
   "extensions": {},
   "database": {
-    "rules": "database.rules.json"
+    "rules": "firebase_config/database.rules.json"
   }
 }
