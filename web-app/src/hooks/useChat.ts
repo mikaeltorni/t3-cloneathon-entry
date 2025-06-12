@@ -21,6 +21,14 @@ import { useAuth } from './useAuth';
 import { useLogger } from './useLogger';
 import { useErrorHandler } from './useErrorHandler';
 import type { ChatThread, ChatMessage, ImageAttachment } from '../../../src/shared/types';
+import { 
+  getCachedThreads, 
+  setCachedThreads, 
+  addThreadToCache, 
+  updateThreadInCache, 
+  removeThreadFromCache,
+  hasCachedThreads 
+} from '../utils/sessionCache';
 
 /**
  * Chat hook return interface
@@ -35,7 +43,7 @@ interface UseChatReturn {
   images: ImageAttachment[];
   
   // Actions
-  loadThreads: () => Promise<void>;
+  loadThreads: (forceRefresh?: boolean) => Promise<void>;
   handleThreadSelect: (threadId: string) => Promise<void>;
   handleNewChat: () => void;
   handleSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean) => Promise<void>;
@@ -117,9 +125,11 @@ export const useChat = (): UseChatReturn => {
   }, [user, debug]);
 
   /**
-   * Load all chat threads from the server
+   * Load all chat threads (with caching)
+   * 
+   * @param forceRefresh - Force reload from server, ignoring cache
    */
-  const loadThreads = useCallback(async () => {
+  const loadThreads = useCallback(async (forceRefresh: boolean = false) => {
     // Ensure user is available before loading threads
     if (!user) {
       debug('Cannot load threads: no user authenticated');
@@ -129,16 +139,50 @@ export const useChat = (): UseChatReturn => {
 
     try {
       setThreadsLoading(true);
-      debug('Loading threads from server...', { userId: user.uid });
+      
+      // Try to load from cache first if not forcing refresh
+      if (!forceRefresh && hasCachedThreads()) {
+        const cachedThreads = getCachedThreads();
+        if (cachedThreads) {
+          debug(`Loading ${cachedThreads.length} threads from cache`);
+          setThreads(cachedThreads);
+          setError(null);
+          log(`Successfully loaded ${cachedThreads.length} threads from cache`);
+          setThreadsLoading(false);
+          return;
+        }
+      }
+      
+      // Load from server if no cache or forced refresh
+      debug('Loading threads from server...', { 
+        userId: user.uid, 
+        forceRefresh,
+        hasCache: hasCachedThreads() 
+      });
+      
       const allThreads = await chatApiService.getAllChats();
+      
+      // Update cache with fresh data
+      setCachedThreads(allThreads);
+      
       setThreads(allThreads);
       setError(null);
-      log(`Successfully loaded ${allThreads.length} threads`);
+      log(`Successfully loaded ${allThreads.length} threads from server`);
     } catch (err) {
       const errorMessage = 'Failed to load chat history. Make sure the server is running.';
       handleError(err as Error, 'LoadThreads');
       setError(errorMessage);
       warn(errorMessage);
+      
+      // If server fails, try to fallback to cache
+      if (!forceRefresh && hasCachedThreads()) {
+        const cachedThreads = getCachedThreads();
+        if (cachedThreads) {
+          debug(`Falling back to ${cachedThreads.length} cached threads due to server error`);
+          setThreads(cachedThreads);
+          warn('Using cached chat history due to server error');
+        }
+      }
     } finally {
       setThreadsLoading(false);
     }
@@ -334,9 +378,29 @@ export const useChat = (): UseChatReturn => {
           
           setCurrentThread(finalThread);
 
-          // Reload threads to update sidebar if new thread was created
+          // Update cache and local state for new threads instead of reloading
           if (isNewThread || !currentThread) {
-            await loadThreads();
+            // Add/update thread in cache
+            addThreadToCache(finalThread);
+            
+            // Update local threads list without server request
+            setThreads(prevThreads => {
+              const existingIndex = prevThreads.findIndex(t => t.id === finalThread.id);
+              if (existingIndex >= 0) {
+                // Update existing thread
+                const updated = [...prevThreads];
+                updated[existingIndex] = finalThread;
+                return updated;
+              } else {
+                // Add new thread at the beginning (most recent first)
+                return [finalThread, ...prevThreads];
+              }
+            });
+            
+            debug(`Updated threads list with ${isNewThread ? 'new' : 'existing'} thread: ${finalThread.id}`);
+          } else {
+            // Update existing thread in cache
+            updateThreadInCache(finalThread);
           }
 
           // Clear images after successful message send
@@ -426,8 +490,12 @@ export const useChat = (): UseChatReturn => {
       debug(`Deleting thread: ${threadId}`);
       await chatApiService.deleteChat(threadId);
       
-      // Remove from local state
-      setThreads(threads.filter(t => t.id !== threadId));
+      // Remove from local state and cache
+      const updatedThreads = threads.filter(t => t.id !== threadId);
+      setThreads(updatedThreads);
+      
+      // Update cache
+      removeThreadFromCache(threadId);
       
       // Clear current thread if it was deleted
       if (currentThread?.id === threadId) {

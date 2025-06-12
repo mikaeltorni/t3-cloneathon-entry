@@ -29,6 +29,7 @@ interface ChatSidebarProps {
   onThreadSelect: (threadId: string) => void;
   onNewChat: () => void;
   onDeleteThread: (threadId: string) => void;
+  onRefreshThreads?: () => Promise<void>;
   loading: boolean;
   isOpen?: boolean;
   onClose?: () => void;
@@ -52,6 +53,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onThreadSelect,
   onNewChat,
   onDeleteThread,
+  onRefreshThreads,
   loading,
   isOpen = false,
   onClose,
@@ -320,7 +322,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
       >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-white">
-        {/* Top row: Toggle button + Chats title */}
+        {/* Top row: Toggle button + Chats title + Refresh button */}
         <div className="flex items-center gap-3 mb-3">
           {/* Sidebar toggle button */}
           {onToggle && (
@@ -347,6 +349,34 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
           )}
           
           <h1 className="text-xl font-bold text-gray-900 flex-1">Chats</h1>
+          
+          {/* Refresh button */}
+          {onRefreshThreads && (
+            <button
+              onClick={() => onRefreshThreads()}
+              disabled={loading}
+              className="p-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              aria-label="Refresh chat list"
+              title="Refresh chat list from server"
+            >
+              <svg
+                className={cn(
+                  "w-4 h-4 text-gray-600",
+                  loading && "animate-spin"
+                )}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
+          )}
         </div>
         
         {/* Wide New Chat button */}

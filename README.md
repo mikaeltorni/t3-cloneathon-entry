@@ -112,6 +112,14 @@ tsc -b && vite build         # Direct TypeScript + Vite build
 - **Server-Side Config**: All Firebase configuration served securely from `/api/config/firebase`
 - **Protected Routes**: Chat interface only accessible when signed in
 
+## 💾 Session Caching
+
+- **Smart Caching**: Chat threads are cached in browser session storage
+- **No Unnecessary Reloads**: Eliminates awkward reloading after sending messages
+- **Instant Response**: Cached threads load instantly on app restart
+- **Manual Refresh**: Refresh button in sidebar to sync with server when needed
+- **Auto Fallback**: Falls back to cache if server is unavailable
+
 ## 🤖 Supported AI Models
 
 - Google Gemini 2.5 Flash Preview

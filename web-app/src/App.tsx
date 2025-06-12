@@ -71,6 +71,13 @@ function App() {
   }, [user, authLoading, debug, chat.loadThreads]);
 
   /**
+   * Handle manual refresh of threads from server
+   */
+  const handleRefreshThreads = async () => {
+    await chat.loadThreads(true);
+  };
+
+  /**
    * Render server connection error UI
    */
   const renderConnectionError = () => (
@@ -87,7 +94,7 @@ function App() {
             </code>
           </div>
           <Button
-            onClick={chat.loadThreads}
+            onClick={() => chat.loadThreads()}
             variant="destructive"
             className="mt-4"
           >
@@ -161,6 +168,7 @@ function App() {
           onThreadSelect={chat.handleThreadSelect}
           onNewChat={chat.handleNewChat}
           onDeleteThread={chat.handleDeleteThread}
+          onRefreshThreads={handleRefreshThreads}
           loading={chat.threadsLoading}
           isOpen={sidebar.isOpen}
           onClose={sidebar.close}
