@@ -68,7 +68,11 @@ A modern, full-stack chat application built with React + TypeScript + Tailwind C
    - Create a Firebase project
    - Enable Authentication and Firestore
    - Download service account key
-   - Deploy security rules: `firebase deploy --only firestore:rules`
+   - **IMPORTANT**: After running `firebase init`, use our cleanup script:
+     ```bash
+     npm run setup:firebase
+     ```
+   - See [FIREBASE_SETUP.md](FIREBASE_SETUP.md) for detailed instructions
 
 ## 🚀 Development
 
@@ -84,12 +88,17 @@ npm run web:dev     # Frontend on port 5173
 
 ### Firebase Setup
 ```bash
-# Deploy security rules
-firebase deploy --only firestore:rules
+# Clean up after firebase init and deploy security rules
+npm run setup:firebase
+
+# Or for Windows PowerShell
+npm run setup:firebase:windows
 
 # Start Firebase emulators (optional)
 firebase emulators:start
 ```
+
+**📖 For detailed Firebase setup instructions, see [FIREBASE_SETUP.md](FIREBASE_SETUP.md)**
 
 ## 🔧 Available Scripts
 
@@ -101,6 +110,8 @@ firebase emulators:start
 - `npm run web:build` - Build frontend with Vite
 - `npm run lint` - Run ESLint on all files
 - `npm run type-check` - Run TypeScript compiler checks
+- `npm run setup:firebase` - Clean up and configure Firebase after `firebase init`
+- `npm run setup:firebase:windows` - Windows PowerShell version of Firebase setup
 
 ## 🏗️ Production Build
 

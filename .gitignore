@@ -135,3 +135,24 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .cursor/rules/global_prompts
+
+# Firebase - Ignore auto-generated files from firebase init
+# Keep only essential files: .firebaserc, firebase.json, firestore.rules, firestore.indexes.json
+functions/
+public/
+extensions/
+dataconnect/
+dataconnect-generated/
+database.rules.json
+remoteconfig.template.json
+storage.rules
+
+# Firebase debug and logs
+firebase-debug.log
+firebase-debug.*.log
+.firebase/
+
+# Firebase emulator data
+firebase-export-*/
+firestore-debug.log
+ui-debug.log
