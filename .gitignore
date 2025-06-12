@@ -144,9 +144,6 @@ public/
 extensions/
 dataconnect/
 dataconnect-generated/
-database.rules.json
-remoteconfig.template.json
-storage.rules
 
 # Firebase debug and logs
 firebase-debug.log
