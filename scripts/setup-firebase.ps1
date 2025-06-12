@@ -89,12 +89,12 @@ foreach ($file in $unnecessaryFiles) {
 Write-Host "`n📋 Step 3: Restoring correct configuration files..." -ForegroundColor Blue
 
 # Restore firebase.json
-if (Copy-Template "firebase.json.template" "firebase.json") {
+if (Copy-Template "firebase-config/firebase.json.template" "firebase.json") {
     Write-Host "✅ Restored minimal firebase.json configuration" -ForegroundColor Green
 }
 
 # Restore firestore.rules
-if (Copy-Template "firestore.rules.template" "firestore.rules") {
+if (Copy-Template "firebase-config/firestore.rules.template" "firestore.rules") {
     Write-Host "✅ Restored Firestore security rules" -ForegroundColor Green
 } else {
     Write-Host "⚠️  firestore.rules.template not found, keeping existing rules" -ForegroundColor Yellow

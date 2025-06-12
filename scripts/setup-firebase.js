@@ -123,12 +123,12 @@ function setupFirebase() {
   console.log('\n📋 Step 3: Restoring correct configuration files...');
   
   // Restore our minimal firebase.json configuration
-  if (copyTemplate('firebase.json.template', 'firebase.json')) {
+  if (copyTemplate('firebase-config/firebase.json.template', 'firebase.json')) {
     console.log('✅ Restored minimal firebase.json configuration');
   }
   
   // Restore our security rules
-  if (copyTemplate('firestore.rules.template', 'firestore.rules')) {
+  if (copyTemplate('firebase-config/firestore.rules.template', 'firestore.rules')) {
     console.log('✅ Restored Firestore security rules');
   } else {
     console.log('⚠️  firestore.rules.template not found, keeping existing rules');

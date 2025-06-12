@@ -138,6 +138,7 @@ dist
 
 # Firebase - Ignore auto-generated files from firebase init
 # Keep only essential files: .firebaserc, firebase.json, firestore.rules, firestore.indexes.json
+# and our firebase-config/ templates directory
 functions/
 public/
 extensions/
