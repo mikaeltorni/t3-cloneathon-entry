@@ -13,10 +13,12 @@
  *   - Timestamp formatting
  *   - Copy message functionality
  *   - Performance optimized with React.memo
+ *   - Markdown rendering with react-markdown
  * 
  * Usage: <Message message={message} showReasoning={showReasoning} onToggleReasoning={handleToggle} />
  */
 import React, { useState, useCallback, useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
 import type { ChatMessage } from '../../../src/shared/types';
 
 interface MessageProps {
@@ -163,7 +165,29 @@ const Message: React.FC<MessageProps> = React.memo(({
           <div className="bg-blue-600 text-white p-3 rounded-lg rounded-br-sm shadow-sm">
             {imageGrid}
             <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-              {message.content}
+              <ReactMarkdown
+                components={{
+                  // Style markdown elements
+                  p: ({ children }) => <p className="mb-2">{children}</p>,
+                  h1: ({ children }) => <h1 className="text-2xl font-bold mb-4">{children}</h1>,
+                  h2: ({ children }) => <h2 className="text-xl font-bold mb-3">{children}</h2>,
+                  h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
+                  strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                  em: ({ children }) => <em className="italic">{children}</em>,
+                  code: ({ children }) => (
+                    <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
+                      {children}
+                    </code>
+                  ),
+                  pre: ({ children }) => (
+                    <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto mb-4">
+                      {children}
+                    </pre>
+                  ),
+                }}
+              >
+                {message.content}
+              </ReactMarkdown>
             </div>
           </div>
           <div className="flex items-center justify-end gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -191,7 +215,29 @@ const Message: React.FC<MessageProps> = React.memo(({
           <div className={`text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words ${
             message.reasoning ? 'mt-3 pt-3 border-t border-gray-100' : ''
           }`}>
-            {message.content}
+            <ReactMarkdown
+              components={{
+                // Style markdown elements
+                p: ({ children }) => <p className="mb-2">{children}</p>,
+                h1: ({ children }) => <h1 className="text-2xl font-bold mb-4">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-xl font-bold mb-3">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
+                strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                em: ({ children }) => <em className="italic">{children}</em>,
+                code: ({ children }) => (
+                  <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
+                    {children}
+                  </code>
+                ),
+                pre: ({ children }) => (
+                  <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto mb-4">
+                    {children}
+                  </pre>
+                ),
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
           </div>
         </div>
         <div className="flex items-center justify-start gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
