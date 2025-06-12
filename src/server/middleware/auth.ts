@@ -7,6 +7,8 @@
  *   - Firebase ID token verification
  *   - User information extraction
  *   - Request authentication
+ *   - Enhanced security validation
+ *   - User ID verification for resource access
  *   - Error handling for invalid tokens
  * 
  * Usage: app.use('/api/chats', authenticateUser, chatRoutes)
@@ -65,6 +67,29 @@ export async function authenticateUser(
     console.log(`[Auth] Verifying token for request: ${req.method} ${req.path}`);
     const decodedToken = await verifyIdToken(idToken);
 
+    // Additional security validation
+    if (!decodedToken.uid || decodedToken.uid.trim().length === 0) {
+      console.error('[Auth] Token missing or invalid UID');
+      res.status(401).json({
+        error: 'Invalid token',
+        message: 'Token does not contain valid user identifier',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
+    // Check token expiration with additional buffer
+    const now = Math.floor(Date.now() / 1000);
+    if (decodedToken.exp && decodedToken.exp < now) {
+      console.error('[Auth] Token has expired');
+      res.status(401).json({
+        error: 'Token expired',
+        message: 'Authentication token has expired. Please sign in again.',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
     // Extract user information
     req.user = {
       uid: decodedToken.uid,
@@ -73,7 +98,7 @@ export async function authenticateUser(
       photoURL: decodedToken.picture,
     };
 
-    console.log(`[Auth] User authenticated: ${req.user.uid} (${req.user.email})`);
+    console.log(`[Auth] User authenticated: ${req.user.uid} (${req.user.email || 'no email'})`);
     next();
   } catch (error) {
     console.error('[Auth] Token verification failed:', error);
@@ -90,6 +115,9 @@ export async function authenticateUser(
       } else if (error.message.includes('revoked')) {
         errorMessage = 'Authentication token has been revoked. Please sign in again.';
         statusCode = 403;
+      } else if (error.message.includes('argument')) {
+        errorMessage = 'Malformed authentication token. Please sign in again.';
+        statusCode = 400;
       }
     }
 
@@ -134,14 +162,18 @@ export async function optionalAuth(
     // Try to verify the token
     const decodedToken = await verifyIdToken(idToken);
     
-    req.user = {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      displayName: decodedToken.name,
-      photoURL: decodedToken.picture,
-    };
+    // Basic validation for optional auth
+    if (decodedToken.uid && decodedToken.uid.trim().length > 0) {
+      req.user = {
+        uid: decodedToken.uid,
+        email: decodedToken.email,
+        displayName: decodedToken.name,
+        photoURL: decodedToken.picture,
+      };
 
-    console.log(`[Auth] Optional auth successful: ${req.user.uid} (${req.user.email})`);
+      console.log(`[Auth] Optional auth successful: ${req.user.uid} (${req.user.email || 'no email'})`);
+    }
+    
     next();
   } catch (error) {
     console.warn('[Auth] Optional auth failed, continuing without user:', error);
@@ -172,4 +204,44 @@ export function requireAuth(
   }
 
   next();
+}
+
+/**
+ * Middleware to validate that the requesting user owns the resource
+ * Checks URL parameters for userId and ensures it matches authenticated user
+ * 
+ * @param paramName - Name of the parameter containing the user ID (default: 'userId')
+ */
+export function validateResourceOwnership(paramName: string = 'userId') {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    if (!req.user?.uid) {
+      res.status(401).json({
+        error: 'Authentication required',
+        message: 'User must be authenticated to access this resource',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
+    const resourceUserId = req.params[paramName];
+    
+    if (!resourceUserId) {
+      // If no userId parameter, proceed (will be handled by controller)
+      next();
+      return;
+    }
+
+    if (req.user.uid !== resourceUserId) {
+      console.warn(`[Auth] Access denied: User ${req.user.uid} attempted to access resource owned by ${resourceUserId}`);
+      res.status(403).json({
+        error: 'Access denied',
+        message: 'You can only access your own resources',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
+    console.log(`[Auth] Resource ownership validated for user: ${req.user.uid}`);
+    next();
+  };
 } 

@@ -1,8 +1,8 @@
 /**
  * ChatInput.tsx
  * 
- * Chat input component for message composition
- * Extracted from ChatInterface.tsx for better organization
+ * Chat input component for message composition - refactored with extracted hooks
+ * Now uses useMessageForm hook for cleaner state management and form handling
  * 
  * Components:
  *   ChatInput
@@ -12,17 +12,18 @@
  *   - Image attachments management
  *   - Beautiful horizontal model selection with brain icons
  *   - Reasoning toggle for optional models
- *   - Form submission handling
+ *   - Form submission handling using extracted useMessageForm hook
  *   - Fixed positioning with proper spacing
  * 
  * Usage: <ChatInput onSendMessage={send} loading={loading} availableModels={models} />
  */
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { Button } from './ui/Button';
 import { ModelSelector } from './ModelSelector';
 import { ReasoningToggle } from './ui/ReasoningToggle';
 import { ImageAttachments } from './ImageAttachments';
 import { useLogger } from '../hooks/useLogger';
+import { useMessageForm } from '../hooks/useMessageForm';
 import { cn } from '../utils/cn';
 import type { ModelConfig, ImageAttachment } from '../../../src/shared/types';
 
@@ -48,12 +49,16 @@ interface ChatInputProps {
  * - Image attachment management
  * - Model selection and reasoning options
  * - Keyboard shortcuts and accessibility
+ * - Form state management via useMessageForm hook
  * 
  * @param onSendMessage - Callback for sending messages
  * @param loading - Loading state indicator
  * @param availableModels - Available AI models
  * @param modelsLoading - Models loading state
  * @param onHeightChange - Callback when input height changes
+ * @param images - Current image attachments
+ * @param onImagesChange - Callback for image changes
+ * @param sidebarOpen - Whether the sidebar is open
  * @returns React component
  */
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -66,22 +71,30 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onImagesChange,
   sidebarOpen = false
 }) => {
-  const [message, setMessage] = useState('');
-  const [selectedModel, setSelectedModel] = useState('google/gemini-2.5-flash-preview-05-20');
-  const [useReasoning, setUseReasoning] = useState(false);
-  
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const inputBarRef = useRef<HTMLDivElement>(null);
-  
-  const { debug, log } = useLogger('ChatInput');
+  const { debug } = useLogger('ChatInput');
 
   /**
-   * Check if a model supports reasoning based on model configuration
+   * Form state and handlers from useMessageForm hook
    */
-  const isReasoningModel = useCallback((modelId?: string): boolean => {
-    if (!modelId || !availableModels[modelId]) return false;
-    return availableModels[modelId].hasReasoning;
-  }, [availableModels]);
+  const {
+    message,
+    selectedModel,
+    useReasoning,
+    setSelectedModel,
+    setUseReasoning,
+    handleSubmit,
+    handleKeyPress,
+    handleMessageChange,
+    isReasoningModel,
+    isSubmitDisabled,
+    textareaRef
+  } = useMessageForm({
+    onSendMessage,
+    availableModels,
+    loading,
+    images
+  });
 
   /**
    * Auto-resize textarea based on content
@@ -118,19 +131,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   }, [onHeightChange, debug]);
 
-  // Auto-focus textarea after sending message
-  useEffect(() => {
-    if (!loading) {
-      const textarea = textareaRef.current;
-      if (textarea) {
-        // Reset height and focus
-        textarea.style.height = '48px';
-        setTimeout(() => {
-          textarea.focus();
-        }, 100);
-      }
-    }
-  }, [loading]);
+  /**
+   * Enhanced message change handler with auto-resize
+   */
+  const handleEnhancedMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    handleMessageChange(e);
+    autoResizeTextarea();
+  }, [handleMessageChange, autoResizeTextarea]);
 
   // Update input bar height when content changes
   useEffect(() => {
@@ -143,85 +150,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [updateInputBarHeight]);
-
-  // Handle reasoning state when model changes
-  useEffect(() => {
-    const currentModel = availableModels[selectedModel];
-    if (currentModel) {
-      if (currentModel.reasoningMode === 'forced') {
-        // For forced reasoning models, always enable reasoning
-        if (!useReasoning) {
-          setUseReasoning(true);
-          debug('Auto-enabled reasoning for forced reasoning model:', currentModel.name);
-        }
-      } else if (currentModel.reasoningMode === 'none') {
-        // For models without reasoning, always disable reasoning
-        if (useReasoning) {
-          setUseReasoning(false);
-          debug('Auto-disabled reasoning for non-reasoning model:', currentModel.name);
-        }
-      }
-      // For optional reasoning models, keep current user preference
-    }
-  }, [selectedModel, availableModels, useReasoning, debug]);
-
-  /**
-   * Handle form submission
-   */
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!message.trim() && images.length === 0) return;
-
-    const messageContent = message.trim();
-
-    debug('Submitting message', { 
-      hasContent: !!messageContent, 
-      imageCount: images.length,
-      model: selectedModel,
-      useReasoning
-    });
-
-    // Clear inputs immediately for better UX
-    setMessage('');
-    onImagesChange([]);
-
-    // Reset textarea height immediately
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = '48px';
-    }
-
-    try {
-      await onSendMessage(
-        messageContent, 
-        images.length > 0 ? images : undefined, 
-        selectedModel,
-        useReasoning
-      );
-      log('Message sent successfully');
-    } catch (error) {
-      // Error handling is done in parent component
-      debug('Message sending failed', error);
-    }
-  }, [message, images, onSendMessage, debug, log, selectedModel, useReasoning, onImagesChange]);
-
-  /**
-   * Handle keyboard shortcuts
-   */
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
-    }
-  }, [handleSubmit]);
-
-  /**
-   * Handle textarea input changes
-   */
-  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
-    autoResizeTextarea();
-  }, [autoResizeTextarea]);
 
   return (
     <div 
@@ -248,44 +176,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           />
 
           {/* Optional Reasoning Toggle for Models with Optional Reasoning */}
-          {isReasoningModel(selectedModel) && availableModels[selectedModel].reasoningMode === 'optional' && (
-            <div className="flex items-center gap-3">
+          {isReasoningModel() && availableModels[selectedModel]?.reasoningMode === 'optional' && (
+            <div className="flex items-center space-x-2">
               <ReasoningToggle
                 enabled={useReasoning}
                 onChange={setUseReasoning}
-                reasoningMode={availableModels[selectedModel].reasoningMode}
-                modelName={availableModels[selectedModel].name}
+                reasoningMode={availableModels[selectedModel]?.reasoningMode || 'none'}
+                modelName={availableModels[selectedModel]?.name}
               />
-              
-              {/* Subtle image upload hint */}
-              <div className="text-xs text-gray-400 opacity-50 flex items-center gap-1 ml-auto">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                <span>Drop images anywhere</span>
-              </div>
             </div>
           )}
 
-          {/* Image upload hint for non-reasoning models */}
-          {(!isReasoningModel(selectedModel) || availableModels[selectedModel].reasoningMode !== 'optional') && (
-            <div className="flex justify-end">
-              <div className="text-xs text-gray-400 opacity-50 flex items-center gap-1">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                <span>Drop images anywhere</span>
-              </div>
-            </div>
-          )}
-
-          {/* Message Input and Send Button */}
+          {/* Input Row */}
           <div className="flex items-end gap-3">
             <div className="flex-1">
               <textarea
                 ref={textareaRef}
                 value={message}
-                onChange={handleMessageChange}
+                onChange={handleEnhancedMessageChange}
                 onKeyPress={handleKeyPress}
                 placeholder="Type your message... (Shift+Enter for new line)"
                 disabled={loading}
@@ -300,7 +208,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             
             <Button
               type="submit"
-              disabled={(!message.trim() && images.length === 0) || loading}
+              disabled={isSubmitDisabled}
               loading={loading}
               className="px-6 py-3 h-12"
             >
