@@ -46,7 +46,22 @@ function App() {
   useEffect(() => {
     if (user && !authLoading) {
       debug('User authenticated, loading chat threads...');
-      chat.loadThreads();
+      // Add a small delay to ensure Firebase token is ready
+      const loadWithDelay = async () => {
+        try {
+          // Wait for token to be available
+          await user.getIdToken();
+          chat.loadThreads();
+        } catch (error) {
+          console.error('Failed to get auth token, retrying in 1 second...', error);
+          // Retry after a short delay if token isn't ready
+          setTimeout(() => {
+            chat.loadThreads();
+          }, 1000);
+        }
+      };
+      
+      loadWithDelay();
     }
   }, [user, authLoading, debug, chat.loadThreads]);
 

@@ -75,6 +75,13 @@ class ChatApiService {
       // Get auth token if available
       const authToken = this.getAuthToken ? await this.getAuthToken() : null;
       
+      // Debug logging for auth token
+      if (authToken) {
+        logger.debug(`Auth token obtained: ${authToken.substring(0, 20)}...`);
+      } else {
+        logger.warn('No auth token available for request');
+      }
+      
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...options.headers as Record<string, string>,
