@@ -291,7 +291,10 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   );
 
   return (
-    <div className="hidden md:flex fixed left-0 top-0 w-80 bg-gray-50 border-r border-gray-200 flex-col h-full z-40">
+    <div 
+      className="hidden md:flex fixed left-0 top-0 w-80 bg-gray-50 border-r border-gray-200 flex-col h-full z-40"
+      data-no-drop="true"
+    >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-3">

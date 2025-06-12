@@ -140,8 +140,8 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="h-screen flex bg-gray-50">
-        {/* Chat Sidebar */}
+      <div className="h-screen bg-gray-50">
+        {/* Fixed Chat Sidebar */}
         <ChatSidebar
           threads={chat.threads}
           currentThreadId={chat.currentThread?.id || null}
@@ -151,8 +151,8 @@ function App() {
           loading={chat.threadsLoading}
         />
 
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
+        {/* Main Chat Area - Offset by sidebar width */}
+        <div className="ml-0 md:ml-80 h-full flex flex-col">
           {/* Error Banner */}
           {chat.error && !chat.error.includes('server') && !chat.error.includes('running') && (
             renderErrorBanner()
