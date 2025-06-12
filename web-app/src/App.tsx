@@ -18,7 +18,6 @@ import { useEffect } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
-import { SidebarToggle } from './components/ui/SidebarToggle';
 import { Button } from './components/ui/Button';
 import { SignInForm } from './components/auth/SignInForm';
 import { useChat } from './hooks/useChat';
@@ -145,12 +144,6 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="h-screen bg-gray-50">
-        {/* Mobile Sidebar Toggle Button */}
-        <SidebarToggle 
-          isOpen={sidebar.isOpen}
-          onToggle={sidebar.toggle}
-        />
-
         {/* Fixed Chat Sidebar */}
         <ChatSidebar
           threads={chat.threads}
@@ -161,6 +154,7 @@ function App() {
           loading={chat.threadsLoading}
           isOpen={sidebar.isOpen}
           onClose={sidebar.close}
+          onToggle={sidebar.toggle}
         />
 
         {/* Main Chat Area - Offset by sidebar width when open */}

@@ -32,6 +32,7 @@ interface ChatSidebarProps {
   loading: boolean;
   isOpen?: boolean;
   onClose?: () => void;
+  onToggle?: () => void;
 }
 
 /**
@@ -53,7 +54,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onDeleteThread,
   loading,
   isOpen = false,
-  onClose
+  onClose,
+  onToggle
 }) => {
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -318,12 +320,44 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
       >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-white">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-xl font-bold text-gray-900">Chats</h1>
-          <Button onClick={handleNewChat} size="sm">
-            + New
-          </Button>
+        {/* Top row: Toggle button + Chats title */}
+        <div className="flex items-center gap-3 mb-3">
+          {/* Sidebar toggle button */}
+          {onToggle && (
+            <button
+              onClick={onToggle}
+              className="p-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Toggle sidebar"
+              title="Toggle sidebar"
+            >
+              <svg
+                className="w-4 h-4 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          )}
+          
+          <h1 className="text-xl font-bold text-gray-900 flex-1">Chats</h1>
         </div>
+        
+        {/* Wide New Chat button */}
+        <Button 
+          onClick={handleNewChat} 
+          className="w-full mb-3"
+          size="sm"
+        >
+          + New Chat
+        </Button>
+        
         <p className="text-xs text-gray-500">
           OpenRouter Chat
         </p>
