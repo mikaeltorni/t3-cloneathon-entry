@@ -38,10 +38,11 @@ export async function rateLimit(req: Request, res: Response, next: NextFunction)
   const key = getRateLimitKey(req);
   
   try {
+    console.log(`[RateLimit] Checking ${key} for ${req.method} ${req.path}`);
     const isQuotaExceeded = await rateLimiter.isQuotaExceededOrRecordUsage(key);
     
     if (isQuotaExceeded) {
-      console.warn(`[RateLimit] Limit exceeded for ${key}`);
+      console.warn(`[RateLimit] 🚫 BLOCKED: ${key} for ${req.method} ${req.path}`);
       
       res.status(429).json({
         error: 'Rate limit exceeded',
@@ -49,6 +50,7 @@ export async function rateLimit(req: Request, res: Response, next: NextFunction)
         retryAfter: 60, // 1 minute
       });
     } else {
+      console.log(`[RateLimit] ✅ ALLOWED: ${key} for ${req.method} ${req.path}`);
       // Rate limit passed, continue
       next();
     }
