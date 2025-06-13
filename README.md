@@ -371,7 +371,7 @@ function ChatComponent() {
 
 #### Automatic Message Integration
 
-Token metrics are automatically attached to every assistant message with zero configuration:
+Token metrics are automatically tracked and displayed for every assistant message with zero configuration:
 
 ```typescript
 // Backend automatically tracks tokens during streaming
@@ -384,15 +384,16 @@ interface ChatMessage {
   tokenMetrics?: TokenMetrics; // Automatically populated for assistant messages
 }
 
-// Frontend automatically displays metrics in message cards
-// No additional code needed - metrics appear automatically below assistant messages
+// Frontend automatically displays metrics above model selector
+// No additional code needed - metrics appear in real-time during generation
 ```
 
 The system provides:
-- **Real-time TPS updates** during message generation
-- **Final metrics** attached to completed messages
-- **Automatic UI display** in message cards
-- **Cost tracking** for conversation budgeting
+- **Real-time TPS updates** during message generation (displayed above model selector)
+- **Final metrics** attached to completed messages and saved to database
+- **Global UI display** above model selection for consistent visibility
+- **Zero configuration** - metrics automatically appear for all assistant responses
+- **Cost tracking** for conversation budgeting with detailed breakdowns
 ```
 
 ### 🎨 UI Components

@@ -40,6 +40,7 @@ interface UseChatReturn {
   threadsLoading: boolean;
   error: string | null;
   images: ImageAttachment[];
+  currentTokenMetrics: TokenMetrics | null;
   
   // Actions
   loadThreads: (forceRefresh?: boolean) => Promise<void>;
@@ -68,6 +69,7 @@ export const useChat = (): UseChatReturn => {
   const [threadsLoading, setThreadsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [images, setImages] = useState<ImageAttachment[]>([]);
+  const [currentTokenMetrics, setCurrentTokenMetrics] = useState<TokenMetrics | null>(null);
 
   const { user } = useAuth();
   const { log, debug, warn, error: logError } = useLogger('useChat');
@@ -258,6 +260,7 @@ export const useChat = (): UseChatReturn => {
   const handleSendMessage = useCallback(async (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean) => {
     setLoading(true);
     setError(null);
+    setCurrentTokenMetrics(null); // Clear previous metrics
 
     try {
       // Check server connectivity first
@@ -481,8 +484,8 @@ export const useChat = (): UseChatReturn => {
             cost: metrics.estimatedCost?.total?.toFixed(6)
           });
           
-          // Update the temporary message with the latest token metrics
-          tempAiMessage.tokenMetrics = {
+          // Update current token metrics for global display
+          const currentMetrics: TokenMetrics = {
             inputTokens: metrics.inputTokens || 0,
             outputTokens: metrics.outputTokens || 0,
             totalTokens: metrics.totalTokens || 0,
@@ -492,6 +495,11 @@ export const useChat = (): UseChatReturn => {
             duration: metrics.duration,
             estimatedCost: metrics.estimatedCost
           };
+          
+          setCurrentTokenMetrics(currentMetrics);
+          
+          // Update the temporary message with the latest token metrics
+          tempAiMessage.tokenMetrics = currentMetrics;
           
           if (tempThread) {
             // Find if temp message already exists in thread
@@ -578,6 +586,7 @@ export const useChat = (): UseChatReturn => {
     threadsLoading,
     error,
     images,
+    currentTokenMetrics,
     
     // Actions
     loadThreads,

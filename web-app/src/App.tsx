@@ -207,6 +207,7 @@ function AppContent() {
               onImagesChange={chat.handleImagesChange}
               sidebarOpen={sidebar.isOpen}
               onModelChange={handleCurrentModelChange}
+              currentTokenMetrics={chat.currentTokenMetrics}
             />
           </div>
         </div>

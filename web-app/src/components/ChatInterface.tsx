@@ -24,7 +24,7 @@ import { useLogger } from '../hooks/useLogger';
 import { useGlobalDropZone } from '../hooks/useGlobalDropZone';
 import { useReasoningState } from '../hooks/useReasoningState';
 import { useInputBarHeight } from '../hooks/useInputBarHeight';
-import type { ChatThread, ModelConfig, ImageAttachment } from '../../../src/shared/types';
+import type { ChatThread, ModelConfig, ImageAttachment, TokenMetrics } from '../../../src/shared/types';
 
 /**
  * Props for the ChatInterface component
@@ -39,6 +39,7 @@ interface ChatInterfaceProps {
   onImagesChange: (images: ImageAttachment[]) => void;
   sidebarOpen?: boolean;
   onModelChange?: (modelId: string) => void;
+  currentTokenMetrics?: TokenMetrics | null;
 }
 
 /**
@@ -66,7 +67,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   images,
   onImagesChange,
   sidebarOpen = false,
-  onModelChange
+  onModelChange,
+  currentTokenMetrics = null
 }) => {
   const { debug } = useLogger('ChatInterface');
 
@@ -151,6 +153,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         onHeightChange={updateHeight}
         sidebarOpen={sidebarOpen}
         onModelChange={onModelChange}
+        currentTokenMetrics={currentTokenMetrics}
+        isGenerating={loading}
       />
     </div>
   );

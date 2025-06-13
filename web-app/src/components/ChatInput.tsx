@@ -22,10 +22,11 @@ import { Button } from './ui/Button';
 import { ModelSelector } from './ModelSelector';
 import { ReasoningToggle } from './ui/ReasoningToggle';
 import { ImageAttachments } from './ImageAttachments';
+import { TokenMetricsDisplay } from './TokenMetricsDisplay';
 import { useLogger } from '../hooks/useLogger';
 import { useMessageForm } from '../hooks/useMessageForm';
 import { cn } from '../utils/cn';
-import type { ModelConfig, ImageAttachment } from '../../../src/shared/types';
+import type { ModelConfig, ImageAttachment, TokenMetrics } from '../../../src/shared/types';
 
 /**
  * Props for the ChatInput component
@@ -40,6 +41,8 @@ interface ChatInputProps {
   onImagesChange: (images: ImageAttachment[]) => void;
   sidebarOpen?: boolean;
   onModelChange?: (modelId: string) => void;
+  currentTokenMetrics?: TokenMetrics | null;
+  isGenerating?: boolean;
 }
 
 /**
@@ -71,7 +74,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   images,
   onImagesChange,
   sidebarOpen = false,
-  onModelChange
+  onModelChange,
+  currentTokenMetrics = null,
+  isGenerating = false
 }) => {
   const inputBarRef = useRef<HTMLDivElement>(null);
   const { debug } = useLogger('ChatInput');
@@ -180,6 +185,27 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             images={images}
             onImagesChange={onImagesChange}
           />
+
+          {/* Token Metrics Display */}
+          {(currentTokenMetrics || isGenerating) && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-700">Performance Metrics</h3>
+                {isGenerating && (
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full animate-pulse">
+                    Generating...
+                  </span>
+                )}
+              </div>
+              {currentTokenMetrics && (
+                <TokenMetricsDisplay 
+                  metrics={currentTokenMetrics} 
+                  variant="compact"
+                  className="justify-start"
+                />
+              )}
+            </div>
+          )}
 
           {/* Model Selection with Beautiful Buttons */}
           <ModelSelector
