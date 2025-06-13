@@ -20,8 +20,8 @@
  */
 
 import { logger } from '../utils/logger';
+import type { TokenMetrics } from '../../../src/shared/types';
 import type { 
-  TokenMetrics, 
   TokenizerProvider, 
   ModelInfo, 
   TokenizationResult 
@@ -536,10 +536,17 @@ export class TokenizerService {
     inputTokens: number,
     outputTokens: number = 0,
     startTime: number,
-    endTime?: number
+    endTime?: number,
+    modelId?: string
   ): TokenMetrics {
     const duration = endTime ? endTime - startTime : Date.now() - startTime;
     const tokensPerSecond = outputTokens > 0 ? (outputTokens / (duration / 1000)) : 0;
+    
+    const modelInfo = modelId ? this.getModelInfo(modelId) : null;
+    const estimatedCost = modelInfo ? this.calculateCost(inputTokens, outputTokens, modelInfo) : undefined;
+    
+    // Calculate context window usage if model is provided
+    const contextWindow = modelId ? this.calculateContextWindowUsage(inputTokens + outputTokens, modelId) : undefined;
 
     return {
       inputTokens,
@@ -548,8 +555,47 @@ export class TokenizerService {
       tokensPerSecond,
       startTime,
       endTime,
-      duration
+      duration,
+      estimatedCost,
+      contextWindow
     };
+  }
+
+  /**
+   * Calculate context window usage for a specific model
+   */
+  calculateContextWindowUsage(usedTokens: number, modelId: string): {
+    used: number;
+    total: number;
+    percentage: number;
+    modelId: string;
+  } {
+    const modelInfo = this.getModelInfo(modelId);
+    const maxTokens = modelInfo.maxTokens || 128000; // Default to 128k if not specified
+    const percentage = Math.min((usedTokens / maxTokens) * 100, 100);
+
+    return {
+      used: usedTokens,
+      total: maxTokens,
+      percentage: Math.round(percentage * 100) / 100, // Round to 2 decimal places
+      modelId
+    };
+  }
+
+  /**
+   * Calculate total context window usage including all messages in a conversation
+   */
+  async calculateConversationContextUsage(
+    messages: any[], 
+    modelId: string
+  ): Promise<{
+    used: number;
+    total: number;
+    percentage: number;
+    modelId: string;
+  }> {
+    const result = await this.tokenizeChat(messages, modelId);
+    return this.calculateContextWindowUsage(result.tokenCount, modelId);
   }
 
   /**

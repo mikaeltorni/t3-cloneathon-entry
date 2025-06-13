@@ -17,16 +17,18 @@
  * 
  * Usage: <ChatInput onSendMessage={send} loading={loading} availableModels={models} />
  */
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Button } from './ui/Button';
 import { ModelSelector } from './ModelSelector';
 import { ReasoningToggle } from './ui/ReasoningToggle';
 import { ImageAttachments } from './ImageAttachments';
 import { TokenMetricsDisplay } from './TokenMetricsDisplay';
+import { ContextWindowDisplay } from './ContextWindowDisplay';
 import { useLogger } from '../hooks/useLogger';
 import { useMessageForm } from '../hooks/useMessageForm';
+import { tokenizerService } from '../services/tokenizerService';
 import { cn } from '../utils/cn';
-import type { ModelConfig, ImageAttachment, TokenMetrics } from '../../../src/shared/types';
+import type { ModelConfig, ImageAttachment, TokenMetrics, ChatMessage } from '../../../src/shared/types';
 
 /**
  * Props for the ChatInput component
@@ -43,6 +45,7 @@ interface ChatInputProps {
   onModelChange?: (modelId: string) => void;
   currentTokenMetrics?: TokenMetrics | null;
   isGenerating?: boolean;
+  currentMessages?: ChatMessage[];
 }
 
 /**
@@ -76,10 +79,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   sidebarOpen = false,
   onModelChange,
   currentTokenMetrics = null,
-  isGenerating = false
+  isGenerating = false,
+  currentMessages = []
 }) => {
   const inputBarRef = useRef<HTMLDivElement>(null);
   const { debug } = useLogger('ChatInput');
+  
+  // State for context window usage
+  const [contextWindowUsage, setContextWindowUsage] = useState<{
+    used: number;
+    total: number;
+    percentage: number;
+    modelId: string;
+  } | null>(null);
 
   /**
    * Form state and handlers from useMessageForm hook
@@ -114,6 +126,40 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     onModelChange?.(modelId);
     debug(`Model changed to: ${modelId}`);
   }, [setSelectedModel, onModelChange, debug]);
+
+  /**
+   * Calculate context window usage based on current messages and model
+   */
+  const calculateContextWindow = useCallback(async () => {
+    if (!selectedModel || currentMessages.length === 0) {
+      setContextWindowUsage(null);
+      return;
+    }
+
+    try {
+      // Convert messages to format expected by tokenizer
+      const messagesForTokenizer = currentMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      const contextUsage = await tokenizerService.calculateConversationContextUsage(
+        messagesForTokenizer, 
+        selectedModel
+      );
+
+      setContextWindowUsage(contextUsage);
+      debug(`Context window calculated for ${selectedModel}: ${contextUsage.percentage.toFixed(1)}%`);
+    } catch (error) {
+      debug('Failed to calculate context window usage:', error);
+      setContextWindowUsage(null);
+    }
+  }, [selectedModel, currentMessages, debug]);
+
+  // Calculate context window usage when model or messages change
+  useEffect(() => {
+    calculateContextWindow();
+  }, [calculateContextWindow]);
 
   /**
    * Auto-resize textarea based on content
@@ -186,21 +232,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             onImagesChange={onImagesChange}
           />
 
-          {/* Token Metrics Display */}
-          {(currentTokenMetrics || isGenerating) && (
+          {/* Token Metrics and Context Window Display */}
+          {(currentTokenMetrics || isGenerating || contextWindowUsage) && (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-1.5 mt-2">
               <div className="flex items-center justify-between">
-                {isGenerating && (
-                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full animate-pulse">Generating...</span>
+                <div className="flex items-center space-x-4">
+                  {isGenerating && (
+                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full animate-pulse">Generating...</span>
+                  )}
+                  {currentTokenMetrics && (
+                    <TokenMetricsDisplay 
+                      metrics={currentTokenMetrics} 
+                      variant="compact"
+                      className="justify-start"
+                    />
+                  )}
+                </div>
+                
+                {/* Context Window Display on the right */}
+                {contextWindowUsage && (
+                  <ContextWindowDisplay 
+                    contextWindow={contextWindowUsage}
+                    variant="compact"
+                    className="flex-shrink-0"
+                  />
                 )}
               </div>
-              {currentTokenMetrics && (
-                <TokenMetricsDisplay 
-                  metrics={currentTokenMetrics} 
-                  variant="compact"
-                  className="justify-start"
-                />
-              )}
             </div>
           )}
 

@@ -390,10 +390,12 @@ interface ChatMessage {
 
 The system provides:
 - **Real-time TPS updates** during message generation (displayed above model selector)
+- **Context window tracking** showing current conversation size vs model limits
 - **Final metrics** attached to completed messages and saved to database
 - **Global UI display** above model selection for consistent visibility
 - **Zero configuration** - metrics automatically appear for all assistant responses
 - **Cost tracking** for conversation budgeting with detailed breakdowns
+- **Visual progress bars** for context window utilization with color-coded warnings
 ```
 
 ### 🎨 UI Components
@@ -427,12 +429,38 @@ import {
 />
 ```
 
+#### Context Window Display Component
+
+```typescript
+import { ContextWindowDisplay } from './components/ContextWindowDisplay';
+
+// Compact context window display (default)
+<ContextWindowDisplay 
+  contextWindow={{
+    used: 15420,
+    total: 128000,
+    percentage: 12.05,
+    modelId: 'gpt-4o'
+  }}
+  variant="compact"
+/>
+
+// Full context window display with warnings
+<ContextWindowDisplay 
+  contextWindow={contextWindow}
+  variant="full"
+/>
+```
+
 #### Component Features
 - **Real-time Updates**: Live TPS display with animations
+- **Context Window Tracking**: Visual progress bars showing conversation size
+- **Color-coded Warnings**: Green/yellow/red based on usage level (50%/75%/90%)
 - **Cost Breakdown**: Input/output cost separation  
 - **Duration Tracking**: Generation time measurement
 - **Responsive Design**: Works on mobile and desktop
 - **Multiple Variants**: Badge, compact, and full display modes
+- **Smart Formatting**: Large numbers displayed as K/M units
 
 ### 🧪 Testing & Demo
 
@@ -502,6 +530,58 @@ class TokenTracker {
 }
 ```
 
+### 📊 Context Window Tracking
+
+Monitor conversation size in real-time to prevent hitting model limits:
+
+```typescript
+import { tokenizerService } from './services/tokenizerService';
+
+// Calculate context usage for current conversation
+const contextUsage = await tokenizerService.calculateConversationContextUsage(
+  messages, 
+  'gpt-4o'
+);
+
+console.log(`Context: ${contextUsage.used}/${contextUsage.total} tokens (${contextUsage.percentage}%)`);
+```
+
+#### Model Context Limits
+
+| Provider | Model | Context Window | 
+|----------|-------|----------------|
+| **OpenAI** | GPT-4o, GPT-4o-mini, GPT-4-turbo | 128K tokens |
+| **OpenAI** | GPT-4 | 8K tokens |
+| **OpenAI** | GPT-3.5-turbo | 16K tokens |
+| **Anthropic** | Claude 3.5 Sonnet/Haiku | 200K tokens |
+| **DeepSeek** | DeepSeek Chat/Coder | 128K tokens |
+| **Google** | Gemini 1.5 Pro | 2M tokens |
+| **Google** | Gemini 1.5 Flash | 1M tokens |
+
+#### Context Window Features
+
+- **Automatic Calculation**: Context usage calculated for every conversation
+- **Real-time Updates**: Updates as conversation grows
+- **Visual Indicators**: Progress bars with color-coded warnings
+- **Smart Warnings**: Alerts when approaching limits (75%, 90%)
+- **Database Persistence**: Context usage saved with each thread
+- **Model-specific Limits**: Accurate limits for each supported model
+
+#### Warning System
+
+```typescript
+// Color-coded warning levels
+if (percentage >= 90) {
+  // RED: "Context window nearly full - consider starting new conversation"
+} else if (percentage >= 75) {
+  // YELLOW: "Context window getting full - X tokens remaining"  
+} else if (percentage >= 50) {
+  // BLUE: Normal usage
+} else {
+  // GREEN: Low usage
+}
+```
+
 ### 💰 Cost Estimation
 
 The system includes comprehensive pricing data for all supported models:
@@ -511,15 +591,18 @@ The system includes comprehensive pricing data for all supported models:
 const MODEL_DATABASE = {
   'gpt-4o': {
     inputCostPer1k: 0.0025,
-    outputCostPer1k: 0.01
+    outputCostPer1k: 0.01,
+    maxTokens: 128000
   },
   'claude-3-5-sonnet-20241022': {
     inputCostPer1k: 0.003,
-    outputCostPer1k: 0.015
+    outputCostPer1k: 0.015,
+    maxTokens: 200000
   },
   'deepseek-chat': {
     inputCostPer1k: 0.00014,
-    outputCostPer1k: 0.00028
+    outputCostPer1k: 0.00028,
+    maxTokens: 128000
   }
 };
 ```

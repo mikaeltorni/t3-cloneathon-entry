@@ -33,6 +33,12 @@ export interface TokenMetrics {
     total: number;
     currency: string;
   };
+  contextWindow?: {
+    used: number;
+    total: number;
+    percentage: number;
+    modelId: string;
+  };
 }
 
 export interface ModelInfo {
@@ -232,6 +238,7 @@ export class TokenTracker {
     const duration = this.endTime - this.startTime;
     const tokensPerSecond = this.getCurrentTPS();
     const cost = this.calculateCost(this.inputTokens, this.outputTokens);
+    const contextWindow = this.calculateContextWindow();
 
     const metrics: TokenMetrics = {
       inputTokens: this.inputTokens,
@@ -241,10 +248,11 @@ export class TokenTracker {
       startTime: this.startTime,
       endTime: this.endTime,
       duration,
-      estimatedCost: cost
+      estimatedCost: cost,
+      contextWindow
     };
 
-    console.log(`[TokenTracker] Completed tracking: ${metrics.totalTokens} tokens, ${tokensPerSecond.toFixed(2)} TPS, $${cost.total.toFixed(6)} cost`);
+    console.log(`[TokenTracker] Completed tracking: ${metrics.totalTokens} tokens, ${tokensPerSecond.toFixed(2)} TPS, $${cost.total.toFixed(6)} cost, ${contextWindow.percentage.toFixed(1)}% context`);
     
     return metrics;
   }
@@ -334,6 +342,28 @@ export class TokenTracker {
   }
 
   /**
+   * Calculate context window usage
+   */
+  private calculateContextWindow(): {
+    used: number;
+    total: number;
+    percentage: number;
+    modelId: string;
+  } {
+    const totalTokens = this.inputTokens + this.outputTokens;
+    const modelInfo = this.getModelInfo(this.model);
+    const maxTokens = modelInfo.maxTokens || 128000; // Default to 128k
+    const percentage = Math.min((totalTokens / maxTokens) * 100, 100);
+
+    return {
+      used: totalTokens,
+      total: maxTokens,
+      percentage: Math.round(percentage * 100) / 100, // Round to 2 decimal places
+      modelId: this.model
+    };
+  }
+
+  /**
    * Get current metrics without stopping tracking
    */
   getCurrentMetrics(): Partial<TokenMetrics> {
@@ -341,6 +371,7 @@ export class TokenTracker {
     const duration = currentTime - this.startTime;
     const tokensPerSecond = this.getCurrentTPS();
     const cost = this.calculateCost(this.inputTokens, this.outputTokens);
+    const contextWindow = this.calculateContextWindow();
 
     return {
       inputTokens: this.inputTokens,
@@ -348,7 +379,8 @@ export class TokenTracker {
       totalTokens: this.inputTokens + this.outputTokens,
       tokensPerSecond,
       duration,
-      estimatedCost: cost
+      estimatedCost: cost,
+      contextWindow
     };
   }
 } 

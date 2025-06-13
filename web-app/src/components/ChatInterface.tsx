@@ -155,6 +155,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         onModelChange={onModelChange}
         currentTokenMetrics={currentTokenMetrics}
         isGenerating={loading}
+        currentMessages={messages}
       />
     </div>
   );

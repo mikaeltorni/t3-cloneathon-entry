@@ -83,7 +83,14 @@ export interface ChatThread {
   createdAt: Date;
   updatedAt: Date;
   currentModel?: string; // Currently selected model ID for this thread
-  lastUsedModel?: string; // Last model ID that was actually used in this thread  
+  lastUsedModel?: string; // Last model ID that was actually used in this thread
+  contextWindowUsage?: { // Current context window utilization
+    used: number;
+    total: number;
+    percentage: number;
+    modelId: string;
+    lastUpdated: Date;
+  };
 }
 
 /**
@@ -152,6 +159,12 @@ export interface TokenMetrics {
     output: number;
     total: number;
     currency: string;
+  };
+  contextWindow?: {
+    used: number;
+    total: number;
+    percentage: number;
+    modelId: string;
   };
 }
 
