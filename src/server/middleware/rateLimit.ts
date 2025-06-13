@@ -15,7 +15,7 @@ const rateLimiter = FirebaseFunctionsRateLimiter.withFirestoreBackend(
   {
     name: 'rateLimits',
     periodSeconds: 1 * 60, // 1 minute
-    maxCalls: 2, // 2 requests per 1 minute
+    maxCalls: 30, // 30 requests per 1 minute
   },
   admin.firestore()
 );
