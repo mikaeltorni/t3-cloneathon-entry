@@ -187,6 +187,7 @@ export class AIService {
    * @returns Model configuration or null if not found
    */
   getModelInfo(modelId: ModelId): any | null {
+    console.log(`[AIService] Getting model info for ${modelId}`);
     try {
       const models = this.getAvailableModels();
       return models[modelId] || null;

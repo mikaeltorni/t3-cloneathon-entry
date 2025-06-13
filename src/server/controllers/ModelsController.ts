@@ -232,6 +232,7 @@ export class ModelsController {
   getRoutes(): Router {
     const router = Router();
 
+    console.log('[ModelsController] Defining routes...');
     // Define routes
     router.get('/', this.getAvailableModels);
     router.get('/health', this.healthCheck);
