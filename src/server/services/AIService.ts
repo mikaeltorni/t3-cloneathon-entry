@@ -197,18 +197,18 @@ export class AIService {
     }
   }
 
-  /**
-   * Estimate token count for messages (placeholder for future implementation)
-   * This could be used for cost estimation and database storage optimization
-   * 
-   * @param messages - Messages to estimate
-   * @returns Rough token estimate
-   */
-  estimateTokens(messages: ChatMessage[]): number {
-    // Simple estimation - could be replaced with actual tokenization
-    const totalChars = messages.reduce((sum, msg) => sum + msg.content.length, 0);
-    return Math.ceil(totalChars / 4); // Rough estimate: 4 characters per token
-  }
+  // /**
+  //  * Estimate token count for messages (placeholder for future implementation)
+  //  * This could be used for cost estimation and database storage optimization
+  //  * 
+  //  * @param messages - Messages to estimate
+  //  * @returns Rough token estimate
+  //  */
+  // estimateTokens(messages: ChatMessage[]): number {
+  //   // Simple estimation - could be replaced with actual tokenization
+  //   const totalChars = messages.reduce((sum, msg) => sum + msg.content.length, 0);
+  //   return Math.ceil(totalChars / 4); // Rough estimate: 4 characters per token
+  // }
 
   /**
    * Health check for the AI service

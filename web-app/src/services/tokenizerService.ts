@@ -611,23 +611,91 @@ export class TokenizerService {
 
   /**
    * Estimate tokens in streaming chunks (for real-time counting)
+   * Uses actual gpt-tokenizer for OpenAI models when available
    */
-  estimateTokensInChunk(chunk: string, model: string): number {
+  async estimateTokensInChunk(chunk: string, model: string): Promise<number> {
     const modelInfo = this.getModelInfo(model);
     
-    // Provider-specific estimation for streaming
-    switch (modelInfo.provider) {
-      case 'openai':
-        return Math.ceil(chunk.length / 4); // ~4 chars per token
-      case 'anthropic':
+    // Use actual tokenizer for OpenAI models
+    if (modelInfo.provider === 'openai') {
+      try {
+        const tokenizer = await this.loadGPTTokenizer(model);
+        const tokens = tokenizer.encode(chunk);
+        return tokens.length;
+      } catch (error) {
+        logger.warn(`Failed to use gpt-tokenizer for chunk estimation, falling back to character-based estimation`, error as Error);
+        // Fallback to character-based estimation if tokenizer fails
         return Math.ceil(chunk.length / 4);
-      case 'deepseek':
-        return Math.ceil(chunk.length / 3.5);
-      case 'google':
-        return Math.ceil(chunk.length / 3.8);
-      default:
-        return Math.ceil(chunk.length / 4);
+      }
     }
+    
+         // For non-OpenAI models, try to use OpenAI tokenizer as fallback for better accuracy
+     // Most models use similar tokenization patterns to OpenAI's encodings
+     try {
+       const fallbackTokenizer = await this.loadGPTTokenizer('gpt-4o'); // Use modern encoding
+       const tokens = fallbackTokenizer.encode(chunk);
+       return tokens.length;
+     } catch (error) {
+       logger.error(`Failed to use gpt-tokenizer for non-OpenAI model`, error as Error);
+       
+      //  // Provider-specific character-based estimation as final fallback
+      //  switch (modelInfo.provider) {
+      //    case 'anthropic':
+      //      return Math.ceil(chunk.length / 4);
+      //    case 'deepseek':
+      //      return Math.ceil(chunk.length / 3.5);
+      //    case 'google':
+      //      return Math.ceil(chunk.length / 3.8);
+      //    default:
+      //      return Math.ceil(chunk.length / 4);
+      //  }
+     }
+  }
+
+  /**
+   * Synchronous version of estimateTokensInChunk for when async is not possible
+   * Falls back to character-based estimation
+   */
+  estimateTokensInChunkSync(chunk: string, model: string): number {
+    const modelInfo = this.getModelInfo(model);
+    
+    // Check if we have a cached tokenizer for OpenAI models
+    if (modelInfo.provider === 'openai' && this.gptTokenizerCache.has(model)) {
+      try {
+        const tokenizer = this.gptTokenizerCache.get(model)!;
+        const tokens = tokenizer.encode(chunk);
+        return tokens.length;
+      } catch (error) {
+        logger.warn(`Failed to use cached gpt-tokenizer for chunk estimation`, error as Error);
+      }
+    }
+    
+         // For non-OpenAI models, try to use cached OpenAI tokenizer for better accuracy  
+     // Most models use similar tokenization patterns to OpenAI's encodings
+     const cachedTokenizer = this.gptTokenizerCache.get('gpt-4o');
+     if (cachedTokenizer) {
+       try {
+         const tokens = cachedTokenizer.encode(chunk);
+         return tokens.length;
+       } catch (error) {
+         logger.warn(`Failed to use cached gpt-tokenizer for non-OpenAI model`, error as Error);
+       }
+     }
+     
+    //  // Fallback to character-based estimation
+    //  switch (modelInfo.provider) {
+    //    case 'openai':
+    //      return Math.ceil(chunk.length / 4);
+    //    case 'anthropic':
+    //      return Math.ceil(chunk.length / 4);
+    //    case 'deepseek':
+    //      return Math.ceil(chunk.length / 3.5);
+    //    case 'google':
+    //      return Math.ceil(chunk.length / 3.8);
+    //    default:
+    //      return Math.ceil(chunk.length / 4);
+    //  }
+    return 0;
   }
 
   /**
