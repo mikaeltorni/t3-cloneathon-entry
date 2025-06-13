@@ -57,7 +57,7 @@ export interface UseMessageFormReturn {
   
   // Form operations
   canSubmit: boolean;
-  handleSubmit: () => void;
+  handleSubmit: (e?: React.FormEvent<HTMLFormElement>) => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   
   // UI helpers
@@ -158,7 +158,12 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
   /**
    * Handle form submission
    */
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback((e?: React.FormEvent<HTMLFormElement>) => {
+    // Prevent default form submission behavior
+    if (e) {
+      e.preventDefault();
+    }
+
     if (!canSubmit()) {
       debug('Form submission blocked: invalid form state');
       return;
