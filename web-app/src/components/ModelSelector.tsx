@@ -195,6 +195,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           return (
             <button
               key={modelId}
+              type="button"
               onClick={() => onChange(modelId)}
               disabled={loading}
               className={cn(
