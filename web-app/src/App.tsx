@@ -25,7 +25,7 @@ import { ConnectionError } from './components/error/ConnectionError';
 import { ErrorBanner } from './components/error/ErrorBanner';
 import { cn } from './utils/cn';
 import { useChat } from './hooks/useChat';
-import { useModels } from './hooks/useModels';
+import { ModelsProvider, useModels } from './contexts/ModelsContext';
 import { useLogger } from './hooks/useLogger';
 import { useAuth } from './hooks/useAuth';
 import { useSidebarToggle } from './hooks/useSidebarToggle';
@@ -36,7 +36,7 @@ import { clearAllCaches } from './utils/sessionCache';
  * 
  * @returns React component
  */
-function App() {
+function AppContent() {
   // Use custom hooks for state management
   const chat = useChat();
   const models = useModels();
@@ -59,11 +59,7 @@ function App() {
     }
   }, [chat.currentThread?.id, chat.currentThread?.currentModel, chat.currentThread?.lastUsedModel, debug]);
 
-  // Load models on app start (no auth required)
-  useEffect(() => {
-    debug('App mounted, loading models...');
-    models.loadModels();
-  }, [debug, models.loadModels]);
+  // Models are now auto-loaded by useModels hook - no manual call needed!
 
   // Load threads only after user is authenticated
   useEffect(() => {
@@ -216,6 +212,17 @@ function App() {
         </div>
       </div>
     </ErrorBoundary>
+  );
+}
+
+/**
+ * Main App component with provider
+ */
+function App() {
+  return (
+    <ModelsProvider>
+      <AppContent />
+    </ModelsProvider>
   );
 }
 
