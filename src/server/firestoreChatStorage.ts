@@ -32,10 +32,22 @@ class FirestoreChatStorageError extends Error {
 }
 
 /**
- * Chat storage service interface (same as file-based version)
+ * Chat storage service interface (enhanced with efficient batch operations)
  */
 interface ChatStorageService {
   getAllThreads(userId: string): Promise<ChatThread[]>;
+  getAllThreadsEfficient(userId: string, limit?: number, startAfter?: FirebaseFirestore.DocumentSnapshot): Promise<{
+    threads: ChatThread[];
+    hasMore: boolean;
+    lastVisible?: FirebaseFirestore.DocumentSnapshot;
+    totalCount?: number;
+  }>;
+  getThreadSummaries(userId: string, limit?: number, startAfter?: FirebaseFirestore.DocumentSnapshot): Promise<{
+    threads: Omit<ChatThread, 'messages'>[];
+    hasMore: boolean;
+    lastVisible?: FirebaseFirestore.DocumentSnapshot;
+  }>;
+  getBatchMessages(userId: string, threadIds: string[]): Promise<Map<string, ChatMessage[]>>;
   getThread(userId: string, threadId: string): Promise<ChatThread | null>;
   createThread(userId: string, title: string, currentModel?: string): Promise<ChatThread>;
   deleteThread(userId: string, threadId: string): Promise<boolean>;
@@ -114,30 +126,211 @@ class FirestoreChatStorageService implements ChatStorageService {
   }
 
   /**
-   * Get all chat threads for a user
+   * Get all chat threads for a user (EFFICIENT VERSION)
+   * 
+   * Uses batch operations and pagination to minimize Firebase rate limits
    * 
    * @param userId - User ID
-   * @returns Array of chat threads sorted by update time (newest first)
+   * @param limit - Max threads to retrieve (default: 50)
+   * @param startAfter - Pagination cursor (optional)
+   * @returns Array of chat threads with pagination info
    */
-  async getAllThreads(userId: string): Promise<ChatThread[]> {
+  async getAllThreadsEfficient(
+    userId: string, 
+    limit: number = 50, 
+    startAfter?: FirebaseFirestore.DocumentSnapshot
+  ): Promise<{
+    threads: ChatThread[];
+    hasMore: boolean;
+    lastVisible?: FirebaseFirestore.DocumentSnapshot;
+    totalCount?: number;
+  }> {
     try {
       if (!userId?.trim()) {
         throw new Error('User ID is required');
       }
 
-      console.log(`[Firestore] Getting all threads for user: ${userId}`);
+      console.log(`[Firestore] Getting threads (efficient) for user: ${userId}, limit: ${limit}`);
 
-      const snapshot = await this.getUserChatsCollection(userId)
+      // Build query with pagination
+      let query = this.getUserChatsCollection(userId)
         .orderBy('updatedAt', 'desc')
-        .get();
+        .limit(limit);
 
+      if (startAfter) {
+        query = query.startAfter(startAfter);
+      }
+
+      const snapshot = await query.get();
       const threads: ChatThread[] = [];
+      const threadIds: string[] = [];
+
+      // First, collect all thread data and IDs
+      for (const doc of snapshot.docs) {
+        const threadData = this.documentToChatThread(doc);
+        if (threadData) {
+          threads.push(threadData);
+          threadIds.push(doc.id);
+        }
+      }
+
+      // Batch retrieve all messages for all threads in parallel
+      if (threadIds.length > 0) {
+        console.log(`[Firestore] Batch loading messages for ${threadIds.length} threads`);
+        
+        const messagePromises = threadIds.map(async (threadId, index) => {
+          try {
+            const messagesSnapshot = await this.getChatMessagesCollection(userId, threadId)
+              .orderBy('timestamp', 'asc')
+              .get();
+
+            const messages: ChatMessage[] = [];
+            messagesSnapshot.docs.forEach(messageDoc => {
+              const message = this.documentToChatMessage(messageDoc);
+              if (message) {
+                messages.push(message);
+              }
+            });
+
+            // Update the corresponding thread with its messages
+            threads[index].messages = messages;
+            return messages.length;
+          } catch (error) {
+            console.error(`[Firestore] Error loading messages for thread ${threadId}:`, error);
+            threads[index].messages = []; // Set empty messages on error
+            return 0;
+          }
+        });
+
+        // Execute all message queries in parallel
+        const messageCounts = await Promise.all(messagePromises);
+        const totalMessages = messageCounts.reduce((sum, count) => sum + count, 0);
+        
+        console.log(`[Firestore] Batch loaded ${totalMessages} messages across ${threadIds.length} threads`);
+      }
+
+      // Determine if there are more results
+      const hasMore = snapshot.docs.length === limit;
+      const lastVisible = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : undefined;
+
+      console.log(`[Firestore] Retrieved ${threads.length} threads efficiently (hasMore: ${hasMore})`);
+      
+      return {
+        threads,
+        hasMore,
+        lastVisible,
+      };
+    } catch (error) {
+      console.error(`[Firestore] Error getting threads efficiently for user ${userId}:`, error);
+      throw new FirestoreChatStorageError(
+        `Failed to get threads efficiently: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'getAllThreadsEfficient',
+        error
+      );
+    }
+  }
+
+  /**
+   * Get all chat threads for a user (LEGACY - kept for backward compatibility)
+   * 
+   * @deprecated Use getAllThreadsEfficient instead
+   * @param userId - User ID
+   * @returns Array of chat threads sorted by update time (newest first)
+   */
+  async getAllThreads(userId: string): Promise<ChatThread[]> {
+    console.log(`[Firestore] LEGACY getAllThreads called - consider using getAllThreadsEfficient`);
+    
+    // For backward compatibility, call the efficient version with default pagination
+    const result = await this.getAllThreadsEfficient(userId, 100); // Increased default limit
+    return result.threads;
+  }
+
+  /**
+   * Get thread summaries without messages (for efficient list views)
+   * 
+   * @param userId - User ID
+   * @param limit - Max threads to retrieve
+   * @param startAfter - Pagination cursor
+   * @returns Thread summaries without message content
+   */
+  async getThreadSummaries(
+    userId: string, 
+    limit: number = 50,
+    startAfter?: FirebaseFirestore.DocumentSnapshot
+  ): Promise<{
+    threads: Omit<ChatThread, 'messages'>[];
+    hasMore: boolean;
+    lastVisible?: FirebaseFirestore.DocumentSnapshot;
+  }> {
+    try {
+      if (!userId?.trim()) {
+        throw new Error('User ID is required');
+      }
+
+      console.log(`[Firestore] Getting thread summaries for user: ${userId}, limit: ${limit}`);
+
+      let query = this.getUserChatsCollection(userId)
+        .orderBy('updatedAt', 'desc')
+        .limit(limit);
+
+      if (startAfter) {
+        query = query.startAfter(startAfter);
+      }
+
+      const snapshot = await query.get();
+      const threads: Omit<ChatThread, 'messages'>[] = [];
 
       for (const doc of snapshot.docs) {
         const threadData = this.documentToChatThread(doc);
         if (threadData) {
-          // Get messages for this thread
-          const messagesSnapshot = await this.getChatMessagesCollection(userId, doc.id)
+          // Exclude messages for summary view
+          const { messages, ...threadSummary } = threadData;
+          threads.push(threadSummary);
+        }
+      }
+
+      const hasMore = snapshot.docs.length === limit;
+      const lastVisible = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : undefined;
+
+      console.log(`[Firestore] Retrieved ${threads.length} thread summaries (hasMore: ${hasMore})`);
+      
+      return {
+        threads,
+        hasMore,
+        lastVisible,
+      };
+    } catch (error) {
+      console.error(`[Firestore] Error getting thread summaries for user ${userId}:`, error);
+      throw new FirestoreChatStorageError(
+        `Failed to get thread summaries: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'getThreadSummaries',
+        error
+      );
+    }
+  }
+
+  /**
+   * Get messages for multiple threads in batch
+   * 
+   * @param userId - User ID
+   * @param threadIds - Array of thread IDs
+   * @returns Map of threadId to messages array
+   */
+  async getBatchMessages(userId: string, threadIds: string[]): Promise<Map<string, ChatMessage[]>> {
+    try {
+      if (!userId?.trim()) {
+        throw new Error('User ID is required');
+      }
+
+      if (!threadIds.length) {
+        return new Map();
+      }
+
+      console.log(`[Firestore] Batch loading messages for ${threadIds.length} threads`);
+
+      const messagePromises = threadIds.map(async (threadId) => {
+        try {
+          const messagesSnapshot = await this.getChatMessagesCollection(userId, threadId)
             .orderBy('timestamp', 'asc')
             .get();
 
@@ -149,18 +342,25 @@ class FirestoreChatStorageService implements ChatStorageService {
             }
           });
 
-          threadData.messages = messages;
-          threads.push(threadData);
+          return [threadId, messages] as [string, ChatMessage[]];
+        } catch (error) {
+          console.error(`[Firestore] Error loading messages for thread ${threadId}:`, error);
+          return [threadId, []] as [string, ChatMessage[]];
         }
-      }
+      });
 
-      console.log(`[Firestore] Retrieved ${threads.length} threads for user: ${userId}`);
-      return threads;
+      const results = await Promise.all(messagePromises);
+      const messageMap = new Map(results);
+      
+      const totalMessages = Array.from(messageMap.values()).reduce((sum, messages) => sum + messages.length, 0);
+      console.log(`[Firestore] Batch loaded ${totalMessages} messages for ${threadIds.length} threads`);
+
+      return messageMap;
     } catch (error) {
-      console.error(`[Firestore] Error getting threads for user ${userId}:`, error);
+      console.error(`[Firestore] Error batch loading messages:`, error);
       throw new FirestoreChatStorageError(
-        `Failed to get all threads: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'getAllThreads',
+        `Failed to batch load messages: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'getBatchMessages',
         error
       );
     }

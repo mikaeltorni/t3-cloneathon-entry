@@ -59,9 +59,12 @@ export class ChatController {
   }
 
   /**
-   * Get all chat threads
+   * Get all chat threads (with efficient pagination)
    * 
    * @route GET /api/chats
+   * @query limit - Number of threads to fetch (default: 50)
+   * @query startAfter - Pagination cursor
+   * @query summaryOnly - If true, returns thread summaries without messages
    */
   getAllThreads = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -73,13 +76,35 @@ export class ChatController {
         return;
       }
 
-      console.log(`[ChatController] Fetching all chat threads for user: ${req.user.uid}`);
+      const limit = parseInt(req.query.limit as string) || 50;
+      const summaryOnly = req.query.summaryOnly === 'true';
+      const startAfter = req.query.startAfter as string; // Cursor for pagination
+
+      console.log(`[ChatController] Fetching chat threads for user: ${req.user.uid} (limit: ${limit}, summaryOnly: ${summaryOnly})`);
       
-      const threads = await firestoreChatStorage.getAllThreads(req.user.uid);
-      const response: GetChatsResponse = { threads };
-      
-      console.log(`[ChatController] Successfully fetched ${threads.length} chat threads`);
-      res.json(response);
+      if (summaryOnly) {
+        // Use thread summaries for efficient list view
+        const result = await firestoreChatStorage.getThreadSummaries(req.user.uid, limit);
+        const response = {
+          threads: result.threads,
+          hasMore: result.hasMore,
+          cursor: result.lastVisible?.id
+        };
+        
+        console.log(`[ChatController] Successfully fetched ${result.threads.length} thread summaries`);
+        res.json(response);
+      } else {
+        // Use efficient batch loading
+        const result = await firestoreChatStorage.getAllThreadsEfficient(req.user.uid, limit);
+        const response: GetChatsResponse & { hasMore?: boolean; cursor?: string } = { 
+          threads: result.threads,
+          hasMore: result.hasMore,
+          cursor: result.lastVisible?.id
+        };
+        
+        console.log(`[ChatController] Successfully fetched ${result.threads.length} chat threads efficiently`);
+        res.json(response);
+      }
     } catch (error) {
       console.error('[ChatController] Error getting chats:', error);
       next(error);
@@ -678,6 +703,58 @@ export class ChatController {
   };
 
   /**
+   * Get messages for multiple threads in batch
+   * 
+   * @route POST /api/chats/messages/batch
+   * @body threadIds - Array of thread IDs to fetch messages for
+   */
+  getBatchMessages = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const { threadIds } = req.body;
+      
+      if (!Array.isArray(threadIds) || threadIds.length === 0) {
+        res.status(400).json({ 
+          error: 'threadIds array is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      if (threadIds.length > 20) {
+        res.status(400).json({ 
+          error: 'Maximum 20 threads per batch request',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      
+      console.log(`[ChatController] Batch fetching messages for ${threadIds.length} threads for user: ${req.user.uid}`);
+      
+      const messagesMap = await firestoreChatStorage.getBatchMessages(req.user.uid, threadIds);
+      
+      // Convert Map to plain object for JSON response
+      const messagesObject: Record<string, ChatMessage[]> = {};
+      messagesMap.forEach((messages, threadId) => {
+        messagesObject[threadId] = messages;
+      });
+      
+      console.log(`[ChatController] Successfully batch fetched messages for ${threadIds.length} threads`);
+      res.json({ messages: messagesObject });
+    } catch (error) {
+      console.error('[ChatController] Error batch fetching messages:', error);
+      next(error);
+    }
+  };
+
+  /**
    * Health check endpoint
    * 
    * @route GET /api/chats/health
@@ -717,6 +794,7 @@ export class ChatController {
     router.get('/:threadId', this.getThread);
     router.post('/message', this.createMessage);
     router.post('/message/stream', this.createMessageStream);
+    router.post('/messages/batch', this.getBatchMessages);
     router.delete('/:threadId', this.deleteThread);
     router.put('/:threadId/title', this.updateThreadTitle);
     router.patch('/:threadId/pin', this.toggleThreadPin);

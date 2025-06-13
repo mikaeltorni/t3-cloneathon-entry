@@ -17,6 +17,7 @@
 import { logger } from '../utils/logger';
 import type { 
   ChatThread, 
+  ChatMessage,
   CreateMessageRequest, 
   CreateMessageResponse, 
   GetChatsResponse,
@@ -137,19 +138,95 @@ class ChatApiService {
   }
 
   /**
-   * Get all chat threads
+   * Get all chat threads (LEGACY - consider using getAllChatsEfficient)
    * 
    * @returns Promise with array of chat threads
    */
   async getAllChats(): Promise<ChatThread[]> {
     try {
-      logger.info('Fetching all chat threads');
+      logger.info('Fetching all chat threads (LEGACY)');
       const response = await this.makeRequest<GetChatsResponse>('/chats');
       logger.info(`Successfully fetched ${response.threads.length} chat threads`);
       return response.threads;
     } catch (error) {
       logger.error('Failed to fetch chat threads', error as Error);
       throw new Error('Failed to load chat history. Please try again.');
+    }
+  }
+
+  /**
+   * Get all chat threads with efficient pagination
+   * 
+   * @param limit - Number of threads to fetch (default: 50)
+   * @param cursor - Pagination cursor from previous request
+   * @param summaryOnly - If true, returns thread summaries without messages
+   * @returns Promise with chat threads and pagination info
+   */
+  async getAllChatsEfficient(
+    limit: number = 50,
+    cursor?: string,
+    summaryOnly: boolean = false
+  ): Promise<{
+    threads: ChatThread[];
+    hasMore: boolean;
+    cursor?: string;
+  }> {
+    try {
+      const params = new URLSearchParams();
+      params.append('limit', limit.toString());
+      if (cursor) params.append('startAfter', cursor);
+      if (summaryOnly) params.append('summaryOnly', 'true');
+
+      logger.info(`Fetching chat threads (efficient): limit=${limit}, summaryOnly=${summaryOnly}`);
+      
+      const response = await this.makeRequest<GetChatsResponse & { hasMore?: boolean; cursor?: string }>(
+        `/chats?${params.toString()}`
+      );
+      
+      logger.info(`Successfully fetched ${response.threads.length} chat threads efficiently (hasMore: ${response.hasMore})`);
+      
+      return {
+        threads: response.threads,
+        hasMore: response.hasMore || false,
+        cursor: response.cursor,
+      };
+    } catch (error) {
+      logger.error('Failed to fetch chat threads efficiently', error as Error);
+      throw new Error('Failed to load chat history. Please try again.');
+    }
+  }
+
+  /**
+   * Get messages for multiple threads in batch
+   * 
+   * @param threadIds - Array of thread IDs to fetch messages for
+   * @returns Promise with messages mapped by thread ID
+   */
+  async getBatchMessages(threadIds: string[]): Promise<Record<string, ChatMessage[]>> {
+    if (!Array.isArray(threadIds) || threadIds.length === 0) {
+      throw new Error('Thread IDs array is required');
+    }
+
+    if (threadIds.length > 20) {
+      throw new Error('Maximum 20 threads per batch request');
+    }
+
+    try {
+      logger.info(`Batch fetching messages for ${threadIds.length} threads`);
+      
+      const response = await this.makeRequest<{ messages: Record<string, ChatMessage[]> }>(
+        '/chats/messages/batch',
+        {
+          method: 'POST',
+          body: JSON.stringify({ threadIds }),
+        }
+      );
+      
+      logger.info(`Successfully batch fetched messages for ${threadIds.length} threads`);
+      return response.messages;
+    } catch (error) {
+      logger.error('Failed to batch fetch messages', error as Error);
+      throw new Error('Failed to load messages. Please try again.');
     }
   }
 

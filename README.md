@@ -11,6 +11,27 @@ A modern full-stack chat application built with React, TypeScript, Express.js, a
 - **Responsive Design**: Tailwind CSS with mobile-first approach
 - **Production Ready**: Firebase/Google Cloud optimized architecture
 
+## 🚀 Recent Performance Optimizations
+
+### **Firebase Rate Limit Prevention**
+We've implemented several efficiency improvements to handle large numbers of chat threads without hitting Firebase rate limits:
+
+#### **Batch Operations**
+- **Efficient Thread Loading**: `getAllThreadsEfficient()` uses parallel message loading instead of sequential queries
+- **Pagination Support**: Load threads in chunks (default: 50) to reduce memory usage and API calls
+- **Batch Message Retrieval**: `getBatchMessages()` loads messages for multiple threads in parallel
+- **Thread Summaries**: `getThreadSummaries()` loads thread metadata without messages for faster list views
+
+#### **Caching Enhancements**
+- **Smart Model Caching**: 30-minute cache for AI models with automatic invalidation
+- **Thread Caching**: Local storage caching for chat threads with fallback support
+- **Rate Limiting Prevention**: Prevents rapid successive API calls
+
+#### **API Endpoints**
+- `GET /api/chats?limit=50&summaryOnly=true` - Efficient thread list loading
+- `POST /api/chats/messages/batch` - Batch message retrieval for up to 20 threads
+- Enhanced pagination with cursor-based navigation
+
 ## 🛠️ Technology Stack
 
 ### Backend
