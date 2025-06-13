@@ -37,7 +37,7 @@ class FirestoreChatStorageError extends Error {
 interface ChatStorageService {
   getAllThreads(userId: string): Promise<ChatThread[]>;
   getThread(userId: string, threadId: string): Promise<ChatThread | null>;
-  createThread(userId: string, title: string): Promise<ChatThread>;
+  createThread(userId: string, title: string, currentModel?: string): Promise<ChatThread>;
   deleteThread(userId: string, threadId: string): Promise<boolean>;
   updateThreadTitle(userId: string, threadId: string, title: string): Promise<ChatThread | null>;
   createMessage(content: string, role: 'user' | 'assistant', imageUrl?: string, modelId?: string): ChatMessage;
@@ -83,6 +83,8 @@ class FirestoreChatStorageService implements ChatStorageService {
       messages: data.messages || [],
       createdAt: data.createdAt?.toDate() || new Date(),
       updatedAt: data.updatedAt?.toDate() || new Date(),
+      currentModel: data.currentModel || undefined,
+      lastUsedModel: data.lastUsedModel || undefined,
     };
   }
 
@@ -220,9 +222,10 @@ class FirestoreChatStorageService implements ChatStorageService {
    * 
    * @param userId - User ID
    * @param title - Title for the new thread
+   * @param currentModel - Optional current model for the thread
    * @returns Created thread data
    */
-  async createThread(userId: string, title: string): Promise<ChatThread> {
+  async createThread(userId: string, title: string, currentModel?: string): Promise<ChatThread> {
     try {
       if (!userId?.trim()) {
         throw new Error('User ID is required');
@@ -241,16 +244,23 @@ class FirestoreChatStorageService implements ChatStorageService {
         messages: [],
         createdAt: now,
         updatedAt: now,
+        currentModel: currentModel,
       };
 
-      console.log(`[Firestore] Creating new thread: ${thread.title} (${threadId}) for user: ${userId}`);
+      console.log(`[Firestore] Creating new thread: ${thread.title} (${threadId}) for user: ${userId}${currentModel ? ` with model: ${currentModel}` : ''}`);
 
-      // Create thread document
-      await this.getUserChatsCollection(userId).doc(threadId).set({
+      // Create thread document with model information
+      const threadData: any = {
         title: thread.title,
         createdAt: now,
         updatedAt: now,
-      });
+      };
+
+      if (currentModel) {
+        threadData.currentModel = currentModel;
+      }
+
+      await this.getUserChatsCollection(userId).doc(threadId).set(threadData);
 
       console.log(`[Firestore] Created new thread: ${thread.title} (${threadId})`);
       return thread;
@@ -446,10 +456,18 @@ class FirestoreChatStorageService implements ChatStorageService {
         ...(message.images && { images: message.images }), // Save multiple image attachments
       });
 
-      // Update thread's updatedAt timestamp
-      await this.getUserChatsCollection(userId).doc(threadId).update({
+      // Update thread's updatedAt timestamp and track lastUsedModel
+      const updateData: any = {
         updatedAt: new Date(),
-      });
+      };
+
+      // If this is an assistant message with a modelId, update lastUsedModel
+      if (message.role === 'assistant' && message.modelId) {
+        updateData.lastUsedModel = message.modelId;
+        console.log(`[Firestore] Updating lastUsedModel to: ${message.modelId}`);
+      }
+
+      await this.getUserChatsCollection(userId).doc(threadId).update(updateData);
 
       console.log(`[Firestore] Added ${message.role} message to thread: ${threadId}`);
     } catch (error) {

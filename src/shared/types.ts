@@ -71,6 +71,8 @@ export interface ImageAttachment {
  * @property messages - Array of messages in chronological order
  * @property createdAt - Thread creation timestamp
  * @property updatedAt - Last modification timestamp
+ * @property currentModel - Currently selected model for this thread
+ * @property lastUsedModel - Last model that was actually used for a message in this thread
  */
 export interface ChatThread {
   id: string;
@@ -78,6 +80,8 @@ export interface ChatThread {
   messages: ChatMessage[];
   createdAt: Date;
   updatedAt: Date;
+  currentModel?: string; // Currently selected model ID for this thread
+  lastUsedModel?: string; // Last model ID that was actually used in this thread  
 }
 
 /**

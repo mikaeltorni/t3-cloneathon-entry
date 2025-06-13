@@ -15,7 +15,7 @@
  *   - Mobile sidebar toggle functionality
  *   - Cache security: Clears session cache on both login and logout
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
@@ -43,6 +43,9 @@ function App() {
   const { user, loading: authLoading } = useAuth();
   const sidebar = useSidebarToggle();
   const { debug } = useLogger('App');
+
+  // Track current model selection (for sidebar display)
+  const [currentModel, setCurrentModel] = useState<string>('google/gemini-2.5-flash-preview-05-20');
 
   // Load models on app start (no auth required)
   useEffect(() => {
@@ -86,6 +89,19 @@ function App() {
   };
 
   /**
+   * Handle model change for a specific thread
+   */
+  const handleModelChange = async (threadId: string, modelId: string) => {
+    debug(`Model changed for thread ${threadId}: ${modelId}`);
+    // Update current model if it's for the active thread
+    if (threadId === chat.currentThread?.id) {
+      setCurrentModel(modelId);
+    }
+    // TODO: Implement thread-specific model persistence
+    // This would update the thread's currentModel field in the backend
+  };
+
+  /**
    * Check if error is a server connection error
    */
   const isConnectionError = (error: string): boolean => {
@@ -124,7 +140,7 @@ function App() {
           />
         )}
 
-        {/* Fixed Chat Sidebar */}
+        {/* Enhanced Fixed Chat Sidebar with Model Information */}
         <ChatSidebar
           threads={chat.threads}
           currentThreadId={chat.currentThread?.id || null}
@@ -136,6 +152,9 @@ function App() {
           isOpen={sidebar.isOpen}
           onClose={sidebar.close}
           onToggle={sidebar.toggle}
+          availableModels={models.availableModels}
+          onModelChange={handleModelChange}
+          currentModel={currentModel}
         />
 
         {/* Main Chat Area - Offset by sidebar width when open */}

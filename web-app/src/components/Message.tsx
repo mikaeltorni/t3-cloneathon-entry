@@ -175,7 +175,7 @@ const Message: React.FC<MessageProps> = React.memo(({
                   h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
                   strong: ({ children }) => <strong className="font-bold">{children}</strong>,
                   em: ({ children }) => <em className="italic">{children}</em>,
-                  code: ({ children, inline, ...props }: any) => {
+                  code: ({ children, inline }: any) => {
                     const codeString = Array.isArray(children) ? children.join('') : String(children);
                     if (inline) {
                       return (
@@ -233,7 +233,7 @@ const Message: React.FC<MessageProps> = React.memo(({
                 h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
                 strong: ({ children }) => <strong className="font-bold">{children}</strong>,
                 em: ({ children }) => <em className="italic">{children}</em>,
-                code: ({ children, inline, ...props }: any) => {
+                code: ({ children, inline }: any) => {
                   const codeString = Array.isArray(children) ? children.join('') : String(children);
                   if (inline) {
                     return (

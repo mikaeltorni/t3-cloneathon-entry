@@ -1,27 +1,29 @@
 /**
  * ChatSidebar.tsx
  * 
- * Fixed positioned sidebar component for chat thread management
- * Anchored to the left side of viewport with responsive behavior
+ * Enhanced fixed positioned sidebar component for chat thread management
+ * Now includes model information, slick design, and improved UX
  * 
  * Components:
  *   ChatSidebar
  * 
  * Features:
  *   - Fixed positioning that stays anchored during scrolling
- *   - Thread list with search and management
+ *   - Thread list with model information and slick design
  *   - Thread deletion with confirmation
  *   - New chat creation
+ *   - Model switching per thread with caching
  *   - Loading states and empty states
  *   - Responsive design (hidden on mobile, fixed on desktop)
  *   - Real-time thread count and connection status
+ *   - Removed robot icons for cleaner design
  */
 import { useState, useCallback } from 'react';
 import { Button } from './ui/Button';
 import { UserProfile } from './UserProfile';
 import { useLogger } from '../hooks/useLogger';
 import { cn } from '../utils/cn';
-import type { ChatThread } from '../../../src/shared/types';
+import type { ChatThread, ModelConfig } from '../../../src/shared/types';
 
 interface ChatSidebarProps {
   threads: ChatThread[];
@@ -34,10 +36,13 @@ interface ChatSidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   onToggle?: () => void;
+  availableModels?: Record<string, ModelConfig>;
+  onModelChange?: (threadId: string, modelId: string) => void;
+  currentModel?: string; // Currently selected model in the main interface
 }
 
 /**
- * Sidebar component for chat thread management
+ * Enhanced sidebar component for chat thread management
  * 
  * @param threads - List of chat threads
  * @param currentThreadId - ID of currently selected thread
@@ -45,6 +50,9 @@ interface ChatSidebarProps {
  * @param onNewChat - Callback for new chat creation
  * @param onDeleteThread - Callback for thread deletion
  * @param loading - Loading state for threads
+ * @param availableModels - Available models for display and selection
+ * @param onModelChange - Callback when model is changed for a thread
+ * @param currentModel - Currently selected model in main interface
  * @returns React component
  */
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
@@ -57,7 +65,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   loading,
   isOpen = false,
   onClose,
-  onToggle
+  onToggle,
+  availableModels = {},
+  currentModel
 }) => {
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -65,9 +75,29 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   const { debug, log } = useLogger('ChatSidebar');
 
   /**
+   * Get model configuration by ID
+   */
+  const getModelConfig = useCallback((modelId: string | undefined): ModelConfig | null => {
+    if (!modelId || !availableModels[modelId]) return null;
+    return availableModels[modelId];
+  }, [availableModels]);
+
+  /**
+   * Get the display model for a thread (prioritize currentModel, then lastUsedModel)
+   */
+  const getThreadDisplayModel = useCallback((thread: ChatThread): ModelConfig | null => {
+    // For current thread, show the currently selected model from main interface
+    if (thread.id === currentThreadId && currentModel) {
+      return getModelConfig(currentModel);
+    }
+    
+    // Otherwise, show the thread's current model or last used model
+    const modelId = thread.currentModel || thread.lastUsedModel;
+    return getModelConfig(modelId);
+  }, [currentThreadId, currentModel, getModelConfig]);
+
+  /**
    * Handle thread selection
-   * 
-   * @param threadId - ID of thread to select
    */
   const handleThreadSelect = useCallback((threadId: string) => {
     debug(`Thread selected: ${threadId}`);
@@ -85,8 +115,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
   /**
    * Handle thread deletion with confirmation
-   * 
-   * @param threadId - ID of thread to delete
    */
   const handleDeleteThread = useCallback(async (threadId: string) => {
     if (confirmDeleteId !== threadId) {
@@ -117,69 +145,93 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   }, [debug]);
 
   /**
-   * Format date for display
-   * 
-   * @param date - Date to format
-   * @returns Formatted date string
+   * Format date for display with enhanced formatting
    */
   const formatDate = useCallback((date: Date | string) => {
     const messageDate = new Date(date);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - messageDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffTime / (1000 * 60));
 
-    if (diffDays === 1) {
-      return 'Today';
-    } else if (diffDays === 2) {
+    if (diffMinutes < 60) {
+      return diffMinutes <= 1 ? 'Just now' : `${diffMinutes}m ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    } else if (diffDays === 1) {
       return 'Yesterday';
     } else if (diffDays <= 7) {
-      return `${diffDays - 1} days ago`;
+      return `${diffDays - 1}d ago`;
     } else {
-      return messageDate.toLocaleDateString();
+      return messageDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
     }
   }, []);
 
   /**
    * Truncate text to specified length
-   * 
-   * @param text - Text to truncate
-   * @param maxLength - Maximum length
-   * @returns Truncated text
    */
   const truncateText = useCallback((text: string, maxLength: number = 50) => {
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   }, []);
 
   /**
-   * Render individual thread item
-   * 
-   * @param thread - Thread to render
-   * @returns React element
+   * Render individual thread item with enhanced design
    */
   const renderThreadItem = useCallback((thread: ChatThread) => {
     const isSelected = thread.id === currentThreadId;
     const isDeleting = deletingThreadId === thread.id;
     const isConfirmingDelete = confirmDeleteId === thread.id;
     const lastMessage = thread.messages[thread.messages.length - 1];
+    const displayModel = getThreadDisplayModel(thread);
 
     return (
       <div
         key={thread.id}
         className={cn(
-          'group relative p-3 rounded-lg cursor-pointer transition-all duration-200 border',
+          'group relative p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 mb-3',
           isSelected
-            ? 'bg-blue-50 border-blue-200 shadow-sm'
-            : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+            ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 shadow-lg transform scale-[1.02]'
+            : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md'
         )}
         onClick={() => !isConfirmingDelete && handleThreadSelect(thread.id)}
       >
-        <div className="flex justify-between items-start mb-2">
-          <h3 className={cn(
-            'font-medium truncate pr-2',
-            isSelected ? 'text-blue-900' : 'text-gray-900'
-          )}>
-            {truncateText(thread.title)}
-          </h3>
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className={cn(
+              'font-semibold truncate pr-2 text-base leading-tight',
+              isSelected ? 'text-blue-900' : 'text-gray-900'
+            )}>
+              {truncateText(thread.title, 45)}
+            </h3>
+            
+            {/* Model indicator */}
+            {displayModel && (
+              <div className="flex items-center mt-2 mb-1">
+                <div 
+                  className="w-2 h-2 rounded-full mr-2 flex-shrink-0"
+                  style={{ backgroundColor: displayModel.color }}
+                />
+                <span 
+                  className={cn(
+                    'text-xs font-medium px-2 py-1 rounded-full truncate',
+                    isSelected 
+                      ? 'bg-blue-100 text-blue-800' 
+                      : 'bg-gray-100 text-gray-700'
+                  )}
+                  style={{
+                    backgroundColor: isSelected ? displayModel.bgColor : undefined,
+                    color: isSelected ? displayModel.textColor : undefined
+                  }}
+                >
+                  {displayModel.name}
+                </span>
+              </div>
+            )}
+          </div>
           
           {/* Delete button */}
           <button
@@ -189,9 +241,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             }}
             disabled={isDeleting}
             className={cn(
-              'opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded',
+              'opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-lg ml-2 flex-shrink-0',
               isConfirmingDelete
-                ? 'opacity-100 bg-red-100 text-red-600'
+                ? 'opacity-100 bg-red-100 text-red-600 hover:bg-red-200'
                 : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
             )}
             title={isConfirmingDelete ? 'Click again to confirm delete' : 'Delete thread'}
@@ -206,24 +258,47 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
           </button>
         </div>
 
-        {/* Last message preview */}
+        {/* Last message preview - removed robot emoji */}
         {lastMessage && (
-          <p className="text-sm text-gray-500 mb-2 truncate">
-            {lastMessage.role === 'user' ? '👤 ' : '🤖 '}
-            {truncateText(lastMessage.content, 60)}
+          <p className={cn(
+            'text-sm mb-2 truncate leading-relaxed',
+            isSelected ? 'text-blue-700' : 'text-gray-600'
+          )}>
+            <span className={cn(
+              'inline-block w-5 text-xs mr-1',
+              lastMessage.role === 'user' ? 'text-gray-500' : 'text-indigo-500'
+            )}>
+              {lastMessage.role === 'user' ? 'You:' : 'AI:'}
+            </span>
+            {truncateText(lastMessage.content, 55)}
           </p>
         )}
 
-        {/* Thread metadata */}
-        <div className="flex justify-between items-center text-xs text-gray-400">
-          <span>{formatDate(thread.updatedAt)}</span>
-          <span>{thread.messages.length} messages</span>
+        {/* Thread metadata with enhanced styling */}
+        <div className="flex justify-between items-center text-xs">
+          <span className={cn(
+            'font-medium',
+            isSelected ? 'text-blue-600' : 'text-gray-500'
+          )}>
+            {formatDate(thread.updatedAt)}
+          </span>
+          <div className="flex items-center space-x-3">
+            <span className={cn(
+              'flex items-center',
+              isSelected ? 'text-blue-600' : 'text-gray-500'
+            )}>
+              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+              </svg>
+              {thread.messages.length}
+            </span>
+          </div>
         </div>
 
         {/* Delete confirmation overlay */}
         {isConfirmingDelete && (
-          <div className="absolute inset-0 bg-red-50 rounded-lg p-3 flex flex-col justify-center">
-            <p className="text-sm text-red-800 mb-2 text-center">
+          <div className="absolute inset-0 bg-red-50 rounded-xl p-4 flex flex-col justify-center border-2 border-red-200">
+            <p className="text-sm text-red-800 mb-3 text-center font-medium">
               Delete this conversation?
             </p>
             <div className="flex space-x-2">
@@ -262,22 +337,27 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     handleDeleteThread,
     cancelDelete,
     formatDate,
-    truncateText
+    truncateText,
+    getThreadDisplayModel
   ]);
 
   /**
-   * Render loading skeleton
+   * Render loading skeleton with enhanced design
    */
   const renderLoadingSkeleton = () => (
-    <div className="space-y-3">
+    <div className="space-y-4 px-1">
       {[...Array(3)].map((_, i) => (
-        <div key={i} className="bg-white border border-gray-200 rounded-lg p-3">
+        <div key={i} className="bg-white border-2 border-gray-200 rounded-xl p-4">
           <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
-            <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
-            <div className="flex justify-between">
-              <div className="h-2 bg-gray-200 rounded w-16"></div>
-              <div className="h-2 bg-gray-200 rounded w-20"></div>
+            <div className="h-4 bg-gray-200 rounded-lg mb-3"></div>
+            <div className="flex items-center mb-2">
+              <div className="w-2 h-2 bg-gray-200 rounded-full mr-2"></div>
+              <div className="h-3 bg-gray-200 rounded-full w-20"></div>
+            </div>
+            <div className="h-3 bg-gray-200 rounded-lg w-4/5 mb-3"></div>
+            <div className="flex justify-between items-center">
+              <div className="h-2 bg-gray-200 rounded-full w-16"></div>
+              <div className="h-2 bg-gray-200 rounded-full w-8"></div>
             </div>
           </div>
         </div>
@@ -286,14 +366,20 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   );
 
   /**
-   * Render empty state
+   * Render empty state with enhanced design
    */
   const renderEmptyState = () => (
-    <div className="text-center py-8">
-      <div className="text-4xl mb-3">💭</div>
-      <p className="text-gray-500 text-sm mb-4">No conversations yet</p>
-      <Button onClick={handleNewChat} size="sm">
-        Start your first chat
+    <div className="text-center py-12 px-4">
+      <div className="text-5xl mb-4 opacity-60">💭</div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">No conversations yet</h3>
+      <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+        Start your first chat to begin exploring AI conversations
+      </p>
+      <Button onClick={handleNewChat} size="md" className="px-6">
+        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+        Create New Chat
       </Button>
     </div>
   );
@@ -312,7 +398,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
       {/* Sidebar */}
       <div 
         className={cn(
-          'fixed left-0 top-0 w-80 bg-gray-50 border-r border-gray-200 flex-col h-full z-40 transition-transform duration-300',
+          'fixed left-0 top-0 w-80 bg-gradient-to-b from-gray-50 to-gray-100 border-r border-gray-200 flex-col h-full z-40 transition-transform duration-300',
           // Always show as flex, but use transform to hide/show
           'flex',
           // Transform based on isOpen state for all screen sizes
@@ -320,15 +406,15 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         )}
         data-no-drop="true"
       >
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200 bg-white">
+      {/* Header with enhanced styling */}
+      <div className="p-4 border-b border-gray-200 bg-white shadow-sm">
         {/* Top row: Toggle button + Chats title + Refresh button */}
-        <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-3 mb-4">
           {/* Sidebar toggle button */}
           {onToggle && (
             <button
               onClick={onToggle}
-              className="p-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:shadow-sm"
               aria-label="Toggle sidebar"
               title="Toggle sidebar"
             >
@@ -348,16 +434,16 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             </button>
           )}
           
-          <h1 className="text-xl font-bold text-gray-900 flex-1">Chats</h1>
+          <h1 className="text-xl font-bold text-gray-900 flex-1">Conversations</h1>
           
           {/* Refresh button */}
           {onRefreshThreads && (
             <button
               onClick={() => onRefreshThreads()}
               disabled={loading}
-              className="p-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="p-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 hover:shadow-sm"
               aria-label="Refresh chat list"
-              title="Refresh chat list from server"
+              title="Refresh conversations from server"
             >
               <svg
                 className={cn(
@@ -379,28 +465,31 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
           )}
         </div>
         
-        {/* Wide New Chat button */}
+        {/* Enhanced New Chat button */}
         <Button 
           onClick={handleNewChat} 
-          className="w-full mb-3"
-          size="sm"
+          className="w-full mb-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm"
+          size="md"
         >
-          + New Chat
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          New Conversation
         </Button>
         
-        <p className="text-xs text-gray-500">
-          OpenRouter Chat
+        <p className="text-xs text-gray-500 text-center">
+          OpenRouter Chat • {threads.length} conversations
         </p>
       </div>
 
-      {/* Thread list */}
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* Thread list with enhanced scrolling */}
+      <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
         {loading ? (
           renderLoadingSkeleton()
         ) : threads.length === 0 ? (
           renderEmptyState()
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {threads.map(renderThreadItem)}
           </div>
         )}
