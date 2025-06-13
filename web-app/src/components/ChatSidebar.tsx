@@ -312,6 +312,30 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
           
           {/* Action buttons */}
           <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
+            {/* Delete button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteThread(thread.id);
+              }}
+              disabled={isDeleting}
+              className={cn(
+                'opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-lg',
+                isConfirmingDelete
+                  ? 'opacity-100 bg-red-100 text-red-600 hover:bg-red-200'
+                  : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+              )}
+              title={isConfirmingDelete ? 'Click again to confirm delete' : 'Delete thread'}
+            >
+              {isDeleting ? (
+                <div className="animate-spin h-4 w-4 border-2 border-red-600 border-t-transparent rounded-full" />
+              ) : (
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              )}
+            </button>
+            
             {/* Pin button */}
             <button
               onClick={(e) => {
@@ -336,30 +360,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
               ) : (
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-              )}
-            </button>
-            
-            {/* Delete button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteThread(thread.id);
-              }}
-              disabled={isDeleting}
-              className={cn(
-                'opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-lg',
-                isConfirmingDelete
-                  ? 'opacity-100 bg-red-100 text-red-600 hover:bg-red-200'
-                  : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
-              )}
-              title={isConfirmingDelete ? 'Click again to confirm delete' : 'Delete thread'}
-            >
-              {isDeleting ? (
-                <div className="animate-spin h-4 w-4 border-2 border-red-600 border-t-transparent rounded-full" />
-              ) : (
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               )}
             </button>

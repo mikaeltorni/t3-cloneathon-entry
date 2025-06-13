@@ -1,7 +1,7 @@
 /**
  * ModelSelector.tsx
  * 
- * Beautiful horizontal model selection with brain icons
+ * Beautiful horizontal model selection with brain and search icons
  * 
  * Components:
  *   ModelSelector
@@ -9,8 +9,9 @@
  * Features:
  *   - Horizontal model buttons with brand colors
  *   - Brain emoji icons with smart opacity (full, half, very low)
+ *   - Search emoji icons for web search capabilities
  *   - One-click model switching with visual feedback
- *   - Selected model description below
+ *   - Selected model description below with capabilities
  *   - Automatic sorting by release date (newest first)
  * 
  * Usage: <ModelSelector value={selectedModel} onChange={setSelectedModel} models={availableModels} />
@@ -27,7 +28,7 @@ interface ModelSelectorProps {
 }
 
 /**
- * Horizontal model selector with brain icons and beautiful design
+ * Horizontal model selector with brain and search icons and beautiful design
  * 
  * @param value - Currently selected model ID
  * @param onChange - Callback when model is selected
@@ -86,6 +87,30 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   };
 
   /**
+   * Get search emoji with proper opacity and color based on web search capability
+   */
+  const getSearchIcon = (model: ModelConfig): React.ReactNode => {
+    if (!model.hasWebSearch) {
+      // Very subtle for no web search
+      return <span className="opacity-30 text-gray-400">🔍</span>;
+    }
+    
+    // Color based on pricing tier
+    const colorClass = model.webSearchPricing === 'perplexity' 
+      ? 'text-green-600' // Green for cheaper Perplexity pricing
+      : model.webSearchPricing === 'openai'
+        ? 'text-amber-600' // Amber for premium OpenAI pricing
+        : 'text-blue-600'; // Blue for standard pricing
+
+    if (model.webSearchMode === 'forced') {
+      // Full opacity for forced web search (like Perplexity models)
+      return <span className={cn('opacity-100', colorClass)}>🔍</span>;
+    }
+    // Half opacity for optional web search
+    return <span className={cn('opacity-60', colorClass)}>🔍</span>;
+  };
+
+  /**
    * Format release date for display
    */
   const formatReleaseDate = (dateString: string): string => {
@@ -94,6 +119,70 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       year: 'numeric', 
       month: 'short' 
     });
+  };
+
+  /**
+   * Get capability badges for the selected model
+   */
+  const getCapabilityBadges = (model: ModelConfig): React.ReactNode[] => {
+    const badges: React.ReactNode[] = [];
+
+    // Release date badge
+    badges.push(
+      <span key="release" className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+        Released {formatReleaseDate(model.released)}
+      </span>
+    );
+
+    // Reasoning badge
+    if (model.hasReasoning) {
+      badges.push(
+        <span 
+          key="reasoning"
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
+          style={{
+            backgroundColor: model.reasoningMode === 'forced' 
+              ? '#F3E8FF' // Purple background for forced
+              : '#EFF6FF', // Blue background for optional
+            color: model.reasoningMode === 'forced'
+              ? '#7C3AED' // Purple text for forced
+              : '#2563EB' // Blue text for optional
+          }}
+        >
+          🧠 
+          {model.reasoningMode === 'forced' ? 'Always Reasoning' : 'Supports Reasoning'}
+        </span>
+      );
+    }
+
+    // Web search badge
+    if (model.hasWebSearch) {
+      const searchColors = model.webSearchPricing === 'perplexity'
+        ? { bg: '#F0FDF4', text: '#166534' } // Green for Perplexity
+        : model.webSearchPricing === 'openai'
+          ? { bg: '#FEF3C7', text: '#D97706' } // Amber for OpenAI
+          : { bg: '#EFF6FF', text: '#2563EB' }; // Blue for standard
+
+      badges.push(
+        <span 
+          key="search"
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
+          style={{
+            backgroundColor: searchColors.bg,
+            color: searchColors.text
+          }}
+        >
+          🔍 
+          {model.webSearchMode === 'forced' 
+            ? 'Built-in Web Search' 
+            : 'Web Search Available'}
+          {model.webSearchPricing === 'perplexity' && ' (Cheaper)'}
+          {model.webSearchPricing === 'openai' && ' (Premium)'}
+        </span>
+      );
+    }
+
+    return badges;
   };
 
   return (
@@ -127,8 +216,11 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                 {model.name}
               </span>
               
-              {/* Brain Icon with Smart Opacity */}
-              {getBrainIcon(model)}
+              {/* Icons: Brain and Search */}
+              <div className="flex items-center gap-1">
+                {getBrainIcon(model)}
+                {getSearchIcon(model)}
+              </div>
 
               {/* Active Indicator Dot */}
               {isSelected && (
@@ -156,30 +248,13 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                 <span className="font-semibold text-gray-900">
                   {currentModel.name}
                 </span>
-                
-                {/* Release Date Badge */}
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
-                  Released {formatReleaseDate(currentModel.released)}
-                </span>
-                
-                {/* Reasoning Capability Badge */}
-                {currentModel.hasReasoning && (
-                  <span 
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
-                    style={{
-                      backgroundColor: currentModel.reasoningMode === 'forced' 
-                        ? '#F3E8FF' // Purple background for forced
-                        : '#EFF6FF', // Blue background for optional
-                      color: currentModel.reasoningMode === 'forced'
-                        ? '#7C3AED' // Purple text for forced
-                        : '#2563EB' // Blue text for optional
-                    }}
-                  >
-                    🧠 
-                    {currentModel.reasoningMode === 'forced' ? 'Always Reasoning' : 'Supports Reasoning'}
-                  </span>
-                )}
               </div>
+              
+              {/* Capability Badges */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {getCapabilityBadges(currentModel)}
+              </div>
+              
               <p className="text-sm text-gray-600">
                 {currentModel.description}
               </p>

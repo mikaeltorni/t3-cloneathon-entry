@@ -24,7 +24,7 @@ import type { ModelConfig, ImageAttachment } from '../../../src/shared/types';
  * Message form hook configuration
  */
 interface UseMessageFormConfig {
-  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high') => Promise<void>;
+  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
   availableModels: Record<string, ModelConfig>;
   loading: boolean;
   images: ImageAttachment[];
@@ -34,30 +34,35 @@ interface UseMessageFormConfig {
 /**
  * Message form hook return interface
  */
-interface UseMessageFormReturn {
+export interface UseMessageFormReturn {
   // Form state
   message: string;
-  selectedModel: string;
-  useReasoning: boolean;
-  reasoningEffort: 'low' | 'medium' | 'high';
-  
-  // Form handlers
   setMessage: (message: string) => void;
-  setSelectedModel: (modelId: string) => void;
-  setUseReasoning: (useReasoning: boolean) => void;
+  selectedModel: string;
+  setSelectedModel: (model: string) => void;
+  useReasoning: boolean;
+  setUseReasoning: (use: boolean) => void;
+  reasoningEffort: 'low' | 'medium' | 'high';
   setReasoningEffort: (effort: 'low' | 'medium' | 'high') => void;
-  handleSubmit: (e: React.FormEvent) => Promise<void>;
-  handleKeyPress: (e: React.KeyboardEvent) => void;
-  handleMessageChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  useWebSearch: boolean;
+  setUseWebSearch: (use: boolean) => void;
+  webSearchEffort: 'low' | 'medium' | 'high';
+  setWebSearchEffort: (effort: 'low' | 'medium' | 'high') => void;
   
-  // Utilities
+  // Helper functions
   isReasoningModel: (modelId?: string) => boolean;
   supportsEffortControl: (modelId?: string) => boolean;
-  isSubmitDisabled: boolean;
-  resetForm: () => void;
+  isWebSearchModel: (modelId?: string) => boolean;
+  supportsWebEffortControl: (modelId?: string) => boolean;
   
-  // Refs
+  // Form operations
+  canSubmit: boolean;
+  handleSubmit: () => void;
+  handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  
+  // UI helpers
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  focusTextarea: () => void;
 }
 
 /**
@@ -79,6 +84,8 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
   const [selectedModel, setSelectedModel] = useState(defaultModel);
   const [useReasoning, setUseReasoning] = useState(false);
   const [reasoningEffort, setReasoningEffort] = useState<'low' | 'medium' | 'high'>('high');
+  const [useWebSearch, setUseWebSearch] = useState(false);
+  const [webSearchEffort, setWebSearchEffort] = useState<'low' | 'medium' | 'high'>('high');
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { debug, log } = useLogger('useMessageForm');
@@ -108,31 +115,51 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
   }, [availableModels, selectedModel]);
 
   /**
+   * Check if a model supports web search based on model configuration
+   * 
+   * @param modelId - Model ID to check (uses selected model if not provided)
+   * @returns Whether the model supports web search
+   */
+  const isWebSearchModel = useCallback((modelId?: string): boolean => {
+    const targetModel = modelId || selectedModel;
+    if (!targetModel || !availableModels[targetModel]) return false;
+    return availableModels[targetModel].hasWebSearch;
+  }, [availableModels, selectedModel]);
+
+  /**
+   * Check if a model supports web search effort control
+   * 
+   * @param modelId - Model ID to check (uses selected model if not provided)
+   * @returns Whether the model supports web search effort control
+   */
+  const supportsWebEffortControl = useCallback((modelId?: string): boolean => {
+    const targetModel = modelId || selectedModel;
+    if (!targetModel || !availableModels[targetModel]) return false;
+    return availableModels[targetModel].supportsWebEffortControl === true;
+  }, [availableModels, selectedModel]);
+
+  /**
    * Check if form submission should be disabled
    */
-  const isSubmitDisabled = useCallback((): boolean => {
-    return (!message.trim() && images.length === 0) || loading;
+  const canSubmit = useCallback((): boolean => {
+    return !((!message.trim() && images.length === 0) || loading);
   }, [message, images.length, loading]);
 
   /**
-   * Reset form to initial state
-   * Note: Preserves useReasoning state to maintain user preference
+   * Focus the textarea
    */
-  const resetForm = useCallback(() => {
-    setMessage('');
-    // Preserve useReasoning state - user shouldn't have to re-enable it for each message
-    debug('Form reset to initial state (preserving reasoning preference)');
-  }, [debug]);
+  const focusTextarea = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.focus();
+    }
+  }, []);
 
   /**
    * Handle form submission
-   * 
-   * @param e - Form event
    */
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (isSubmitDisabled()) {
+  const handleSubmit = useCallback(() => {
+    if (!canSubmit()) {
       debug('Form submission blocked: invalid form state');
       return;
     }
@@ -144,46 +171,40 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
         messageLength: trimmedMessage.length, 
         imageCount: images.length,
         modelId: selectedModel,
-        useReasoning: useReasoning && isReasoningModel()
+        useReasoning: useReasoning && isReasoningModel(),
+        useWebSearch: useWebSearch && isWebSearchModel()
       });
 
-      await onSendMessage(
+      onSendMessage(
         trimmedMessage, 
         images, 
         selectedModel, 
         useReasoning && isReasoningModel(), // Only use reasoning if model supports it
-        reasoningEffort // Pass reasoning effort level
+        reasoningEffort, // Pass reasoning effort level
+        useWebSearch && isWebSearchModel(), // Only use web search if model supports it
+        webSearchEffort // Pass web search effort level
       );
 
       // Reset form after successful submission
-      resetForm();
+      setMessage('');
       log('Message sent successfully');
     } catch (error) {
       debug('Message submission failed', error);
       // Don't reset form on error so user can retry
     }
-  }, [message, images, selectedModel, useReasoning, isReasoningModel, isSubmitDisabled, onSendMessage, resetForm, debug, log]);
+  }, [message, images, selectedModel, useReasoning, isReasoningModel, useWebSearch, isWebSearchModel, canSubmit, onSendMessage, debug, log, reasoningEffort, webSearchEffort]);
 
   /**
    * Handle keyboard shortcuts
    * 
    * @param e - Keyboard event
    */
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e);
+      handleSubmit();
     }
   }, [handleSubmit]);
-
-  /**
-   * Handle textarea input changes
-   * 
-   * @param e - Change event
-   */
-  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
-  }, []);
 
   /**
    * Auto-focus textarea after message is sent
@@ -211,29 +232,44 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
     }
   }, [selectedModel, useReasoning, isReasoningModel, debug]);
 
+  /**
+   * Reset web search if model doesn't support it
+   */
+  useEffect(() => {
+    if (useWebSearch && !isWebSearchModel()) {
+      setUseWebSearch(false);
+      debug('Web search disabled: selected model does not support web search');
+    }
+  }, [selectedModel, useWebSearch, isWebSearchModel, debug]);
+
   return {
     // Form state
     message,
-    selectedModel,
-    useReasoning,
-    reasoningEffort,
-    
-    // Form handlers
     setMessage,
+    selectedModel,
     setSelectedModel,
+    useReasoning,
     setUseReasoning,
+    reasoningEffort,
     setReasoningEffort,
-    handleSubmit,
-    handleKeyPress,
-    handleMessageChange,
+    useWebSearch,
+    setUseWebSearch,
+    webSearchEffort,
+    setWebSearchEffort,
     
-    // Utilities
+    // Helper functions
     isReasoningModel,
     supportsEffortControl,
-    isSubmitDisabled: isSubmitDisabled(),
-    resetForm,
+    isWebSearchModel,
+    supportsWebEffortControl,
     
-    // Refs
-    textareaRef
+    // Form operations
+    canSubmit: canSubmit(),
+    handleSubmit,
+    handleKeyDown,
+    
+    // UI helpers
+    textareaRef,
+    focusTextarea
   };
 }; 

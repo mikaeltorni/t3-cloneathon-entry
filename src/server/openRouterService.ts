@@ -31,6 +31,12 @@ const RETRY_DELAY = 1000; // 1 second
  * - Gemini/Claude models: Use max_tokens parameter, can return reasoning tokens  
  * - DeepSeek R1: Returns reasoning tokens with effort configuration
  * - See: https://openrouter.ai/docs/use-cases/reasoning-tokens
+ * 
+ * Web Search Support:
+ * - All models can use web search via OpenRouter's web plugin ($4/1K requests)
+ * - Perplexity models have built-in web search with cheaper pricing
+ * - OpenAI models have premium web search pricing
+ * - See: https://openrouter.ai/docs/features/web-search
  */
 export const AVAILABLE_MODELS = {
   'google/gemini-2.5-flash-preview-05-20': {
@@ -40,6 +46,10 @@ export const AVAILABLE_MODELS = {
     reasoningType: 'thinking', // Uses max_tokens parameter (Anthropic-style)
     reasoningMode: 'optional', // Can toggle reasoning on/off
     supportsEffortControl: true, // Supports effort level control
+    hasWebSearch: true, // Supports web search via OpenRouter plugin
+    webSearchMode: 'optional', // Can toggle web search on/off
+    webSearchPricing: 'standard', // Standard OpenRouter web search pricing
+    supportsWebEffortControl: true, // Supports web search effort control
     color: '#4285F4', // Google Blue
     bgColor: '#E8F0FE', // Light Google Blue
     textColor: '#1A73E8', // Darker Google Blue for text
@@ -52,6 +62,10 @@ export const AVAILABLE_MODELS = {
     reasoningType: 'internal', // Internal reasoning only
     reasoningMode: 'none', // No reasoning capabilities
     supportsEffortControl: false, // No effort control
+    hasWebSearch: true, // Supports web search via OpenRouter plugin
+    webSearchMode: 'optional', // Can toggle web search on/off
+    webSearchPricing: 'openai', // Premium OpenAI web search pricing
+    supportsWebEffortControl: true, // Supports web search effort control
     color: '#10A37F', // OpenAI Green
     bgColor: '#F0FDF4', // Light Green
     textColor: '#065F46', // Dark Green for text
@@ -64,6 +78,10 @@ export const AVAILABLE_MODELS = {
     reasoningType: 'effort', // Uses effort parameter (OpenAI-style)
     reasoningMode: 'forced', // Always uses reasoning, can't be disabled
     supportsEffortControl: true, // Supports effort level control
+    hasWebSearch: true, // Supports web search via OpenRouter plugin
+    webSearchMode: 'optional', // Can toggle web search on/off
+    webSearchPricing: 'openai', // Premium OpenAI web search pricing
+    supportsWebEffortControl: true, // Supports web search effort control
     color: '#FF6B35', // OpenAI Orange for reasoning models
     bgColor: '#FFF7ED', // Light Orange
     textColor: '#C2410C', // Dark Orange for text
@@ -76,6 +94,10 @@ export const AVAILABLE_MODELS = {
     reasoningType: 'effort', // Uses effort parameter (OpenAI-style)
     reasoningMode: 'forced', // Always uses reasoning, can't be disabled
     supportsEffortControl: true, // Supports effort level control
+    hasWebSearch: true, // Supports web search via OpenRouter plugin
+    webSearchMode: 'optional', // Can toggle web search on/off
+    webSearchPricing: 'standard', // Standard OpenRouter web search pricing
+    supportsWebEffortControl: true, // Supports web search effort control
     color: '#3B82F6', // Tech Blue
     bgColor: '#EFF6FF', // Light Blue
     textColor: '#1D4ED8', // Dark Blue for text
@@ -88,10 +110,46 @@ export const AVAILABLE_MODELS = {
     reasoningType: 'thinking', // Uses max_tokens parameter (Anthropic-style)
     reasoningMode: 'optional', // Can toggle reasoning on/off
     supportsEffortControl: true, // Supports effort level control
+    hasWebSearch: true, // Supports web search via OpenRouter plugin
+    webSearchMode: 'optional', // Can toggle web search on/off
+    webSearchPricing: 'standard', // Standard OpenRouter web search pricing
+    supportsWebEffortControl: true, // Supports web search effort control
     color: '#FF7A00', // Anthropic Orange
     bgColor: '#FFF7ED', // Light Orange
     textColor: '#C2410C', // Dark Orange for text
     released: '2024-11-15', // November 2024 - Hypothetical Claude 3.7 release
+  },
+  'perplexity/sonar-reasoning': {
+    name: 'Sonar Reasoning',
+    description: 'Reasoning model with built-in web search by Perplexity (based on DeepSeek R1)',
+    hasReasoning: true, // Built-in reasoning
+    reasoningType: 'effort', // Uses effort parameter (DeepSeek R1-style)
+    reasoningMode: 'forced', // Always uses reasoning, can't be disabled
+    supportsEffortControl: true, // Supports effort level control
+    hasWebSearch: true, // Built-in web search
+    webSearchMode: 'forced', // Always searches the web, can't be disabled
+    webSearchPricing: 'perplexity', // Cheaper Perplexity web search pricing
+    supportsWebEffortControl: true, // Supports web search effort control
+    color: '#20B2AA', // Perplexity Teal
+    bgColor: '#F0FDFA', // Light Teal
+    textColor: '#0D9488', // Dark Teal for text
+    released: '2025-01-29', // January 2025 - Very recent Perplexity release
+  },
+  'perplexity/sonar-pro': {
+    name: 'Sonar Pro',
+    description: 'Advanced web-first model with professional search capabilities',
+    hasReasoning: false, // No reasoning tokens
+    reasoningType: 'internal', // Internal reasoning only
+    reasoningMode: 'none', // No reasoning capabilities
+    supportsEffortControl: false, // No effort control
+    hasWebSearch: true, // Built-in web search
+    webSearchMode: 'forced', // Always searches the web, can't be disabled
+    webSearchPricing: 'perplexity', // Cheaper Perplexity web search pricing
+    supportsWebEffortControl: true, // Supports web search effort control
+    color: '#20B2AA', // Perplexity Teal
+    bgColor: '#F0FDFA', // Light Teal
+    textColor: '#0D9488', // Dark Teal for text
+    released: '2024-10-15', // October 2024 - Perplexity Pro launch
   }
 } as const;
 

@@ -21,6 +21,7 @@ import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Button } from './ui/Button';
 import { ModelSelector } from './ModelSelector';
 import { ReasoningToggle } from './ui/ReasoningToggle';
+import { SearchToggle } from './ui/SearchToggle';
 import { ImageAttachments } from './ImageAttachments';
 import { TokenMetricsDisplay } from './TokenMetricsDisplay';
 import { ContextWindowDisplay } from './ContextWindowDisplay';
@@ -34,7 +35,7 @@ import type { ModelConfig, ImageAttachment, TokenMetrics, ChatMessage } from '..
  * Props for the ChatInput component
  */
 interface ChatInputProps {
-  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high') => Promise<void>;
+  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
   loading: boolean;
   availableModels: Record<string, ModelConfig>;
   modelsLoading: boolean;
@@ -98,18 +99,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
    */
   const {
     message,
+    setMessage,
     selectedModel,
     useReasoning,
     reasoningEffort,
+    useWebSearch,
+    webSearchEffort,
     setSelectedModel,
     setUseReasoning,
     setReasoningEffort,
-    handleSubmit,
-    handleKeyPress,
-    handleMessageChange,
+    setUseWebSearch,
+    setWebSearchEffort,
     isReasoningModel,
     supportsEffortControl,
-    isSubmitDisabled,
+    isWebSearchModel,
+    supportsWebEffortControl,
+    canSubmit,
+    handleSubmit,
+    handleKeyDown,
     textareaRef
   } = useMessageForm({
     onSendMessage,
@@ -200,9 +207,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
    * Enhanced message change handler with auto-resize
    */
   const handleEnhancedMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    handleMessageChange(e);
+    setMessage(e.target.value);
     autoResizeTextarea();
-  }, [handleMessageChange, autoResizeTextarea]);
+  }, [setMessage, autoResizeTextarea]);
 
   // Update input bar height when content changes
   useEffect(() => {
@@ -269,26 +276,40 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             loading={modelsLoading}
           />
 
-          {/* Optional Reasoning Toggle for Models with Optional Reasoning */}
-          {isReasoningModel() && availableModels[selectedModel]?.reasoningMode === 'optional' && (
+          {/* Feature Toggles for Reasoning and Web Search */}
+          {(isReasoningModel() || isWebSearchModel()) && (
             <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <ReasoningToggle
-                  enabled={useReasoning}
-                  onChange={setUseReasoning}
-                  reasoningMode={availableModels[selectedModel]?.reasoningMode || 'none'}
-                  modelName={availableModels[selectedModel]?.name}
-                />
+              <div className="flex items-center flex-wrap gap-3">
+                {/* Reasoning Toggle for Models with Optional Reasoning */}
+                {isReasoningModel() && availableModels[selectedModel]?.reasoningMode === 'optional' && (
+                  <ReasoningToggle
+                    enabled={useReasoning}
+                    onChange={setUseReasoning}
+                    reasoningMode={availableModels[selectedModel]?.reasoningMode || 'none'}
+                    modelName={availableModels[selectedModel]?.name}
+                  />
+                )}
+
+                {/* Web Search Toggle for Models with Optional Web Search */}
+                {isWebSearchModel() && availableModels[selectedModel]?.webSearchMode === 'optional' && (
+                  <SearchToggle
+                    enabled={useWebSearch}
+                    onChange={setUseWebSearch}
+                    webSearchMode={availableModels[selectedModel]?.webSearchMode || 'none'}
+                    webSearchPricing={availableModels[selectedModel]?.webSearchPricing}
+                    modelName={availableModels[selectedModel]?.name}
+                  />
+                )}
                 
-                {/* Inline Effort Level Display - only show if model supports effort control */}
-                {supportsEffortControl() && (
+                {/* Inline Reasoning Effort Level Display */}
+                {isReasoningModel() && supportsEffortControl() && (
                   <div className={cn(
                     'flex items-center space-x-2 px-2 py-1 rounded-md text-sm transition-all duration-200',
                     useReasoning 
                       ? 'opacity-100 bg-blue-50 border border-blue-200' 
                       : 'opacity-30 bg-gray-50 border border-gray-200'
                   )}>
-                    <span className="text-xs font-medium text-gray-600">effort:</span>
+                    <span className="text-xs font-medium text-gray-600">reasoning:</span>
                     <div className="flex items-center space-x-1">
                       <span className="text-base">
                         {reasoningEffort === 'low' ? '⚡' : reasoningEffort === 'medium' ? '⚖️' : '🧠'}
@@ -306,7 +327,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     {/* Left/Right arrows to adjust effort level */}
                     {useReasoning && (
                       <div className="flex items-center space-x-0.5 ml-1">
-                        {/* Left arrow - decrease effort */}
                         <button
                           type="button"
                           onClick={(e) => {
@@ -317,14 +337,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                             setReasoningEffort(levels[prevIndex]);
                           }}
                           className="text-gray-400 hover:text-gray-600 transition-colors duration-150 p-0.5"
-                          title="Decrease effort level"
+                          title="Decrease reasoning effort"
                         >
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                           </svg>
                         </button>
                         
-                        {/* Right arrow - increase effort */}
                         <button
                           type="button"
                           onClick={(e) => {
@@ -335,7 +354,71 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                             setReasoningEffort(levels[nextIndex]);
                           }}
                           className="text-gray-400 hover:text-gray-600 transition-colors duration-150 p-0.5"
-                          title="Increase effort level"
+                          title="Increase reasoning effort"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Inline Web Search Effort Level Display */}
+                {isWebSearchModel() && supportsWebEffortControl() && (
+                  <div className={cn(
+                    'flex items-center space-x-2 px-2 py-1 rounded-md text-sm transition-all duration-200',
+                    useWebSearch 
+                      ? 'opacity-100 bg-green-50 border border-green-200' 
+                      : 'opacity-30 bg-gray-50 border border-gray-200'
+                  )}>
+                    <span className="text-xs font-medium text-gray-600">search:</span>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-base">
+                        {webSearchEffort === 'low' ? '⚡' : webSearchEffort === 'medium' ? '⚖️' : '🔍'}
+                      </span>
+                      <span className={cn(
+                        'text-xs font-medium',
+                        webSearchEffort === 'low' && 'text-green-600',
+                        webSearchEffort === 'medium' && 'text-yellow-600',
+                        webSearchEffort === 'high' && 'text-blue-600'
+                      )}>
+                        {webSearchEffort}
+                      </span>
+                    </div>
+                    
+                    {/* Left/Right arrows to adjust effort level */}
+                    {useWebSearch && (
+                      <div className="flex items-center space-x-0.5 ml-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const levels: ('low' | 'medium' | 'high')[] = ['low', 'medium', 'high'];
+                            const currentIndex = levels.indexOf(webSearchEffort);
+                            const prevIndex = currentIndex === 0 ? levels.length - 1 : currentIndex - 1;
+                            setWebSearchEffort(levels[prevIndex]);
+                          }}
+                          className="text-gray-400 hover:text-gray-600 transition-colors duration-150 p-0.5"
+                          title="Decrease search context size"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const levels: ('low' | 'medium' | 'high')[] = ['low', 'medium', 'high'];
+                            const currentIndex = levels.indexOf(webSearchEffort);
+                            const nextIndex = (currentIndex + 1) % levels.length;
+                            setWebSearchEffort(levels[nextIndex]);
+                          }}
+                          className="text-gray-400 hover:text-gray-600 transition-colors duration-150 p-0.5"
+                          title="Increase search context size"
                         >
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -356,7 +439,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 ref={textareaRef}
                 value={message}
                 onChange={handleEnhancedMessageChange}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyDown}
                 placeholder="Type your message... (Shift+Enter for new line)"
                 disabled={loading}
                 className={cn(
@@ -370,7 +453,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             
             <Button
               type="submit"
-              disabled={isSubmitDisabled}
+              disabled={!canSubmit}
               loading={loading}
               className="px-6 py-3 h-12"
             >
