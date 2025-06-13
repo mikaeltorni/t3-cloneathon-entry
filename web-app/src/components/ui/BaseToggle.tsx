@@ -110,12 +110,12 @@ export const BaseToggle: React.FC<BaseToggleProps> = ({
     if (isForced) return forcedColors;
     if (enabled) return enabledColors;
     
-    // For optional mode when disabled, use a neutral inactive state
-    // instead of the disabled colors which are too muted
+    // For optional mode when disabled, use a much more neutral inactive state
+    // to make the difference more obvious
     return {
-      bg: '#F9FAFB', // Gray-50 - neutral background
-      border: '#D1D5DB', // Gray-300 - visible but muted border
-      text: '#6B7280' // Gray-500 - readable but muted text
+      bg: '#FFFFFF', // White background for inactive
+      border: '#D1D5DB', // Gray-300 border
+      text: '#9CA3AF' // Gray-400 text (more muted)
     };
   };
 
@@ -128,17 +128,20 @@ export const BaseToggle: React.FC<BaseToggleProps> = ({
         onClick={handleClick}
         disabled={isDisabled}
         className={cn(
-          'inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ease-in-out',
-          'border focus:outline-none focus:ring-2 focus:ring-offset-1',
-          isTogglable && 'hover:scale-105 hover:shadow-md cursor-pointer',
+          'inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ease-in-out',
+          'border-2 focus:outline-none focus:ring-2 focus:ring-offset-1',
+          isTogglable && 'hover:scale-105 hover:shadow-lg cursor-pointer',
           isForced && 'cursor-default',
           isDisabled && 'cursor-not-allowed opacity-60',
-          !isDisabled && 'shadow-sm'
+          !isDisabled && 'shadow-sm',
+          // Add visual feedback for enabled state
+          (enabled || isForced) && !isDisabled && 'shadow-md'
         )}
         style={{
           backgroundColor: colors.bg,
           borderColor: colors.border,
           color: colors.text,
+          borderWidth: '2px'
         }}
         title={getTooltipText()}
         aria-label={getTooltipText()}
@@ -159,15 +162,23 @@ export const BaseToggle: React.FC<BaseToggleProps> = ({
           {isForced ? forcedLabel : label}
         </span>
 
-        {/* Status indicator */}
+        {/* Status indicator - More prominent */}
         <div 
           className={cn(
-            'w-2 h-2 rounded-full transition-colors duration-200'
+            'w-3 h-3 rounded-full transition-all duration-200 flex items-center justify-center',
+            (enabled || isForced) && !isDisabled && 'ring-2 ring-white'
           )}
           style={{
             backgroundColor: (enabled || isForced) && !isDisabled ? colors.text : '#d1d5db'
           }}
-        />
+        >
+          {/* Checkmark for enabled state */}
+          {(enabled || isForced) && !isDisabled && (
+            <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          )}
+        </div>
       </button>
 
       {/* Tooltip */}

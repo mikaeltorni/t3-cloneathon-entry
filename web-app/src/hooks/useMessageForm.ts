@@ -83,11 +83,27 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
   const [selectedModel, setSelectedModel] = useState(defaultModel);
   const [useReasoning, setUseReasoning] = useState(false);
   const [reasoningEffort, setReasoningEffort] = useState<'low' | 'medium' | 'high'>('high');
-  const [useWebSearch, setUseWebSearch] = useState(false);
-  const [webSearchEffort, setWebSearchEffort] = useState<'low' | 'medium' | 'high'>('high');
+  const [useWebSearch, setUseWebSearch] = useState(() => {
+    // Persist web search preference in localStorage
+    const saved = localStorage.getItem('useWebSearch');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [webSearchEffort, setWebSearchEffort] = useState<'low' | 'medium' | 'high'>(() => {
+    // Persist web search effort preference in localStorage
+    const saved = localStorage.getItem('webSearchEffort');
+    return saved ? saved as 'low' | 'medium' | 'high' : 'high';
+  });
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { debug, log } = useLogger('useMessageForm');
+
+  /**
+   * Enhanced setUseWebSearch with logging
+   */
+  const handleSetUseWebSearch = useCallback((value: boolean) => {
+    debug(`Web search toggled: ${value}`);
+    setUseWebSearch(value);
+  }, [debug]);
 
   /**
    * Check if a model supports reasoning based on model configuration
@@ -225,14 +241,28 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
   }, [selectedModel, useReasoning, isReasoningModel, debug]);
 
   /**
-   * Reset web search if model doesn't support it
+   * Persist web search preference to localStorage
    */
   useEffect(() => {
-    if (useWebSearch) {
+    localStorage.setItem('useWebSearch', JSON.stringify(useWebSearch));
+  }, [useWebSearch]);
+
+  /**
+   * Persist web search effort preference to localStorage
+   */
+  useEffect(() => {
+    localStorage.setItem('webSearchEffort', webSearchEffort);
+  }, [webSearchEffort]);
+
+  /**
+   * Reset web search if model doesn't support it (only for models with webSearchMode: 'none')
+   */
+  useEffect(() => {
+    if (useWebSearch && availableModels[selectedModel]?.webSearchMode === 'none') {
       setUseWebSearch(false);
       debug('Web search disabled: selected model does not support web search');
     }
-  }, [selectedModel, useWebSearch, debug]);
+  }, [selectedModel, useWebSearch, availableModels, debug]);
 
   return {
     // Form state
@@ -245,7 +275,7 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
     reasoningEffort,
     setReasoningEffort,
     useWebSearch,
-    setUseWebSearch,
+    setUseWebSearch: handleSetUseWebSearch,
     webSearchEffort,
     setWebSearchEffort,
     
