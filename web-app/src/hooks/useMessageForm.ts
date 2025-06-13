@@ -164,7 +164,7 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
         imageCount: images.length,
         modelId: selectedModel,
         useReasoning: useReasoning && isReasoningModel(),
-        useWebSearch: useWebSearch && isWebSearchModel()
+        useWebSearch: useWebSearch
       });
 
       onSendMessage(
@@ -173,7 +173,7 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
         selectedModel,
         useReasoning && isReasoningModel(),
         reasoningEffort,
-        useWebSearch && isWebSearchModel(),
+        useWebSearch,
         webSearchEffort
       );
 
