@@ -31,7 +31,7 @@ import type { ChatThread, ModelConfig, ImageAttachment, TokenMetrics } from '../
  */
 interface ChatInterfaceProps {
   currentThread: ChatThread | null;
-  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high') => Promise<void>;
+  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
   loading: boolean;
   availableModels: Record<string, ModelConfig>;
   modelsLoading: boolean;

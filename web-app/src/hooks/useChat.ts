@@ -46,7 +46,7 @@ interface UseChatReturn {
   loadThreads: (forceRefresh?: boolean) => Promise<void>;
   handleThreadSelect: (threadId: string) => Promise<void>;
   handleNewChat: () => void;
-  handleSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean) => Promise<void>;
+  handleSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
   handleDeleteThread: (threadId: string) => Promise<void>;
   handleTogglePinThread: (threadId: string, isPinned: boolean) => Promise<void>;
   clearError: () => void;
@@ -257,8 +257,19 @@ export const useChat = (): UseChatReturn => {
    * @param images - Optional image attachments
    * @param modelId - AI model to use
    * @param useReasoning - Whether to enable reasoning for the request
+   * @param reasoningEffort - Reasoning effort level
+   * @param useWebSearch - Whether to enable web search for the request
+   * @param webSearchEffort - Web search effort level
    */
-  const handleSendMessage = useCallback(async (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean) => {
+  const handleSendMessage = useCallback(async (
+    content: string, 
+    images?: ImageAttachment[], 
+    modelId?: string, 
+    useReasoning?: boolean, 
+    reasoningEffort?: 'low' | 'medium' | 'high', 
+    useWebSearch?: boolean, 
+    webSearchEffort?: 'low' | 'medium' | 'high'
+  ) => {
     setLoading(true);
     setError(null);
     setCurrentTokenMetrics(null); // Clear previous metrics
@@ -326,7 +337,10 @@ export const useChat = (): UseChatReturn => {
           imageUrl: images && images.length > 1 ? undefined : images?.[0]?.url, // Only for single image
           images: images,
           modelId,
-          useReasoning
+          useReasoning,
+          reasoningEffort,
+          useWebSearch,
+          webSearchEffort
         },
         // onChunk callback - update the streaming message content
         (chunk: string, fullContent: string) => {
@@ -648,4 +662,4 @@ export const useChat = (): UseChatReturn => {
     clearError,
     handleImagesChange
   };
-}; 
+};

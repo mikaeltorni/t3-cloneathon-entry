@@ -20,6 +20,7 @@
  */
 
 import { logger } from '../utils/logger';
+import { SHARED_MODEL_CONFIG, type SharedModelConfig } from '../../../src/shared/modelConfig';
 import type { TokenMetrics } from '../../../src/shared/types';
 import type { 
   TokenizerProvider, 
@@ -38,121 +39,29 @@ type GPTTokenizerModule = {
 
 /**
  * Model database with provider information and pricing
+ * Now uses the shared model configuration for consistency
  */
-const MODEL_DATABASE: Record<string, ModelInfo> = {
-  // OpenAI Models
-  'gpt-4o': {
-    provider: 'openai',
-    modelName: 'gpt-4o',
-    encoding: 'o200k_base',
-    maxTokens: 128000,
-    inputCostPer1k: 0.0025,
-    outputCostPer1k: 0.01
-  },
-  'gpt-4o-mini': {
-    provider: 'openai',
-    modelName: 'gpt-4o-mini',
-    encoding: 'o200k_base',
-    maxTokens: 128000,
-    inputCostPer1k: 0.00015,
-    outputCostPer1k: 0.0006
-  },
-  'gpt-4-turbo': {
-    provider: 'openai',
-    modelName: 'gpt-4-turbo',
-    encoding: 'cl100k_base',
-    maxTokens: 128000,
-    inputCostPer1k: 0.01,
-    outputCostPer1k: 0.03
-  },
-  'gpt-4': {
-    provider: 'openai',
-    modelName: 'gpt-4',
-    encoding: 'cl100k_base',
-    maxTokens: 8192,
-    inputCostPer1k: 0.03,
-    outputCostPer1k: 0.06
-  },
-  'gpt-3.5-turbo': {
-    provider: 'openai',
-    modelName: 'gpt-3.5-turbo',
-    encoding: 'cl100k_base',
-    maxTokens: 16385,
-    inputCostPer1k: 0.0005,
-    outputCostPer1k: 0.0015
-  },
-  'o1-preview': {
-    provider: 'openai',
-    modelName: 'o1-preview',
-    encoding: 'o200k_base',
-    maxTokens: 128000,
-    inputCostPer1k: 0.015,
-    outputCostPer1k: 0.06
-  },
-  'o1-mini': {
-    provider: 'openai',
-    modelName: 'o1-mini',
-    encoding: 'o200k_base',
-    maxTokens: 128000,
-    inputCostPer1k: 0.003,
-    outputCostPer1k: 0.012
-  },
-  
-  // Anthropic Models
-  'claude-3-5-sonnet-20241022': {
-    provider: 'anthropic',
-    modelName: 'claude-3-5-sonnet-20241022',
-    maxTokens: 200000,
-    inputCostPer1k: 0.003,
-    outputCostPer1k: 0.015
-  },
-  'claude-3-5-haiku-20241022': {
-    provider: 'anthropic',
-    modelName: 'claude-3-5-haiku-20241022',
-    maxTokens: 200000,
-    inputCostPer1k: 0.0008,
-    outputCostPer1k: 0.004
-  },
-  'claude-3-opus-20240229': {
-    provider: 'anthropic',
-    modelName: 'claude-3-opus-20240229',
-    maxTokens: 200000,
-    inputCostPer1k: 0.015,
-    outputCostPer1k: 0.075
-  },
-  
-  // DeepSeek Models
-  'deepseek-chat': {
-    provider: 'deepseek',
-    modelName: 'deepseek-chat',
-    maxTokens: 128000,
-    inputCostPer1k: 0.00014,
-    outputCostPer1k: 0.00028
-  },
-  'deepseek-coder': {
-    provider: 'deepseek',
-    modelName: 'deepseek-coder',
-    maxTokens: 128000,
-    inputCostPer1k: 0.00014,
-    outputCostPer1k: 0.00028
-  },
-  
-  // Google Models
-  'gemini-1.5-pro': {
-    provider: 'google',
-    modelName: 'gemini-1.5-pro',
-    maxTokens: 2097152,
-    inputCostPer1k: 0.00125,
-    outputCostPer1k: 0.005
-  },
-  'gemini-1.5-flash': {
-    provider: 'google',
-    modelName: 'gemini-1.5-flash',
-    maxTokens: 1048576,
-    inputCostPer1k: 0.00015,
-    outputCostPer1k: 0.0006
-  }
+const convertSharedConfigToModelInfo = (sharedConfig: SharedModelConfig): ModelInfo => {
+  return {
+    provider: sharedConfig.provider as TokenizerProvider,
+    modelName: sharedConfig.name,
+    encoding: sharedConfig.encoding,
+    maxTokens: sharedConfig.contextLength,
+    inputCostPer1k: sharedConfig.inputCostPer1k,
+    outputCostPer1k: sharedConfig.outputCostPer1k
+  };
 };
+
+/**
+ * Legacy MODEL_DATABASE for backward compatibility
+ * Automatically generated from SHARED_MODEL_CONFIG
+ */
+const MODEL_DATABASE: Record<string, ModelInfo> = Object.fromEntries(
+  Object.entries(SHARED_MODEL_CONFIG).map(([modelId, config]) => [
+    modelId,
+    convertSharedConfigToModelInfo(config)
+  ])
+);
 
 /**
  * Real-time token tracking for streaming responses
@@ -675,7 +584,7 @@ export class TokenizerService {
    * Get supported models list
    */
   getSupportedModels(): string[] {
-    return Object.keys(MODEL_DATABASE);
+    return Object.keys(SHARED_MODEL_CONFIG);
   }
 
   /**

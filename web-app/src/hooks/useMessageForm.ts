@@ -176,13 +176,13 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
       });
 
       onSendMessage(
-        trimmedMessage, 
-        images, 
-        selectedModel, 
-        useReasoning && isReasoningModel(), // Only use reasoning if model supports it
-        reasoningEffort, // Pass reasoning effort level
-        useWebSearch && isWebSearchModel(), // Only use web search if model supports it
-        webSearchEffort // Pass web search effort level
+        trimmedMessage,
+        images,
+        selectedModel,
+        useReasoning && isReasoningModel(),
+        reasoningEffort,
+        useWebSearch && isWebSearchModel(),
+        webSearchEffort
       );
 
       // Reset form after successful submission

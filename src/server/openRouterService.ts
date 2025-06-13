@@ -7,7 +7,8 @@
  *   createOpenRouterService - Factory function for creating service instance
  * 
  * Features:
- *   - Google Gemini 2.5 Flash integration via OpenRouter
+ *   - Complete model support via shared configuration
+ *   - Web search support using :online suffix and web_search_options
  *   - Image and text analysis support
  *   - Conversation history management
  *   - Comprehensive error handling and logging
@@ -16,6 +17,7 @@
  * 
  * Usage: const service = createOpenRouterService(apiKey);
  */
+import { SHARED_MODEL_CONFIG, type ModelId, type SharedModelConfig, DEFAULT_MODEL } from '../shared/modelConfig';
 import type { OpenRouterRequest, OpenRouterResponse } from '../shared/types';
 
 // OpenRouter API configuration
@@ -25,138 +27,12 @@ const RETRY_DELAY = 1000; // 1 second
 
 /**
  * Available AI models configuration
- * 
- * Note: According to OpenRouter docs, reasoning token support varies by model:
- * - OpenAI o-series: Use effort parameter, but do NOT return tokens
- * - Gemini/Claude models: Use max_tokens parameter, can return reasoning tokens  
- * - DeepSeek R1: Returns reasoning tokens with effort configuration
- * - See: https://openrouter.ai/docs/use-cases/reasoning-tokens
- * 
- * Web Search Support:
- * - All models can use web search via OpenRouter's web plugin ($4/1K requests)
- * - Perplexity models have built-in web search with cheaper pricing
- * - OpenAI models have premium web search pricing
- * - See: https://openrouter.ai/docs/features/web-search
+ * Now uses shared model configuration for consistency
  */
-export const AVAILABLE_MODELS = {
-  'google/gemini-2.5-flash-preview-05-20': {
-    name: 'Gemini 2.5 Flash',
-    description: 'Fast and efficient multimodal model for general tasks',
-    hasReasoning: true, // Supports reasoning
-    reasoningType: 'thinking', // Uses max_tokens parameter (Anthropic-style)
-    reasoningMode: 'optional', // Can toggle reasoning on/off
-    supportsEffortControl: true, // Supports effort level control
-    hasWebSearch: true, // Supports web search via OpenRouter plugin
-    webSearchMode: 'optional', // Can toggle web search on/off
-    webSearchPricing: 'standard', // Standard OpenRouter web search pricing
-    supportsWebEffortControl: true, // Supports web search effort control
-    color: '#4285F4', // Google Blue
-    bgColor: '#E8F0FE', // Light Google Blue
-    textColor: '#1A73E8', // Darker Google Blue for text
-    released: '2024-12-19', // December 2024 - Very recent Google release
-  },
-  'openai/gpt-4o': {
-    name: 'GPT-4o',
-    description: 'Advanced multimodal model from OpenAI',
-    hasReasoning: false, // No reasoning token support yet
-    reasoningType: 'internal', // Internal reasoning only
-    reasoningMode: 'none', // No reasoning capabilities
-    supportsEffortControl: false, // No effort control
-    hasWebSearch: true, // Supports web search via OpenRouter plugin
-    webSearchMode: 'optional', // Can toggle web search on/off
-    webSearchPricing: 'openai', // Premium OpenAI web search pricing
-    supportsWebEffortControl: true, // Supports web search effort control
-    color: '#10A37F', // OpenAI Green
-    bgColor: '#F0FDF4', // Light Green
-    textColor: '#065F46', // Dark Green for text
-    released: '2024-05-13', // May 2024 - GPT-4o launch
-  },
-  'openai/o1-preview': {
-    name: 'OpenAI o1 Preview',
-    description: 'Reasoning model that thinks before responding',
-    hasReasoning: true, // Built-in reasoning
-    reasoningType: 'effort', // Uses effort parameter (OpenAI-style)
-    reasoningMode: 'forced', // Always uses reasoning, can't be disabled
-    supportsEffortControl: true, // Supports effort level control
-    hasWebSearch: true, // Supports web search via OpenRouter plugin
-    webSearchMode: 'optional', // Can toggle web search on/off
-    webSearchPricing: 'openai', // Premium OpenAI web search pricing
-    supportsWebEffortControl: true, // Supports web search effort control
-    color: '#FF6B35', // OpenAI Orange for reasoning models
-    bgColor: '#FFF7ED', // Light Orange
-    textColor: '#C2410C', // Dark Orange for text
-    released: '2024-09-12', // September 2024 - o1 preview launch
-  },
-  'deepseek/deepseek-r1': {
-    name: 'DeepSeek R1',
-    description: 'Open-source reasoning model that returns reasoning tokens',
-    hasReasoning: true, // Returns reasoning tokens
-    reasoningType: 'effort', // Uses effort parameter (OpenAI-style)
-    reasoningMode: 'forced', // Always uses reasoning, can't be disabled
-    supportsEffortControl: true, // Supports effort level control
-    hasWebSearch: true, // Supports web search via OpenRouter plugin
-    webSearchMode: 'optional', // Can toggle web search on/off
-    webSearchPricing: 'standard', // Standard OpenRouter web search pricing
-    supportsWebEffortControl: true, // Supports web search effort control
-    color: '#3B82F6', // Tech Blue
-    bgColor: '#EFF6FF', // Light Blue
-    textColor: '#1D4ED8', // Dark Blue for text
-    released: '2025-01-20', // January 2025 - Very recent DeepSeek release
-  },
-  'anthropic/claude-3.7-sonnet': {
-    name: 'Claude 3.7 Sonnet',
-    description: 'Advanced Claude model with reasoning capabilities',
-    hasReasoning: true, // Supports reasoning
-    reasoningType: 'thinking', // Uses max_tokens parameter (Anthropic-style)
-    reasoningMode: 'optional', // Can toggle reasoning on/off
-    supportsEffortControl: true, // Supports effort level control
-    hasWebSearch: true, // Supports web search via OpenRouter plugin
-    webSearchMode: 'optional', // Can toggle web search on/off
-    webSearchPricing: 'standard', // Standard OpenRouter web search pricing
-    supportsWebEffortControl: true, // Supports web search effort control
-    color: '#FF7A00', // Anthropic Orange
-    bgColor: '#FFF7ED', // Light Orange
-    textColor: '#C2410C', // Dark Orange for text
-    released: '2024-11-15', // November 2024 - Hypothetical Claude 3.7 release
-  },
-  'perplexity/sonar-reasoning': {
-    name: 'Sonar Reasoning',
-    description: 'Reasoning model with built-in web search by Perplexity (based on DeepSeek R1)',
-    hasReasoning: true, // Built-in reasoning
-    reasoningType: 'effort', // Uses effort parameter (DeepSeek R1-style)
-    reasoningMode: 'forced', // Always uses reasoning, can't be disabled
-    supportsEffortControl: true, // Supports effort level control
-    hasWebSearch: true, // Built-in web search
-    webSearchMode: 'forced', // Always searches the web, can't be disabled
-    webSearchPricing: 'perplexity', // Cheaper Perplexity web search pricing
-    supportsWebEffortControl: true, // Supports web search effort control
-    color: '#20B2AA', // Perplexity Teal
-    bgColor: '#F0FDFA', // Light Teal
-    textColor: '#0D9488', // Dark Teal for text
-    released: '2025-01-29', // January 2025 - Very recent Perplexity release
-  },
-  'perplexity/sonar-pro': {
-    name: 'Sonar Pro',
-    description: 'Advanced web-first model with professional search capabilities',
-    hasReasoning: false, // No reasoning tokens
-    reasoningType: 'internal', // Internal reasoning only
-    reasoningMode: 'none', // No reasoning capabilities
-    supportsEffortControl: false, // No effort control
-    hasWebSearch: true, // Built-in web search
-    webSearchMode: 'forced', // Always searches the web, can't be disabled
-    webSearchPricing: 'perplexity', // Cheaper Perplexity web search pricing
-    supportsWebEffortControl: true, // Supports web search effort control
-    color: '#20B2AA', // Perplexity Teal
-    bgColor: '#F0FDFA', // Light Teal
-    textColor: '#0D9488', // Dark Teal for text
-    released: '2024-10-15', // October 2024 - Perplexity Pro launch
-  }
-} as const;
+export const AVAILABLE_MODELS = SHARED_MODEL_CONFIG;
 
-export type ModelId = keyof typeof AVAILABLE_MODELS;
-
-// Default model
-const DEFAULT_MODEL: ModelId = 'google/gemini-2.5-flash-preview-05-20';
+// Re-export types that other services need
+export type { ModelId };
 
 /**
  * Custom error class for OpenRouter API errors
@@ -411,9 +287,18 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
      * @param modelId - AI model to use (defaults to DEFAULT_MODEL)
      * @param useReasoning - Whether to enable reasoning for supported models
      * @param reasoningEffort - Reasoning effort level (low, medium, high)
+     * @param useWebSearch - Whether to enable web search for supported models
+     * @param webSearchEffort - Web search effort level (low, medium, high)
      * @returns Promise with AI response text
      */
-    async sendMessage(messages: ConversationMessage[], modelId: ModelId = DEFAULT_MODEL, useReasoning: boolean = false, reasoningEffort: 'low' | 'medium' | 'high' = 'high'): Promise<{ content: string; reasoning?: string }> {
+    async sendMessage(
+      messages: ConversationMessage[], 
+      modelId: ModelId = DEFAULT_MODEL, 
+      useReasoning: boolean = false, 
+      reasoningEffort: 'low' | 'medium' | 'high' = 'high',
+      useWebSearch: boolean = false,
+      webSearchEffort: 'low' | 'medium' | 'high' = 'medium'
+    ): Promise<{ content: string; reasoning?: string }> {
       try {
         // Validate input
         validateMessages(messages);
@@ -425,13 +310,25 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
 
         const modelConfig = AVAILABLE_MODELS[modelId];
         
-        // Determine the actual model to use (add :thinking suffix if needed)
+        // Determine the actual model to use based on web search and reasoning
         let actualModelId = modelId;
-        if (useReasoning && modelConfig.hasReasoning && modelConfig.reasoningType === 'thinking') {
-          actualModelId = `${modelId}:thinking` as ModelId;
+        
+        // Handle web search - Use :online suffix for models that support web search
+        if (useWebSearch && modelConfig.hasWebSearch && modelConfig.webSearchMode === 'optional') {
+          actualModelId = `${modelId}:online` as ModelId;
         }
         
-        console.log(`[OpenRouter] Processing ${messages.length} message(s) with model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}`);
+        // Handle reasoning - Add :thinking suffix for thinking models (after web search processing)
+        if (useReasoning && modelConfig.hasReasoning && modelConfig.reasoningType === 'thinking') {
+          // If we already added :online, replace it with :thinking:online or add :thinking
+          if (actualModelId.endsWith(':online')) {
+            actualModelId = `${modelId}:thinking:online` as ModelId;
+          } else {
+            actualModelId = `${modelId}:thinking` as ModelId;
+          }
+        }
+        
+        console.log(`[OpenRouter] Processing ${messages.length} message(s) with model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}${useWebSearch && modelConfig.hasWebSearch ? ' (with web search)' : ''}`);
         
         // Format messages for API
         const formattedMessages = formatMessagesForAPI(messages);
@@ -461,6 +358,26 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
           console.log(`[OpenRouter] Configured reasoning for ${actualModelId} (${modelConfig.name}) - type: ${modelConfig.reasoningType}, effort: ${reasoningEffort}`);
         }
 
+        // Add web search configuration for models that support web search effort control
+        if (useWebSearch && modelConfig.hasWebSearch && modelConfig.supportsWebEffortControl) {
+          // Only add web_search_options for models that are not Perplexity (they handle this internally)
+          if (modelConfig.webSearchMode !== 'forced') {
+            const effortToContextSize: Record<string, 'low' | 'medium' | 'high'> = {
+              low: 'low',
+              medium: 'medium', 
+              high: 'high'
+            };
+            
+            requestData.web_search_options = {
+              search_context_size: effortToContextSize[webSearchEffort]
+            };
+            
+            console.log(`[OpenRouter] Configured web search for ${actualModelId} (${modelConfig.name}) - effort: ${webSearchEffort}, pricing: ${modelConfig.webSearchPricing}`);
+          } else {
+            console.log(`[OpenRouter] Using built-in web search for ${actualModelId} (${modelConfig.name}) - effort: ${webSearchEffort}, pricing: ${modelConfig.webSearchPricing}`);
+          }
+        }
+
         // Make API request
         const response = await makeOpenRouterRequest(apiKey, requestData);
 
@@ -479,6 +396,11 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
           } else {
             console.log(`[OpenRouter] ⚠️  No reasoning tokens received from ${actualModelId} - this model may not return reasoning tokens`);
           }
+        }
+
+        // Log web search status
+        if (useWebSearch && modelConfig.hasWebSearch) {
+          console.log(`[OpenRouter] ✅ Web search enabled for ${actualModelId} with ${modelConfig.webSearchPricing} pricing`);
         }
 
         console.log(`[OpenRouter] Response received (${aiResponse.length} characters)${reasoning ? ` with reasoning (${reasoning.length} characters)` : ''}`);
@@ -510,9 +432,18 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
      * @param modelId - AI model to use (defaults to DEFAULT_MODEL)
      * @param useReasoning - Whether to enable reasoning for supported models
      * @param reasoningEffort - Reasoning effort level (low, medium, high)
+     * @param useWebSearch - Whether to enable web search for supported models
+     * @param webSearchEffort - Web search effort level (low, medium, high)
      * @returns Async iterable with AI response stream
      */
-    async sendMessageStream(messages: ConversationMessage[], modelId: ModelId = DEFAULT_MODEL, useReasoning: boolean = false, reasoningEffort: 'low' | 'medium' | 'high' = 'high'): Promise<AsyncIterable<string>> {
+    async sendMessageStream(
+      messages: ConversationMessage[], 
+      modelId: ModelId = DEFAULT_MODEL, 
+      useReasoning: boolean = false, 
+      reasoningEffort: 'low' | 'medium' | 'high' = 'high',
+      useWebSearch: boolean = false,
+      webSearchEffort: 'low' | 'medium' | 'high' = 'medium'
+    ): Promise<AsyncIterable<string>> {
       try {
         // Validate input
         validateMessages(messages);
@@ -524,13 +455,25 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
 
         const modelConfig = AVAILABLE_MODELS[modelId];
         
-        // Determine the actual model to use (add :thinking suffix if needed)
+        // Determine the actual model to use based on web search and reasoning
         let actualModelId = modelId;
-        if (useReasoning && modelConfig.hasReasoning && modelConfig.reasoningType === 'thinking') {
-          actualModelId = `${modelId}:thinking` as ModelId;
+        
+        // Handle web search - Use :online suffix for models that support web search
+        if (useWebSearch && modelConfig.hasWebSearch && modelConfig.webSearchMode === 'optional') {
+          actualModelId = `${modelId}:online` as ModelId;
         }
         
-        console.log(`[OpenRouter] Processing ${messages.length} message(s) with streaming model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}`);
+        // Handle reasoning - Add :thinking suffix for thinking models (after web search processing)
+        if (useReasoning && modelConfig.hasReasoning && modelConfig.reasoningType === 'thinking') {
+          // If we already added :online, replace it with :thinking:online or add :thinking
+          if (actualModelId.endsWith(':online')) {
+            actualModelId = `${modelId}:thinking:online` as ModelId;
+          } else {
+            actualModelId = `${modelId}:thinking` as ModelId;
+          }
+        }
+        
+        console.log(`[OpenRouter] Processing ${messages.length} message(s) with streaming model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}${useWebSearch && modelConfig.hasWebSearch ? ' (with web search)' : ''}`);
         
         // Format messages for API
         const formattedMessages = formatMessagesForAPI(messages);
@@ -559,6 +502,26 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
             };
           }
           console.log(`[OpenRouter] Configured reasoning for ${actualModelId} (${modelConfig.name}) - type: ${modelConfig.reasoningType}, effort: ${reasoningEffort}`);
+        }
+
+        // Add web search configuration for models that support web search effort control
+        if (useWebSearch && modelConfig.hasWebSearch && modelConfig.supportsWebEffortControl) {
+          // Only add web_search_options for models that are not Perplexity (they handle this internally)
+          if (modelConfig.webSearchMode !== 'forced') {
+            const effortToContextSize: Record<string, 'low' | 'medium' | 'high'> = {
+              low: 'low',
+              medium: 'medium', 
+              high: 'high'
+            };
+            
+            requestData.web_search_options = {
+              search_context_size: effortToContextSize[webSearchEffort]
+            };
+            
+            console.log(`[OpenRouter] Configured web search for ${actualModelId} (${modelConfig.name}) - effort: ${webSearchEffort}, pricing: ${modelConfig.webSearchPricing}`);
+          } else {
+            console.log(`[OpenRouter] Using built-in web search for ${actualModelId} (${modelConfig.name}) - effort: ${webSearchEffort}, pricing: ${modelConfig.webSearchPricing}`);
+          }
         }
 
         console.log(`[OpenRouter] Making streaming API request`);

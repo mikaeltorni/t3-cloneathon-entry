@@ -124,6 +124,8 @@ export interface UserChats {
  * @property modelId - AI model to use for processing the message
  * @property useReasoning - Whether to enable reasoning for supported models
  * @property reasoningEffort - Reasoning effort level for supported models
+ * @property useWebSearch - Whether to enable web search for supported models
+ * @property webSearchEffort - Web search effort level for supported models
  */
 export interface CreateMessageRequest {
   threadId?: string; // If not provided, creates new thread
@@ -133,6 +135,8 @@ export interface CreateMessageRequest {
   modelId?: string; // AI model identifier
   useReasoning?: boolean; // Enable reasoning for supported models
   reasoningEffort?: 'low' | 'medium' | 'high'; // Reasoning effort level
+  useWebSearch?: boolean; // Enable web search for supported models
+  webSearchEffort?: 'low' | 'medium' | 'high'; // Web search effort level
 }
 
 /**
@@ -206,6 +210,7 @@ export interface GetChatsResponse {
  * @property messages - Array of conversation messages
  * @property stream - Enable streaming responses
  * @property reasoning - Reasoning tokens configuration
+ * @property web_search_options - Web search configuration options
  */
 export interface OpenRouterRequest {
   model: string;
@@ -225,6 +230,9 @@ export interface OpenRouterRequest {
     max_tokens?: number;
     exclude?: boolean;
     enabled?: boolean;
+  };
+  web_search_options?: {
+    search_context_size?: 'low' | 'medium' | 'high';
   };
 }
 
