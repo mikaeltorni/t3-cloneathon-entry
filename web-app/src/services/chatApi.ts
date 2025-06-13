@@ -20,7 +20,8 @@ import type {
   CreateMessageRequest, 
   CreateMessageResponse, 
   GetChatsResponse,
-  AvailableModelsResponse 
+  AvailableModelsResponse,
+  TokenMetrics
 } from '../../../src/shared/types';
 
 // Base API URL - defaults to localhost for development
@@ -330,6 +331,7 @@ class ChatApiService {
    * @param onComplete - Callback when streaming is complete
    * @param onError - Callback for errors
    * @param onReasoningChunk - Optional callback for reasoning chunks
+   * @param onTokenMetrics - Optional callback for real-time token metrics
    * @returns Promise that resolves when streaming starts
    */
   async sendMessageStream(
@@ -337,7 +339,8 @@ class ChatApiService {
     onChunk: (chunk: string, fullContent: string) => void,
     onComplete: (response: CreateMessageResponse) => void,
     onError: (error: Error) => void,
-    onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void
+    onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void,
+    onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void
   ): Promise<void> {
     if (!request.content?.trim() && !request.imageUrl?.trim() && (!request.images || request.images.length === 0)) {
       throw new Error('Message content or image URL is required');
@@ -436,20 +439,31 @@ class ChatApiService {
                   if (onReasoningChunk) {
                     onReasoningChunk(parsed.content, parsed.fullReasoning);
                   }
+                  // Handle token metrics if available
+                  if (onTokenMetrics && parsed.tokenMetrics) {
+                    onTokenMetrics(parsed.tokenMetrics);
+                  }
                   break;
                   
                 case 'ai_chunk':
                   onChunk(parsed.content, parsed.fullContent);
+                  // Handle token metrics if available
+                  if (onTokenMetrics && parsed.tokenMetrics) {
+                    onTokenMetrics(parsed.tokenMetrics);
+                  }
                   break;
                   
                 case 'ai_complete':
                   const completeResponse: CreateMessageResponse = {
                     threadId: threadId!,
                     message: userMessage,
-                    assistantResponse: parsed.assistantMessage
+                    assistantResponse: parsed.assistantMessage,
+                    tokenMetrics: parsed.tokenMetrics // Include final token metrics
                   };
                   onComplete(completeResponse);
-                  logger.info(`Streaming message completed for thread: ${threadId}`);
+                  logger.info(`Streaming message completed for thread: ${threadId}`, {
+                    tokenMetrics: parsed.tokenMetrics
+                  });
                   break;
                   
                 case 'error':

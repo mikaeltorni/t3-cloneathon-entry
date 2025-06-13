@@ -21,6 +21,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { ChatMessage } from '../../../src/shared/types';
 import { CopyButton } from './ui/CopyButton';
+import { TokenMetricsDisplay } from './TokenMetricsDisplay';
 
 interface MessageProps {
   message: ChatMessage;
@@ -256,6 +257,17 @@ const Message: React.FC<MessageProps> = React.memo(({
               {message.content}
             </ReactMarkdown>
           </div>
+          
+          {/* Token metrics for assistant messages */}
+          {message.tokenMetrics && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <TokenMetricsDisplay 
+                metrics={message.tokenMetrics} 
+                variant="compact"
+                className="justify-start"
+              />
+            </div>
+          )}
         </div>
         <div className="flex items-center justify-start gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <span className="text-xs text-gray-500">{formattedTime}</span>

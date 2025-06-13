@@ -17,7 +17,7 @@
  * 
  * Usage: app.use('/api/chats', chatController.getRoutes());
  */
-import { Request, Response, NextFunction, Router } from 'express';
+import express, { Request, Response, NextFunction, Router } from 'express';
 import { firestoreChatStorage } from '../firestoreChatStorage';
 import { createAIService } from '../services/AIService';
 import { authenticateUser, type AuthenticatedRequest } from '../middleware/auth';
@@ -28,6 +28,9 @@ import type {
   ChatThread,
   ChatMessage
 } from '../../shared/types';
+
+// Import tokenizer for real-time tracking
+import { TokenTracker } from '../services/tokenizerService';
 
 /**
  * Controller for chat operations
@@ -429,6 +432,13 @@ export class ChatController {
 
       console.log(`[ChatController] Streaming AI response with model: ${modelId}`);
       
+      // Initialize token tracker for this response
+      const tokenTracker = new TokenTracker(modelId || 'google/gemini-2.5-flash-preview-05-20');
+      
+      // Start tracking with the full conversation context
+      const conversationText = updatedThread.messages.map(msg => `${msg.role}: ${msg.content}`).join('\n');
+      tokenTracker.startTracking(conversationText);
+      
       // Stream the AI response
       res.write(`data: ${JSON.stringify({ type: 'ai_start' })}\n\n`);
       
@@ -464,11 +474,18 @@ export class ChatController {
             fullReasoning += reasoningChunk;
             hasContent = true;
             
-            // Stream reasoning in real-time
+            // Update token tracker with reasoning chunk
+            const currentTPS = tokenTracker.addTokensFromChunk(reasoningChunk);
+            
+            // Stream reasoning in real-time with token metrics
             res.write(`data: ${JSON.stringify({ 
               type: 'reasoning_chunk', 
               content: reasoningChunk,
-              fullReasoning: fullReasoning 
+              fullReasoning: fullReasoning,
+              tokenMetrics: {
+                ...tokenTracker.getCurrentMetrics(),
+                tokensPerSecond: currentTPS
+              }
             })}\n\n`);
           } else if (chunk.startsWith('content:')) {
             // Extract content chunk
@@ -476,27 +493,44 @@ export class ChatController {
             fullContent += contentChunk;
             hasContent = true;
             
-            // Stream content chunk
+            // Update token tracker with content chunk
+            const currentTPS = tokenTracker.addTokensFromChunk(contentChunk);
+            
+            // Stream content chunk with token metrics
             res.write(`data: ${JSON.stringify({ 
               type: 'ai_chunk', 
               content: contentChunk, 
-              fullContent: fullContent 
+              fullContent: fullContent,
+              tokenMetrics: {
+                ...tokenTracker.getCurrentMetrics(),
+                tokensPerSecond: currentTPS
+              }
             })}\n\n`);
           } else {
             // Fallback for chunks without prefix (backward compatibility)
             fullContent += chunk;
             hasContent = true;
             
+            // Update token tracker with chunk
+            const currentTPS = tokenTracker.addTokensFromChunk(chunk);
+            
             res.write(`data: ${JSON.stringify({ 
               type: 'ai_chunk', 
               content: chunk, 
-              fullContent: fullContent 
+              fullContent: fullContent,
+              tokenMetrics: {
+                ...tokenTracker.getCurrentMetrics(),
+                tokensPerSecond: currentTPS
+              }
             })}\n\n`);
           }
         }
 
         // Only create and save message if we actually received content
         if (hasContent && (fullContent.trim() || fullReasoning.trim())) {
+          // Stop tracking and get final metrics
+          const finalTokenMetrics = tokenTracker.stopTracking();
+          
           // Create assistant message with full response
           const assistantMessage = firestoreChatStorage.createMessage(
             fullContent || 'No content received',
@@ -510,13 +544,17 @@ export class ChatController {
             assistantMessage.reasoning = fullReasoning;
           }
           
+          // Attach token metrics to the assistant message
+          assistantMessage.tokenMetrics = finalTokenMetrics;
+          
           await firestoreChatStorage.addMessageToThread(req.user.uid, currentThread.id, assistantMessage);
 
-          // Send completion
+          // Send completion with final token metrics
           res.write(`data: ${JSON.stringify({ 
             type: 'ai_complete', 
             assistantMessage,
-            fullContent: fullContent 
+            fullContent: fullContent,
+            tokenMetrics: finalTokenMetrics
           })}\n\n`);
         } else {
           // No content received, send error
@@ -529,7 +567,8 @@ export class ChatController {
         res.write('data: [DONE]\n\n');
         res.end();
 
-        console.log(`[ChatController] Successfully streamed message for thread: ${currentThread.id} (${fullContent.length} characters content, ${fullReasoning.length} characters reasoning)`);
+        const finalMetrics = tokenTracker.getCurrentMetrics();
+        console.log(`[ChatController] Successfully streamed message for thread: ${currentThread.id} (${fullContent.length} characters content, ${fullReasoning.length} characters reasoning, ${finalMetrics.totalTokens} tokens, ${finalMetrics.tokensPerSecond?.toFixed(2)} TPS)`);
 
       } catch (streamError) {
         console.error('[ChatController] Error in streaming:', streamError);

@@ -26,6 +26,7 @@
  * @property images - Optional array of image attachments
  * @property modelId - AI model used for processing (for assistant messages)
  * @property reasoning - Optional reasoning content for reasoning models (raw text)
+ * @property tokenMetrics - Optional token usage and performance metrics (for assistant messages)
  * @property metadata - Optional metadata for additional message information
  */
 export interface ChatMessage {
@@ -37,6 +38,7 @@ export interface ChatMessage {
   images?: ImageAttachment[]; // Multiple image support
   modelId?: string; // AI model used (for assistant messages)
   reasoning?: string; // Raw reasoning content for reasoning models
+  tokenMetrics?: TokenMetrics; // Token usage and performance metrics (for assistant messages)
   metadata?: { // Additional message metadata
     reasoningDuration?: number; // Duration in milliseconds for reasoning
     isReasoning?: boolean; // Whether the message is currently reasoning
@@ -125,17 +127,48 @@ export interface CreateMessageRequest {
 }
 
 /**
+ * Token metrics for tracking tokenization performance
+ * 
+ * @interface TokenMetrics
+ * @property inputTokens - Total input tokens
+ * @property outputTokens - Total output tokens generated
+ * @property totalTokens - Total tokens (input + output)
+ * @property tokensPerSecond - Tokens per second during generation
+ * @property startTime - Generation start time
+ * @property endTime - Generation end time
+ * @property duration - Generation duration in milliseconds
+ * @property estimatedCost - Estimated cost based on token count
+ */
+export interface TokenMetrics {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  tokensPerSecond: number;
+  startTime: number;
+  endTime?: number;
+  duration?: number;
+  estimatedCost?: {
+    input: number;
+    output: number;
+    total: number;
+    currency: string;
+  };
+}
+
+/**
  * Response payload for message creation
  * 
  * @interface CreateMessageResponse
  * @property threadId - ID of the thread containing the messages
  * @property message - The user's message that was created
  * @property assistantResponse - The AI assistant's response message
+ * @property tokenMetrics - Token usage and performance metrics
  */
 export interface CreateMessageResponse {
   threadId: string;
   message: ChatMessage;
   assistantResponse: ChatMessage;
+  tokenMetrics?: TokenMetrics;
 }
 
 /**

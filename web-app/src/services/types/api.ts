@@ -265,4 +265,65 @@ function getDefaultErrorCode(status: number): ApiErrorCode {
   if (status === 429) return ApiErrorCodes.RATE_LIMITED;
   if (status >= 500) return ApiErrorCodes.SERVER_ERROR;
   return ApiErrorCodes.UNKNOWN_ERROR;
+}
+
+/**
+ * Token metrics for tracking tokenization performance
+ */
+export interface TokenMetrics {
+  /** Total input tokens */
+  inputTokens: number;
+  /** Total output tokens generated */
+  outputTokens: number;
+  /** Total tokens (input + output) */
+  totalTokens: number;
+  /** Tokens per second during generation */
+  tokensPerSecond: number;
+  /** Generation start time */
+  startTime: number;
+  /** Generation end time */
+  endTime?: number;
+  /** Generation duration in milliseconds */
+  duration?: number;
+  /** Estimated cost based on token count */
+  estimatedCost?: {
+    input: number;
+    output: number;
+    total: number;
+    currency: string;
+  };
+}
+
+/**
+ * Supported AI providers for tokenization
+ */
+export type TokenizerProvider = 
+  | 'openai' 
+  | 'anthropic' 
+  | 'deepseek' 
+  | 'google' 
+  | 'auto';
+
+/**
+ * Model-specific information for tokenization
+ */
+export interface ModelInfo {
+  provider: TokenizerProvider;
+  modelName: string;
+  encoding?: string;
+  maxTokens?: number;
+  inputCostPer1k?: number;
+  outputCostPer1k?: number;
+}
+
+/**
+ * Tokenization result with detailed metrics
+ */
+export interface TokenizationResult {
+  tokens: number[];
+  tokenCount: number;
+  text: string;
+  model: string;
+  provider: TokenizerProvider;
+  estimatedCost?: number;
 } 

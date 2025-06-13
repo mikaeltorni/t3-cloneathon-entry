@@ -20,7 +20,7 @@ import { createChatApiService } from '../services/chatApi';
 import { useAuth } from './useAuth';
 import { useLogger } from './useLogger';
 import { useErrorHandler } from './useErrorHandler';
-import type { ChatThread, ChatMessage, ImageAttachment } from '../../../src/shared/types';
+import type { ChatThread, ChatMessage, ImageAttachment, TokenMetrics } from '../../../src/shared/types';
 import { 
   getCachedThreads, 
   setCachedThreads, 
@@ -465,6 +465,45 @@ export const useChat = (): UseChatReturn => {
               const updatedThread = {
                 ...tempThread,
                 messages: [...tempThread.messages, tempAiMessage],
+                updatedAt: new Date()
+              };
+              setCurrentThread(updatedThread);
+              tempThread = updatedThread;
+            }
+          }
+        },
+        // onTokenMetrics callback - update real-time token metrics
+        (metrics: Partial<TokenMetrics>) => {
+          debug('📊 Received token metrics', { 
+            tokensPerSecond: metrics.tokensPerSecond?.toFixed(2),
+            totalTokens: metrics.totalTokens,
+            outputTokens: metrics.outputTokens,
+            cost: metrics.estimatedCost?.total?.toFixed(6)
+          });
+          
+          // Update the temporary message with the latest token metrics
+          tempAiMessage.tokenMetrics = {
+            inputTokens: metrics.inputTokens || 0,
+            outputTokens: metrics.outputTokens || 0,
+            totalTokens: metrics.totalTokens || 0,
+            tokensPerSecond: metrics.tokensPerSecond || 0,
+            startTime: metrics.startTime || Date.now(),
+            endTime: metrics.endTime,
+            duration: metrics.duration,
+            estimatedCost: metrics.estimatedCost
+          };
+          
+          if (tempThread) {
+            // Find if temp message already exists in thread
+            const existingTempIndex = tempThread.messages.findIndex(msg => msg.id === tempAiMessage.id);
+            
+            if (existingTempIndex >= 0) {
+              // Update existing temp message with token metrics
+              const updatedMessages = [...tempThread.messages];
+              updatedMessages[existingTempIndex] = { ...tempAiMessage };
+              const updatedThread = {
+                ...tempThread,
+                messages: updatedMessages,
                 updatedAt: new Date()
               };
               setCurrentThread(updatedThread);

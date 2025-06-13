@@ -251,3 +251,358 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 ---
 
 **🎯 T3 Cloneathon Entry**: This project demonstrates modern full-stack development with effective rate limiting using Firebase-native solutions, providing an excellent balance of simplicity and functionality.
+
+## 🧮 Comprehensive Tokenizer System
+
+A powerful multi-provider tokenization system with real-time token counting and cost estimation.
+
+### 🚀 Features
+
+- **Multi-Provider Support**: OpenAI (using [`gpt-tokenizer`](https://www.npmjs.com/package/gpt-tokenizer)), Anthropic, DeepSeek, and Google models
+- **Real-time Token Tracking**: Live tokens-per-second calculation during message generation  
+- **Automatic Message Integration**: Token metrics automatically attached to assistant responses
+- **Accurate Cost Estimation**: Provider-specific pricing with input/output token breakdown
+- **Model Auto-Detection**: Automatic provider selection based on model names
+- **React Hooks Integration**: Easy-to-use hooks for real-time UI updates
+- **Performance Optimized**: Efficient tokenization with caching for OpenAI models
+
+### 📊 Supported Providers & Models
+
+#### OpenAI (using gpt-tokenizer library)
+- **GPT-4o Series**: `gpt-4o`, `gpt-4o-mini` (o200k_base encoding)
+- **GPT-4 Series**: `gpt-4`, `gpt-4-turbo` (cl100k_base encoding)  
+- **GPT-3.5**: `gpt-3.5-turbo` (cl100k_base encoding)
+- **o1 Series**: `o1-preview`, `o1-mini` (o200k_base encoding)
+
+#### Anthropic (estimation-based)
+- **Claude 3.5**: Sonnet and Haiku variants
+- **Claude 3**: Opus series
+- **Estimation**: ~4 characters per token
+
+#### DeepSeek (estimation-based)
+- **DeepSeek Chat/Coder**: Latest models
+- **Estimation**: ~3.5 characters per token (optimized for code)
+
+#### Google (estimation-based)  
+- **Gemini 1.5**: Pro and Flash variants
+- **Estimation**: ~3.8 characters per token (SentencePiece-like)
+
+### 🔧 Installation
+
+The tokenizer system requires the `gpt-tokenizer` package:
+
+```bash
+cd web-app
+npm install gpt-tokenizer
+```
+
+### 📖 Usage Examples
+
+#### Basic Tokenization
+
+```typescript
+import { tokenizerService } from './services/tokenizerService';
+
+// Tokenize text with automatic provider detection
+const result = await tokenizerService.tokenize(
+  "Hello, how are you today?", 
+  'gpt-4o'
+);
+
+console.log(`Tokens: ${result.tokenCount}`);
+console.log(`Estimated Cost: $${result.estimatedCost}`);
+console.log(`Provider: ${result.provider}`);
+```
+
+#### Chat Message Tokenization
+
+```typescript
+// Tokenize entire conversation context
+const messages = [
+  { role: 'user', content: 'What is AI?' },
+  { role: 'assistant', content: 'AI is artificial intelligence...' }
+];
+
+const chatResult = await tokenizerService.tokenizeChat(messages, 'gpt-4o');
+console.log(`Conversation tokens: ${chatResult.tokenCount}`);
+```
+
+#### Real-time Token Tracking
+
+```typescript
+import { useTokenTracker } from './hooks/useTokenTracker';
+
+function ChatComponent() {
+  const { 
+    tokenMetrics, 
+    isTracking, 
+    startTracking, 
+    updateTokens, 
+    stopTracking 
+  } = useTokenTracker('gpt-4o');
+
+  const handleSendMessage = async (message: string) => {
+    // Start tracking
+    await startTracking(message);
+    
+    // Simulate streaming response
+    const response = await streamChatResponse(message);
+    for await (const chunk of response) {
+      updateTokens(chunk); // Real-time token updates
+    }
+    
+    // Get final metrics
+    const finalMetrics = stopTracking();
+    console.log(`Final TPS: ${finalMetrics.tokensPerSecond}`);
+  };
+
+  return (
+    <div>
+      {isTracking && (
+        <div>
+          TPS: {tokenMetrics.tokensPerSecond.toFixed(1)} tokens/sec
+          Cost: ${tokenMetrics.estimatedCost.total.toFixed(4)}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+#### Automatic Message Integration
+
+Token metrics are automatically attached to every assistant message with zero configuration:
+
+```typescript
+// Backend automatically tracks tokens during streaming
+// ChatMessage interface includes tokenMetrics
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  tokenMetrics?: TokenMetrics; // Automatically populated for assistant messages
+}
+
+// Frontend automatically displays metrics in message cards
+// No additional code needed - metrics appear automatically below assistant messages
+```
+
+The system provides:
+- **Real-time TPS updates** during message generation
+- **Final metrics** attached to completed messages
+- **Automatic UI display** in message cards
+- **Cost tracking** for conversation budgeting
+```
+
+### 🎨 UI Components
+
+#### Token Metrics Display Components
+
+```typescript
+import { 
+  TokenMetricsDisplay, 
+  TokenMetricsCompact, 
+  TokenMetricsBadge 
+} from './components/TokenMetricsDisplay';
+
+// Full detailed display
+<TokenMetricsDisplay 
+  tokenMetrics={metrics} 
+  isGenerating={true}
+  variant="full" 
+/>
+
+// Compact row display  
+<TokenMetricsCompact 
+  tokenMetrics={metrics}
+  isGenerating={true}
+/>
+
+// Minimal badge display
+<TokenMetricsBadge 
+  tokenMetrics={metrics}
+  isGenerating={true} 
+/>
+```
+
+#### Component Features
+- **Real-time Updates**: Live TPS display with animations
+- **Cost Breakdown**: Input/output cost separation  
+- **Duration Tracking**: Generation time measurement
+- **Responsive Design**: Works on mobile and desktop
+- **Multiple Variants**: Badge, compact, and full display modes
+
+### 🧪 Testing & Demo
+
+Try the interactive tokenizer demo:
+
+```typescript
+import { TokenizerDemo } from './components/TokenizerDemo';
+
+<TokenizerDemo />
+```
+
+**Demo Features:**
+- Live text tokenization across all providers
+- Real-time TPS simulation  
+- Model comparison tools
+- Cost estimation visualization
+- Sample texts for different use cases
+
+### ⚡ Performance
+
+#### OpenAI Tokenization (gpt-tokenizer)
+- **Accuracy**: 1:1 parity with OpenAI's tiktoken
+- **Speed**: Fastest JavaScript tokenizer available
+- **Memory**: Minimal footprint with efficient caching
+- **Encodings**: o200k_base, cl100k_base, p50k_base, r50k_base
+
+#### Provider Estimates
+- **Anthropic**: Character-based estimation (~4 chars/token)
+- **DeepSeek**: Code-optimized estimation (~3.5 chars/token)  
+- **Google**: SentencePiece-like estimation (~3.8 chars/token)
+
+### 🔍 Technical Implementation
+
+#### TokenizerService Architecture
+
+```typescript
+class TokenizerService {
+  // Multi-provider tokenization
+  async tokenize(text: string, model: string): Promise<TokenizationResult>
+  
+  // Chat context tokenization  
+  async tokenizeChat(messages: any[], model: string): Promise<TokenizationResult>
+  
+  // Fast token counting
+  async countTokens(text: string, model: string): Promise<number>
+  
+  // Streaming token estimation
+  estimateTokensInChunk(chunk: string, model: string): number
+  
+  // Cost calculation
+  calculateCost(inputTokens: number, outputTokens: number, modelInfo: ModelInfo)
+}
+```
+
+#### Real-time Token Tracking
+
+```typescript
+class TokenTracker {
+  // Add tokens and calculate TPS
+  addTokens(count: number): number
+  
+  // Get smoothed TPS average  
+  getCurrentTPS(): number
+  
+  // Reset tracking state
+  reset(): void
+}
+```
+
+### 💰 Cost Estimation
+
+The system includes comprehensive pricing data for all supported models:
+
+```typescript
+// Example model pricing (per 1K tokens)
+const MODEL_DATABASE = {
+  'gpt-4o': {
+    inputCostPer1k: 0.0025,
+    outputCostPer1k: 0.01
+  },
+  'claude-3-5-sonnet-20241022': {
+    inputCostPer1k: 0.003,
+    outputCostPer1k: 0.015
+  },
+  'deepseek-chat': {
+    inputCostPer1k: 0.00014,
+    outputCostPer1k: 0.00028
+  }
+};
+```
+
+### 🔧 Configuration
+
+#### Model Database Customization
+
+Add new models to the `MODEL_DATABASE` in `tokenizerService.ts`:
+
+```typescript
+const MODEL_DATABASE: Record<string, ModelInfo> = {
+  'your-custom-model': {
+    provider: 'openai', // or 'anthropic', 'deepseek', 'google'
+    modelName: 'your-custom-model',
+    encoding: 'cl100k_base', // for OpenAI models
+    maxTokens: 128000,
+    inputCostPer1k: 0.001,
+    outputCostPer1k: 0.002
+  }
+};
+```
+
+#### Hook Configuration
+
+```typescript
+const { tokenMetrics } = useTokenTracker('gpt-4o', {
+  autoStart: false,           // Auto-start tracking
+  updateInterval: 100,        // Update frequency (ms)
+  onComplete: (metrics) => {  // Completion callback
+    console.log('Final metrics:', metrics);
+  },
+  onUpdate: (metrics) => {    // Real-time callback
+    console.log('Current TPS:', metrics.tokensPerSecond);
+  }
+});
+```
+
+### 🚀 Integration with Chat Streaming
+
+The tokenizer integrates seamlessly with existing chat functionality:
+
+```typescript
+// In your chat streaming handler
+const tracker = new TokenTracker();
+await startTracking(userMessage);
+
+// During streaming
+onChunk((chunk) => {
+  updateTokens(chunk);
+  // Display real-time TPS in UI
+});
+
+// On completion  
+const metrics = stopTracking();
+// Save metrics with message
+```
+
+### 📈 Analytics & Monitoring
+
+Track tokenization performance:
+
+```typescript
+// Get tokenization analytics
+const analytics = {
+  totalRequests: tokenizerService.getRequestCount(),
+  averageLatency: tokenizerService.getAverageLatency(),
+  providerUsage: tokenizerService.getProviderStats(),
+  costAnalytics: tokenizerService.getCostAnalytics()
+};
+```
+
+### 🤝 Contributing
+
+To add support for new AI providers:
+
+1. **Add Model Info**: Update `MODEL_DATABASE` with provider details
+2. **Implement Tokenizer**: Add provider-specific tokenization method
+3. **Add Tests**: Include test cases for the new provider
+4. **Update Documentation**: Document the new provider capabilities
+
+### 📚 Additional Resources
+
+- [gpt-tokenizer Documentation](https://www.npmjs.com/package/gpt-tokenizer)
+- [OpenAI Tokenizer Cookbook](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb)
+- [Anthropic Token Counting](https://docs.anthropic.com/en/docs/build-with-claude/token-counting)
+- [Token Counting Best Practices](https://platform.openai.com/docs/guides/text-generation/managing-tokens)
