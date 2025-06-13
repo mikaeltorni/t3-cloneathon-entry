@@ -39,6 +39,7 @@ interface ChatInputProps {
   images: ImageAttachment[];
   onImagesChange: (images: ImageAttachment[]) => void;
   sidebarOpen?: boolean;
+  onModelChange?: (modelId: string) => void;
 }
 
 /**
@@ -69,7 +70,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onHeightChange,
   images,
   onImagesChange,
-  sidebarOpen = false
+  sidebarOpen = false,
+  onModelChange
 }) => {
   const inputBarRef = useRef<HTMLDivElement>(null);
   const { debug } = useLogger('ChatInput');
@@ -98,6 +100,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     loading,
     images
   });
+
+  /**
+   * Enhanced model change handler that notifies parent
+   */
+  const handleModelChange = useCallback((modelId: string) => {
+    setSelectedModel(modelId);
+    onModelChange?.(modelId);
+    debug(`Model changed to: ${modelId}`);
+  }, [setSelectedModel, onModelChange, debug]);
 
   /**
    * Auto-resize textarea based on content
@@ -173,7 +184,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           {/* Model Selection with Beautiful Buttons */}
           <ModelSelector
             value={selectedModel}
-            onChange={setSelectedModel}
+            onChange={handleModelChange}
             models={availableModels}
             loading={modelsLoading}
           />

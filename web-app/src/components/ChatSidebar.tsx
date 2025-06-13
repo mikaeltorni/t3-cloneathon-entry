@@ -208,23 +208,24 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
               {truncateText(thread.title, 45)}
             </h3>
             
-            {/* Model indicator */}
+            {/* Model indicator - Always visible */}
             {displayModel && (
-              <div className="flex items-center mt-2 mb-1">
+              <div className="flex items-center mt-1.5 mb-2">
                 <div 
-                  className="w-2 h-2 rounded-full mr-2 flex-shrink-0"
+                  className="w-2.5 h-2.5 rounded-full mr-2 flex-shrink-0 shadow-sm"
                   style={{ backgroundColor: displayModel.color }}
                 />
                 <span 
                   className={cn(
-                    'text-xs font-medium px-2 py-1 rounded-full truncate',
+                    'text-xs font-medium px-2.5 py-1 rounded-full truncate transition-colors duration-200',
                     isSelected 
-                      ? 'bg-blue-100 text-blue-800' 
-                      : 'bg-gray-100 text-gray-700'
+                      ? 'shadow-sm border' 
+                      : 'bg-gray-100 text-gray-700 border border-gray-200'
                   )}
                   style={{
                     backgroundColor: isSelected ? displayModel.bgColor : undefined,
-                    color: isSelected ? displayModel.textColor : undefined
+                    color: isSelected ? displayModel.textColor : undefined,
+                    borderColor: isSelected ? displayModel.color : undefined
                   }}
                 >
                   {displayModel.name}

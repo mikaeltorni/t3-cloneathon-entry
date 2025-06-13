@@ -47,6 +47,18 @@ function App() {
   // Track current model selection (for sidebar display)
   const [currentModel, setCurrentModel] = useState<string>('google/gemini-2.5-flash-preview-05-20');
 
+  // Sync currentModel when thread changes
+  useEffect(() => {
+    if (chat.currentThread) {
+      // Use the thread's current model, or last used model, or fall back to default
+      const threadModel = chat.currentThread.currentModel || 
+                          chat.currentThread.lastUsedModel || 
+                          'google/gemini-2.5-flash-preview-05-20';
+      setCurrentModel(threadModel);
+      debug(`Synced current model for thread ${chat.currentThread.id}: ${threadModel}`);
+    }
+  }, [chat.currentThread?.id, chat.currentThread?.currentModel, chat.currentThread?.lastUsedModel, debug]);
+
   // Load models on app start (no auth required)
   useEffect(() => {
     debug('App mounted, loading models...');
@@ -99,6 +111,18 @@ function App() {
     }
     // TODO: Implement thread-specific model persistence
     // This would update the thread's currentModel field in the backend
+  };
+
+  /**
+   * Handle model change from ChatInterface (current conversation)
+   */
+  const handleCurrentModelChange = (modelId: string) => {
+    setCurrentModel(modelId);
+    debug(`Current model changed to: ${modelId}`);
+    // If there's an active thread, update its model preference
+    if (chat.currentThread?.id) {
+      handleModelChange(chat.currentThread.id, modelId);
+    }
   };
 
   /**
@@ -186,6 +210,7 @@ function App() {
               images={chat.images}
               onImagesChange={chat.handleImagesChange}
               sidebarOpen={sidebar.isOpen}
+              onModelChange={handleCurrentModelChange}
             />
           </div>
         </div>

@@ -38,6 +38,7 @@ interface ChatInterfaceProps {
   images: ImageAttachment[];
   onImagesChange: (images: ImageAttachment[]) => void;
   sidebarOpen?: boolean;
+  onModelChange?: (modelId: string) => void;
 }
 
 /**
@@ -64,7 +65,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   modelsLoading,
   images,
   onImagesChange,
-  sidebarOpen = false
+  sidebarOpen = false,
+  onModelChange
 }) => {
   const { debug } = useLogger('ChatInterface');
 
@@ -148,6 +150,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         onImagesChange={onImagesChange}
         onHeightChange={updateHeight}
         sidebarOpen={sidebarOpen}
+        onModelChange={onModelChange}
       />
     </div>
   );
