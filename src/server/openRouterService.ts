@@ -400,7 +400,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
 
         // Log web search status
         if (useWebSearch) {
-          console.log(`[OpenRouter] ✅ Web search enabled for ${actualModelId} with ${modelConfig.webSearchPricing} pricing`);
+          console.log(`[OpenRouter] ✅ Web search enabled for ${actualModelId}`);
         }
 
         console.log(`[OpenRouter] Response received (${aiResponse.length} characters)${reasoning ? ` with reasoning (${reasoning.length} characters)` : ''}`);
