@@ -314,7 +314,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         let actualModelId = modelId;
         
         // Handle web search - Use :online suffix for models that support web search
-        if (useWebSearch && modelConfig.hasWebSearch && modelConfig.webSearchMode === 'optional') {
+        if (useWebSearch && modelConfig.webSearchMode === 'optional') {
           actualModelId = `${modelId}:online` as ModelId;
         }
         
@@ -328,7 +328,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
           }
         }
         
-        console.log(`[OpenRouter] Processing ${messages.length} message(s) with model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}${useWebSearch && modelConfig.hasWebSearch ? ' (with web search)' : ''}`);
+        console.log(`[OpenRouter] Processing ${messages.length} message(s) with model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}${useWebSearch ? ' (with web search)' : ''}`);
         
         // Format messages for API
         const formattedMessages = formatMessagesForAPI(messages);
@@ -359,7 +359,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         }
 
         // Add web search configuration for models that support web search effort control
-        if (useWebSearch && modelConfig.hasWebSearch && modelConfig.supportsWebEffortControl) {
+        if (useWebSearch && modelConfig.supportsWebEffortControl) {
           // Only add web_search_options for models that are not Perplexity (they handle this internally)
           if (modelConfig.webSearchMode !== 'forced') {
             const effortToContextSize: Record<string, 'low' | 'medium' | 'high'> = {
@@ -399,7 +399,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         }
 
         // Log web search status
-        if (useWebSearch && modelConfig.hasWebSearch) {
+        if (useWebSearch) {
           console.log(`[OpenRouter] ✅ Web search enabled for ${actualModelId} with ${modelConfig.webSearchPricing} pricing`);
         }
 
@@ -459,7 +459,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         let actualModelId = modelId;
         
         // Handle web search - Use :online suffix for models that support web search
-        if (useWebSearch && modelConfig.hasWebSearch && modelConfig.webSearchMode === 'optional') {
+        if (useWebSearch && modelConfig.webSearchMode === 'optional') {
           actualModelId = `${modelId}:online` as ModelId;
         }
         
@@ -473,7 +473,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
           }
         }
         
-        console.log(`[OpenRouter] Processing ${messages.length} message(s) with streaming model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}${useWebSearch && modelConfig.hasWebSearch ? ' (with web search)' : ''}`);
+        console.log(`[OpenRouter] Processing ${messages.length} message(s) with streaming model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}${useWebSearch ? ' (with web search)' : ''}`);
         
         // Format messages for API
         const formattedMessages = formatMessagesForAPI(messages);
@@ -505,7 +505,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         }
 
         // Add web search configuration for models that support web search effort control
-        if (useWebSearch && modelConfig.hasWebSearch && modelConfig.supportsWebEffortControl) {
+        if (useWebSearch && modelConfig.supportsWebEffortControl) {
           // Only add web_search_options for models that are not Perplexity (they handle this internally)
           if (modelConfig.webSearchMode !== 'forced') {
             const effortToContextSize: Record<string, 'low' | 'medium' | 'high'> = {

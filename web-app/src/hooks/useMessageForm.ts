@@ -121,9 +121,10 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
    * @returns Whether the model supports web search
    */
   const isWebSearchModel = useCallback((modelId?: string): boolean => {
-    const targetModel = modelId || selectedModel;
-    if (!targetModel || !availableModels[targetModel]) return false;
-    return availableModels[targetModel].hasWebSearch;
+    //const targetModel = modelId || selectedModel;
+    //if (!targetModel || !availableModels[targetModel]) return false;
+    //return availableModels[targetModel].hasWebSearch;
+    return true;
   }, [availableModels, selectedModel]);
 
   /**

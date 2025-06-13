@@ -70,8 +70,9 @@ export const ModelsProvider: React.FC<ModelsProviderProps> = ({ children }) => {
   };
 
   const isWebSearchModel = (modelId: string): boolean => {
-    const model = availableModels[modelId];
-    return model?.hasWebSearch || false;
+    //const model = availableModels[modelId];
+    //return model?.hasWebSearch || false;
+    return true;
   };
 
   const getWebSearchMode = (modelId: string): 'forced' | 'optional' | 'none' => {

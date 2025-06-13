@@ -26,7 +26,6 @@ export interface SharedModelConfig {
   supportsEffortControl: boolean;
   
   // Web search capabilities
-  hasWebSearch: boolean;
   webSearchMode: 'forced' | 'optional' | 'none';
   webSearchPricing?: 'standard' | 'perplexity' | 'openai';
   supportsWebEffortControl: boolean;
@@ -64,7 +63,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'internal' as const,
     reasoningMode: 'none' as const,
     supportsEffortControl: false,
-    hasWebSearch: true,
     webSearchMode: 'optional' as const,
     webSearchPricing: 'openai' as const,
     supportsWebEffortControl: true,
@@ -88,7 +86,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'internal' as const,
     reasoningMode: 'none' as const,
     supportsEffortControl: false,
-    hasWebSearch: true,
     webSearchMode: 'optional' as const,
     webSearchPricing: 'openai' as const,
     supportsWebEffortControl: true,
@@ -112,7 +109,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'effort' as const,
     reasoningMode: 'forced' as const,
     supportsEffortControl: true,
-    hasWebSearch: true,
     webSearchMode: 'optional' as const,
     webSearchPricing: 'openai' as const,
     supportsWebEffortControl: true,
@@ -136,7 +132,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'thinking' as const,
     reasoningMode: 'optional' as const,
     supportsEffortControl: true,
-    hasWebSearch: true,
     webSearchMode: 'optional' as const,
     webSearchPricing: 'standard' as const,
     supportsWebEffortControl: true,
@@ -160,7 +155,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'thinking' as const,
     reasoningMode: 'optional' as const,
     supportsEffortControl: true,
-    hasWebSearch: true,
     webSearchMode: 'optional' as const,
     webSearchPricing: 'standard' as const,
     supportsWebEffortControl: true,
@@ -182,7 +176,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'thinking' as const,
     reasoningMode: 'optional' as const,
     supportsEffortControl: true,
-    hasWebSearch: true,
     webSearchMode: 'optional' as const,
     webSearchPricing: 'standard' as const,
     supportsWebEffortControl: true,
@@ -205,7 +198,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'internal' as const,
     reasoningMode: 'none' as const,
     supportsEffortControl: false,
-    hasWebSearch: false, // Open source, no native web search
     webSearchMode: 'none' as const,
     supportsWebEffortControl: false,
     color: '#1877F2',
@@ -226,7 +218,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'internal' as const,
     reasoningMode: 'none' as const,
     supportsEffortControl: false,
-    hasWebSearch: false, // Open source, no native web search
     webSearchMode: 'none' as const,
     supportsWebEffortControl: false,
     color: '#1877F2',
@@ -248,7 +239,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'internal' as const,
     reasoningMode: 'none' as const,
     supportsEffortControl: false,
-    hasWebSearch: true,
     webSearchMode: 'optional' as const,
     webSearchPricing: 'standard' as const,
     supportsWebEffortControl: true,
@@ -270,7 +260,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'effort' as const,
     reasoningMode: 'forced' as const,
     supportsEffortControl: true,
-    hasWebSearch: true,
     webSearchMode: 'optional' as const,
     webSearchPricing: 'standard' as const,
     supportsWebEffortControl: true,
@@ -293,7 +282,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'effort' as const,
     reasoningMode: 'forced' as const,
     supportsEffortControl: true,
-    hasWebSearch: true,
     webSearchMode: 'forced' as const, // Always searches web
     webSearchPricing: 'perplexity' as const,
     supportsWebEffortControl: true,
@@ -315,7 +303,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'internal' as const,
     reasoningMode: 'none' as const,
     supportsEffortControl: false,
-    hasWebSearch: true,
     webSearchMode: 'forced' as const, // Always searches web
     webSearchPricing: 'perplexity' as const,
     supportsWebEffortControl: true,
@@ -337,7 +324,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'internal' as const,
     reasoningMode: 'none' as const,
     supportsEffortControl: false,
-    hasWebSearch: true,
     webSearchMode: 'forced' as const, // Always searches web
     webSearchPricing: 'perplexity' as const,
     supportsWebEffortControl: true,
@@ -360,7 +346,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'internal' as const,
     reasoningMode: 'none' as const,
     supportsEffortControl: false,
-    hasWebSearch: true,
     webSearchMode: 'optional' as const,
     webSearchPricing: 'standard' as const,
     supportsWebEffortControl: true,
@@ -383,7 +368,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'internal' as const,
     reasoningMode: 'none' as const,
     supportsEffortControl: false,
-    hasWebSearch: true,
     webSearchMode: 'optional' as const,
     webSearchPricing: 'standard' as const,
     supportsWebEffortControl: true,
@@ -405,7 +389,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'internal' as const,
     reasoningMode: 'none' as const,
     supportsEffortControl: false,
-    hasWebSearch: true,
     webSearchMode: 'optional' as const,
     webSearchPricing: 'standard' as const,
     supportsWebEffortControl: true,
@@ -427,7 +410,6 @@ export const SHARED_MODEL_CONFIG = {
     reasoningType: 'internal' as const,
     reasoningMode: 'none' as const,
     supportsEffortControl: false,
-    hasWebSearch: true,
     webSearchMode: 'optional' as const,
     webSearchPricing: 'standard' as const,
     supportsWebEffortControl: true,
@@ -460,7 +442,7 @@ export function getModelsByProvider(provider: SharedModelConfig['provider']): Mo
 /**
  * Get models with specific capabilities
  */
-export function getModelsByCapability(capability: keyof Pick<SharedModelConfig, 'hasReasoning' | 'hasWebSearch' | 'hasVision'>): ModelId[] {
+export function getModelsByCapability(capability: keyof Pick<SharedModelConfig, 'hasReasoning' | 'hasVision'>): ModelId[] {
   return Object.entries(SHARED_MODEL_CONFIG)
     .filter(([_, config]) => config[capability])
     .map(([modelId]) => modelId as ModelId);

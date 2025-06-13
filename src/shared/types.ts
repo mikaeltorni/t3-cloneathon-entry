@@ -322,7 +322,6 @@ export interface HealthResponse {
  * @property reasoningType - Type of reasoning implementation
  * @property reasoningMode - Whether reasoning is forced, optional, or unavailable
  * @property supportsEffortControl - Whether model supports effort level control
- * @property hasWebSearch - Whether the model supports web search capabilities
  * @property webSearchMode - Whether web search is forced, optional, or unavailable
  * @property webSearchPricing - Pricing tier for web search
  * @property supportsWebEffortControl - Whether model supports web search effort control
@@ -338,7 +337,6 @@ export interface ModelConfig {
   reasoningType: 'thinking' | 'effort' | 'internal';
   reasoningMode: 'forced' | 'optional' | 'none';
   supportsEffortControl?: boolean; // Whether model supports effort level control
-  hasWebSearch: boolean; // Whether the model supports web search capabilities
   webSearchMode: 'forced' | 'optional' | 'none'; // Whether web search is forced, optional, or unavailable
   webSearchPricing: 'standard' | 'perplexity' | 'openai'; // Pricing tier for web search
   supportsWebEffortControl?: boolean; // Whether model supports web search effort control

@@ -89,12 +89,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   /**
    * Get search emoji with proper opacity and color based on web search capability
    */
-  const getSearchIcon = (model: ModelConfig): React.ReactNode => {
-    if (!model.hasWebSearch) {
-      // Very subtle for no web search
-      return <span className="opacity-30 text-gray-400">🔍</span>;
-    }
-    
+  const getSearchIcon = (model: ModelConfig): React.ReactNode => {   
     // Color based on pricing tier
     const colorClass = model.webSearchPricing === 'perplexity' 
       ? 'text-green-600' // Green for cheaper Perplexity pricing
@@ -156,31 +151,30 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     }
 
     // Web search badge
-    if (model.hasWebSearch) {
-      const searchColors = model.webSearchPricing === 'perplexity'
-        ? { bg: '#F0FDF4', text: '#166534' } // Green for Perplexity
-        : model.webSearchPricing === 'openai'
-          ? { bg: '#FEF3C7', text: '#D97706' } // Amber for OpenAI
-          : { bg: '#EFF6FF', text: '#2563EB' }; // Blue for standard
+    const searchColors = model.webSearchPricing === 'perplexity'
+      ? { bg: '#F0FDF4', text: '#166534' } // Green for Perplexity
+      : model.webSearchPricing === 'openai'
+        ? { bg: '#FEF3C7', text: '#D97706' } // Amber for OpenAI
+        : { bg: '#EFF6FF', text: '#2563EB' }; // Blue for standard
 
-      badges.push(
-        <span 
-          key="search"
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
-          style={{
-            backgroundColor: searchColors.bg,
-            color: searchColors.text
-          }}
-        >
-          🔍 
-          {model.webSearchMode === 'forced' 
-            ? 'Built-in Web Search' 
-            : 'Web Search Available'}
-          {model.webSearchPricing === 'perplexity' && ' (Cheaper)'}
-          {model.webSearchPricing === 'openai' && ' (Premium)'}
-        </span>
-      );
-    }
+    badges.push(
+      <span 
+        key="search"
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
+        style={{
+          backgroundColor: searchColors.bg,
+          color: searchColors.text
+        }}
+      >
+        🔍 
+        {model.webSearchMode === 'forced' 
+          ? 'Built-in Web Search' 
+          : 'Web Search Available'}
+        {model.webSearchPricing === 'perplexity' && ' (Cheaper)'}
+        {model.webSearchPricing === 'openai' && ' (Premium)'}
+      </span>
+    );
+  
 
     return badges;
   };
