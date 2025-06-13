@@ -112,7 +112,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setWebSearchEffort,
     isReasoningModel,
     supportsEffortControl,
-    isWebSearchModel,
     supportsWebEffortControl,
     canSubmit,
     handleSubmit,
@@ -277,7 +276,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           />
 
           {/* Feature Toggles for Reasoning and Web Search */}
-          {(isReasoningModel() || isWebSearchModel()) && (
+          {(isReasoningModel()) && (
             <div className="space-y-3">
               <div className="flex items-center flex-wrap gap-3">
                 {/* Reasoning Toggle for Models with Optional Reasoning */}
@@ -291,7 +290,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 )}
 
                 {/* Web Search Toggle for Models with Optional Web Search */}
-                {isWebSearchModel() && availableModels[selectedModel]?.webSearchMode === 'optional' && (
+                {availableModels[selectedModel]?.webSearchMode === 'optional' && (
                   <SearchToggle
                     enabled={useWebSearch}
                     onChange={setUseWebSearch}
@@ -366,7 +365,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 )}
 
                 {/* Inline Web Search Effort Level Display */}
-                {isWebSearchModel() && supportsWebEffortControl() && (
+                {supportsWebEffortControl() && (
                   <div className={cn(
                     'flex items-center space-x-2 px-2 py-1 rounded-md text-sm transition-all duration-200',
                     useWebSearch 

@@ -52,7 +52,6 @@ export interface UseMessageFormReturn {
   // Helper functions
   isReasoningModel: (modelId?: string) => boolean;
   supportsEffortControl: (modelId?: string) => boolean;
-  isWebSearchModel: (modelId?: string) => boolean;
   supportsWebEffortControl: (modelId?: string) => boolean;
   
   // Form operations
@@ -112,19 +111,6 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
     const targetModel = modelId || selectedModel;
     if (!targetModel || !availableModels[targetModel]) return false;
     return availableModels[targetModel].supportsEffortControl === true;
-  }, [availableModels, selectedModel]);
-
-  /**
-   * Check if a model supports web search based on model configuration
-   * 
-   * @param modelId - Model ID to check (uses selected model if not provided)
-   * @returns Whether the model supports web search
-   */
-  const isWebSearchModel = useCallback((modelId?: string): boolean => {
-    //const targetModel = modelId || selectedModel;
-    //if (!targetModel || !availableModels[targetModel]) return false;
-    //return availableModels[targetModel].hasWebSearch;
-    return true;
   }, [availableModels, selectedModel]);
 
   /**
@@ -198,7 +184,7 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
       debug('Message submission failed', error);
       // Don't reset form on error so user can retry
     }
-  }, [message, images, selectedModel, useReasoning, isReasoningModel, useWebSearch, isWebSearchModel, canSubmit, onSendMessage, debug, log, reasoningEffort, webSearchEffort]);
+  }, [message, images, selectedModel, useReasoning, isReasoningModel, useWebSearch, canSubmit, onSendMessage, debug, log, reasoningEffort, webSearchEffort]);
 
   /**
    * Handle keyboard shortcuts
@@ -242,11 +228,11 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
    * Reset web search if model doesn't support it
    */
   useEffect(() => {
-    if (useWebSearch && !isWebSearchModel()) {
+    if (useWebSearch) {
       setUseWebSearch(false);
       debug('Web search disabled: selected model does not support web search');
     }
-  }, [selectedModel, useWebSearch, isWebSearchModel, debug]);
+  }, [selectedModel, useWebSearch, debug]);
 
   return {
     // Form state
@@ -266,7 +252,6 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
     // Helper functions
     isReasoningModel,
     supportsEffortControl,
-    isWebSearchModel,
     supportsWebEffortControl,
     
     // Form operations

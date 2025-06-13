@@ -15,7 +15,6 @@ interface ModelsContextType {
   getModelConfig: (modelId: string) => ModelConfig | undefined;
   isReasoningModel: (modelId: string) => boolean;
   getReasoningMode: (modelId: string) => 'forced' | 'optional' | 'none';
-  isWebSearchModel: (modelId: string) => boolean;
   getWebSearchMode: (modelId: string) => 'forced' | 'optional' | 'none';
   getWebSearchPricing: (modelId: string) => 'standard' | 'perplexity' | 'openai';
   getModelNames: () => string[];
@@ -69,12 +68,6 @@ export const ModelsProvider: React.FC<ModelsProviderProps> = ({ children }) => {
     return model?.reasoningMode || 'none';
   };
 
-  const isWebSearchModel = (modelId: string): boolean => {
-    //const model = availableModels[modelId];
-    //return model?.hasWebSearch || false;
-    return true;
-  };
-
   const getWebSearchMode = (modelId: string): 'forced' | 'optional' | 'none' => {
     const model = availableModels[modelId];
     return model?.webSearchMode || 'none';
@@ -100,7 +93,6 @@ export const ModelsProvider: React.FC<ModelsProviderProps> = ({ children }) => {
     getModelConfig,
     isReasoningModel,
     getReasoningMode,
-    isWebSearchModel,
     getWebSearchMode,
     getWebSearchPricing,
     getModelNames,
