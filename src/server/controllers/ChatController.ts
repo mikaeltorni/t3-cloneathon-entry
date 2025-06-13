@@ -621,6 +621,63 @@ export class ChatController {
   };
 
   /**
+   * Toggle thread pin status
+   * 
+   * @route PATCH /api/chats/:threadId/pin
+   */
+  toggleThreadPin = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const { threadId } = req.params;
+      const { isPinned } = req.body;
+      
+      if (!threadId?.trim()) {
+        res.status(400).json({ 
+          error: 'Thread ID is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      if (typeof isPinned !== 'boolean') {
+        res.status(400).json({ 
+          error: 'isPinned must be a boolean',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      
+      console.log(`[ChatController] ${isPinned ? 'Pinning' : 'Unpinning'} thread: ${threadId} for user: ${req.user.uid}`);
+      
+      // Check if thread exists first
+      const existingThread = await firestoreChatStorage.getThread(req.user.uid, threadId);
+      if (!existingThread) {
+        res.status(404).json({ 
+          error: 'Thread not found',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      
+      // Update the pin status
+      const updatedThread = await firestoreChatStorage.updateThreadPin(req.user.uid, threadId, isPinned);
+      
+      console.log(`[ChatController] Successfully ${isPinned ? 'pinned' : 'unpinned'} thread: ${threadId}`);
+      res.json(updatedThread);
+    } catch (error) {
+      console.error('[ChatController] Error toggling thread pin:', error);
+      next(error);
+    }
+  };
+
+  /**
    * Health check endpoint
    * 
    * @route GET /api/chats/health
@@ -662,6 +719,7 @@ export class ChatController {
     router.post('/message/stream', this.createMessageStream);
     router.delete('/:threadId', this.deleteThread);
     router.put('/:threadId/title', this.updateThreadTitle);
+    router.patch('/:threadId/pin', this.toggleThreadPin);
 
     return router;
   }

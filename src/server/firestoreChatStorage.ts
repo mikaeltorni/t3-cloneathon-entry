@@ -40,6 +40,7 @@ interface ChatStorageService {
   createThread(userId: string, title: string, currentModel?: string): Promise<ChatThread>;
   deleteThread(userId: string, threadId: string): Promise<boolean>;
   updateThreadTitle(userId: string, threadId: string, title: string): Promise<ChatThread | null>;
+  updateThreadPin(userId: string, threadId: string, isPinned: boolean): Promise<ChatThread | null>;
   createMessage(content: string, role: 'user' | 'assistant', imageUrl?: string, modelId?: string): ChatMessage;
   addMessageToThread(userId: string, threadId: string, message: ChatMessage): Promise<void>;
 }
@@ -85,6 +86,7 @@ class FirestoreChatStorageService implements ChatStorageService {
       updatedAt: data.updatedAt?.toDate() || new Date(),
       currentModel: data.currentModel || undefined,
       lastUsedModel: data.lastUsedModel || undefined,
+      isPinned: data.isPinned || false,
     };
   }
 
@@ -378,6 +380,62 @@ class FirestoreChatStorageService implements ChatStorageService {
       throw new FirestoreChatStorageError(
         `Failed to update thread title: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'updateThreadTitle',
+        error
+      );
+    }
+  }
+
+  /**
+   * Update thread pin status
+   * 
+   * @param userId - User ID
+   * @param threadId - ID of the thread to update
+   * @param isPinned - New pin status
+   * @returns Updated thread data or null if not found
+   */
+  async updateThreadPin(userId: string, threadId: string, isPinned: boolean): Promise<ChatThread | null> {
+    try {
+      if (!userId?.trim()) {
+        throw new Error('User ID is required');
+      }
+
+      if (!threadId?.trim()) {
+        throw new Error('Thread ID is required');
+      }
+
+      if (typeof isPinned !== 'boolean') {
+        throw new Error('isPinned must be a boolean');
+      }
+
+      console.log(`[Firestore] ${isPinned ? 'Pinning' : 'Unpinning'} thread ${threadId} for user: ${userId}`);
+
+      const threadRef = this.getUserChatsCollection(userId).doc(threadId);
+      const threadDoc = await threadRef.get();
+
+      if (!threadDoc.exists) {
+        console.log(`[Firestore] Thread not found for pin update: ${threadId}`);
+        return null;
+      }
+
+      const now = new Date();
+      await threadRef.update({
+        isPinned,
+        updatedAt: now,
+      });
+
+      // Get the updated thread with messages
+      const updatedThread = await this.getThread(userId, threadId);
+
+      if (updatedThread) {
+        console.log(`[Firestore] ${isPinned ? 'Pinned' : 'Unpinned'} thread: "${updatedThread.title}"`);
+      }
+
+      return updatedThread;
+    } catch (error) {
+      console.error(`[Firestore] Error updating thread pin status for ${threadId}:`, error);
+      throw new FirestoreChatStorageError(
+        `Failed to update thread pin status: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'updateThreadPin',
         error
       );
     }

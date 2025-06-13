@@ -48,6 +48,7 @@ interface UseChatReturn {
   handleNewChat: () => void;
   handleSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean) => Promise<void>;
   handleDeleteThread: (threadId: string) => Promise<void>;
+  handleTogglePinThread: (threadId: string, isPinned: boolean) => Promise<void>;
   clearError: () => void;
   handleImagesChange: (images: ImageAttachment[]) => void;
 }
@@ -563,6 +564,55 @@ export const useChat = (): UseChatReturn => {
   }, [threads, currentThread?.id, chatApiService, debug, log, warn, handleError]);
 
   /**
+   * Handle toggling thread pin status
+   * 
+   * @param threadId - ID of the thread to pin/unpin
+   * @param isPinned - New pin status for the thread
+   */
+  const handleTogglePinThread = useCallback(async (threadId: string, isPinned: boolean) => {
+    try {
+      debug(`${isPinned ? 'Pinning' : 'Unpinning'} thread: ${threadId}`);
+      
+      // Update local state immediately for responsive UI
+      setThreads(prevThreads => prevThreads.map(thread => 
+        thread.id === threadId ? { ...thread, isPinned } : thread
+      ));
+      
+      // Update current thread if it's the one being toggled
+      if (currentThread?.id === threadId) {
+        setCurrentThread(prev => prev ? { ...prev, isPinned } : null);
+      }
+      
+      // Send to server
+      await chatApiService.toggleThreadPin(threadId, isPinned);
+      
+      // Update cache with the new pin status
+      const updatedThreads = threads.map(thread => 
+        thread.id === threadId ? { ...thread, isPinned } : thread
+      );
+      setCachedThreads(updatedThreads);
+      
+      setError(null);
+      log(`Thread ${isPinned ? 'pinned' : 'unpinned'} successfully`);
+    } catch (err) {
+      const errorMessage = `Failed to ${isPinned ? 'pin' : 'unpin'} thread`;
+      handleError(err as Error, 'TogglePinThread');
+      setError(errorMessage);
+      warn(errorMessage);
+      
+      // Revert local state on error
+      setThreads(prevThreads => prevThreads.map(thread => 
+        thread.id === threadId ? { ...thread, isPinned: !isPinned } : thread
+      ));
+      
+      // Revert current thread if it's the one being toggled
+      if (currentThread?.id === threadId) {
+        setCurrentThread(prev => prev ? { ...prev, isPinned: !isPinned } : null);
+      }
+    }
+  }, [threads, currentThread?.id, chatApiService, debug, log, warn, handleError]);
+
+  /**
    * Clear the current error state
    */
   const clearError = useCallback(() => {
@@ -594,6 +644,7 @@ export const useChat = (): UseChatReturn => {
     handleNewChat,
     handleSendMessage,
     handleDeleteThread,
+    handleTogglePinThread,
     clearError,
     handleImagesChange
   };

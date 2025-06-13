@@ -287,6 +287,37 @@ class ChatApiService {
   }
 
   /**
+   * Toggle thread pin status
+   * 
+   * @param threadId - ID of the thread to pin/unpin
+   * @param isPinned - New pin status for the thread
+   * @returns Promise with updated thread data
+   */
+  async toggleThreadPin(threadId: string, isPinned: boolean): Promise<ChatThread> {
+    if (!threadId.trim()) {
+      throw new Error('Thread ID is required');
+    }
+
+    try {
+      logger.info(`${isPinned ? 'Pinning' : 'Unpinning'} thread: ${threadId}`);
+      const thread = await this.makeRequest<ChatThread>(`/chats/${threadId}/pin`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isPinned }),
+      });
+      logger.info(`Successfully ${isPinned ? 'pinned' : 'unpinned'} thread: ${threadId}`);
+      return thread;
+    } catch (error) {
+      logger.error(`Failed to ${isPinned ? 'pin' : 'unpin'} thread: ${threadId}`, error as Error);
+      
+      if (error instanceof ApiError && error.status === 404) {
+        throw new Error('Chat thread not found');
+      }
+      
+      throw new Error(`Failed to ${isPinned ? 'pin' : 'unpin'} thread. Please try again.`);
+    }
+  }
+
+  /**
    * Get available AI models
    * 
    * @returns Promise with available models configuration

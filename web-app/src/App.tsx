@@ -167,6 +167,7 @@ function AppContent() {
           onThreadSelect={chat.handleThreadSelect}
           onNewChat={chat.handleNewChat}
           onDeleteThread={chat.handleDeleteThread}
+          onTogglePinThread={chat.handleTogglePinThread}
           onRefreshThreads={handleRefreshThreads}
           loading={chat.threadsLoading}
           isOpen={sidebar.isOpen}

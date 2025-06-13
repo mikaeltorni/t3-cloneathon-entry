@@ -2,7 +2,7 @@
  * ChatSidebar.tsx
  * 
  * Enhanced fixed positioned sidebar component for chat thread management
- * Now includes model information, slick design, and improved UX
+ * Now includes model information, slick design, improved UX, and pinning functionality
  * 
  * Components:
  *   ChatSidebar
@@ -11,12 +11,49 @@
  *   - Fixed positioning that stays anchored during scrolling
  *   - Thread list with model information and slick design
  *   - Thread deletion with confirmation
+ *   - Thread pinning/unpinning with server synchronization
+ *   - Pinned threads sorted to the top with visual indicators
  *   - New chat creation
  *   - Model switching per thread with caching
  *   - Loading states and empty states
  *   - Responsive design (hidden on mobile, fixed on desktop)
  *   - Real-time thread count and connection status
- *   - Removed robot icons for cleaner design
+ *   - Clean design without robot icons
+ * 
+ * Usage Example:
+ * ```tsx
+ * const handleTogglePinThread = async (threadId: string, isPinned: boolean) => {
+ *   try {
+ *     // Update local state immediately for responsive UI
+ *     setThreads(prev => prev.map(thread => 
+ *       thread.id === threadId ? { ...thread, isPinned } : thread
+ *     ));
+ *     
+ *     // Send to server
+ *     await apiClient.patch(`/api/threads/${threadId}/pin`, { isPinned });
+ *   } catch (error) {
+ *     // Revert on error
+ *     setThreads(prev => prev.map(thread => 
+ *       thread.id === threadId ? { ...thread, isPinned: !isPinned } : thread
+ *     ));
+ *     throw error;
+ *   }
+ * };
+ * 
+ * <ChatSidebar
+ *   threads={threads}
+ *   currentThreadId={currentThreadId}
+ *   onThreadSelect={handleThreadSelect}
+ *   onNewChat={handleNewChat}
+ *   onDeleteThread={handleDeleteThread}
+ *   onTogglePinThread={handleTogglePinThread}
+ *   loading={loading}
+ *   isOpen={sidebarOpen}
+ *   onToggle={() => setSidebarOpen(!sidebarOpen)}
+ *   availableModels={models}
+ *   currentModel={selectedModel}
+ * />
+ * ```
  */
 import { useState, useCallback } from 'react';
 import { Button } from './ui/Button';
@@ -31,6 +68,7 @@ interface ChatSidebarProps {
   onThreadSelect: (threadId: string) => void;
   onNewChat: () => void;
   onDeleteThread: (threadId: string) => void;
+  onTogglePinThread: (threadId: string, isPinned: boolean) => void;
   onRefreshThreads?: () => Promise<void>;
   loading: boolean;
   isOpen?: boolean;
@@ -49,6 +87,7 @@ interface ChatSidebarProps {
  * @param onThreadSelect - Callback for thread selection
  * @param onNewChat - Callback for new chat creation
  * @param onDeleteThread - Callback for thread deletion
+ * @param onTogglePinThread - Callback for pinning/unpinning threads
  * @param loading - Loading state for threads
  * @param availableModels - Available models for display and selection
  * @param onModelChange - Callback when model is changed for a thread
@@ -61,6 +100,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onThreadSelect,
   onNewChat,
   onDeleteThread,
+  onTogglePinThread,
   onRefreshThreads,
   loading,
   isOpen = false,
@@ -71,6 +111,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
 }) => {
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [pinningThreadId, setPinningThreadId] = useState<string | null>(null);
 
   const { debug, log } = useLogger('ChatSidebar');
 
@@ -145,6 +186,38 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   }, [debug]);
 
   /**
+   * Handle thread pinning/unpinning
+   */
+  const handleTogglePin = useCallback(async (threadId: string, currentPinStatus: boolean) => {
+    try {
+      setPinningThreadId(threadId);
+      const newPinStatus = !currentPinStatus;
+      debug(`${newPinStatus ? 'Pinning' : 'Unpinning'} thread: ${threadId}`);
+      
+      await onTogglePinThread(threadId, newPinStatus);
+      log(`Thread ${newPinStatus ? 'pinned' : 'unpinned'} successfully`);
+    } catch (error) {
+      debug('Pin toggle failed', error);
+    } finally {
+      setPinningThreadId(null);
+    }
+  }, [onTogglePinThread, debug, log]);
+
+  /**
+   * Sort threads with pinned threads at the top
+   */
+  const sortedThreads = useCallback(() => {
+    return [...threads].sort((a, b) => {
+      // First, sort by pinned status (pinned threads first)
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      
+      // Then sort by updatedAt (most recent first)
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+  }, [threads]);
+
+  /**
    * Format date for display with enhanced formatting
    */
   const formatDate = useCallback((date: Date | string) => {
@@ -185,6 +258,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     const isSelected = thread.id === currentThreadId;
     const isDeleting = deletingThreadId === thread.id;
     const isConfirmingDelete = confirmDeleteId === thread.id;
+    const isPinning = pinningThreadId === thread.id;
+    const isPinned = Boolean(thread.isPinned);
     const lastMessage = thread.messages[thread.messages.length - 1];
     const displayModel = getThreadDisplayModel(thread);
 
@@ -195,7 +270,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
           'group relative p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 mb-3',
           isSelected
             ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 shadow-lg transform scale-[1.02]'
-            : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md'
+            : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md',
+          isPinned && 'ring-2 ring-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50'
         )}
         onClick={() => !isConfirmingDelete && handleThreadSelect(thread.id)}
       >
@@ -234,29 +310,60 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             )}
           </div>
           
-          {/* Delete button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteThread(thread.id);
-            }}
-            disabled={isDeleting}
-            className={cn(
-              'opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-lg ml-2 flex-shrink-0',
-              isConfirmingDelete
-                ? 'opacity-100 bg-red-100 text-red-600 hover:bg-red-200'
-                : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
-            )}
-            title={isConfirmingDelete ? 'Click again to confirm delete' : 'Delete thread'}
-          >
-            {isDeleting ? (
-              <div className="animate-spin h-4 w-4 border-2 border-red-600 border-t-transparent rounded-full" />
-            ) : (
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            )}
-          </button>
+          {/* Action buttons */}
+          <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
+            {/* Pin button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleTogglePin(thread.id, isPinned);
+              }}
+              disabled={isPinning}
+              className={cn(
+                'transition-all duration-200 p-2 rounded-lg',
+                isPinned
+                  ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50 opacity-100'
+                  : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-amber-600 hover:bg-amber-50'
+              )}
+              title={isPinned ? 'Unpin conversation' : 'Pin to top'}
+            >
+              {isPinning ? (
+                <div className="animate-spin h-4 w-4 border-2 border-amber-600 border-t-transparent rounded-full" />
+              ) : isPinned ? (
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14,4V2H10V4H4V6H5.5L6.5,17H17.5L18.5,6H20V4H14M12,7.1L16.05,11.5L15.6,12.5L12,10.4L8.4,12.5L7.95,11.5L12,7.1Z" />
+                </svg>
+              ) : (
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              )}
+            </button>
+            
+            {/* Delete button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteThread(thread.id);
+              }}
+              disabled={isDeleting}
+              className={cn(
+                'opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-lg',
+                isConfirmingDelete
+                  ? 'opacity-100 bg-red-100 text-red-600 hover:bg-red-200'
+                  : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+              )}
+              title={isConfirmingDelete ? 'Click again to confirm delete' : 'Delete thread'}
+            >
+              {isDeleting ? (
+                <div className="animate-spin h-4 w-4 border-2 border-red-600 border-t-transparent rounded-full" />
+              ) : (
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Last message preview - removed robot emoji */}
@@ -334,8 +441,10 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     currentThreadId,
     deletingThreadId,
     confirmDeleteId,
+    pinningThreadId,
     handleThreadSelect,
     handleDeleteThread,
+    handleTogglePin,
     cancelDelete,
     formatDate,
     truncateText,
@@ -480,6 +589,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         
         <p className="text-xs text-gray-500 text-center">
           OpenRouter Chat • {threads.length} conversations
+          {threads.filter(t => t.isPinned).length > 0 && (
+            <span className="text-amber-600 ml-1">
+              • {threads.filter(t => t.isPinned).length} pinned
+            </span>
+          )}
         </p>
       </div>
 
@@ -491,7 +605,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
           renderEmptyState()
         ) : (
           <div className="space-y-1">
-            {threads.map(renderThreadItem)}
+            {sortedThreads().map(renderThreadItem)}
           </div>
         )}
       </div>

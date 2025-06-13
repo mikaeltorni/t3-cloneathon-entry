@@ -75,6 +75,7 @@ export interface ImageAttachment {
  * @property updatedAt - Last modification timestamp
  * @property currentModel - Currently selected model for this thread
  * @property lastUsedModel - Last model that was actually used for a message in this thread
+ * @property isPinned - Whether the thread is pinned to the top of the list
  */
 export interface ChatThread {
   id: string;
@@ -84,6 +85,7 @@ export interface ChatThread {
   updatedAt: Date;
   currentModel?: string; // Currently selected model ID for this thread
   lastUsedModel?: string; // Last model ID that was actually used in this thread
+  isPinned?: boolean; // Whether the thread is pinned to the top
   contextWindowUsage?: { // Current context window utilization
     used: number;
     total: number;
