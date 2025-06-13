@@ -1,7 +1,7 @@
 /**
  * ModelSelector.tsx
  * 
- * Beautiful horizontal model selection with brain and search icons
+ * Beautiful horizontal model selection with brain icons
  * 
  * Components:
  *   ModelSelector
@@ -9,10 +9,10 @@
  * Features:
  *   - Horizontal model buttons with brand colors
  *   - Brain emoji icons with smart opacity (full, half, very low)
- *   - Search emoji icons for web search capabilities
  *   - One-click model switching with visual feedback
  *   - Selected model description below with capabilities
  *   - Automatic sorting by release date (newest first)
+ *   - Web search now handled by dedicated SearchToggle component
  * 
  * Usage: <ModelSelector value={selectedModel} onChange={setSelectedModel} models={availableModels} />
  */
@@ -86,24 +86,8 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     return <span className="opacity-60 text-blue-600">🧠</span>;
   };
 
-  /**
-   * Get search emoji with proper opacity and color based on web search capability
-   */
-  const getSearchIcon = (model: ModelConfig): React.ReactNode => {   
-    // Color based on pricing tier
-    const colorClass = model.webSearchPricing === 'perplexity' 
-      ? 'text-green-600' // Green for cheaper Perplexity pricing
-      : model.webSearchPricing === 'openai'
-        ? 'text-amber-600' // Amber for premium OpenAI pricing
-        : 'text-blue-600'; // Blue for standard pricing
-
-    if (model.webSearchMode === 'forced') {
-      // Full opacity for forced web search (like Perplexity models)
-      return <span className={cn('opacity-100', colorClass)}>🔍</span>;
-    }
-    // Half opacity for optional web search
-    return <span className={cn('opacity-60', colorClass)}>🔍</span>;
-  };
+  // Note: Search icons removed from individual model buttons
+  // Web search is now controlled via dedicated SearchToggle component
 
   /**
    * Format release date for display
@@ -150,30 +134,26 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       );
     }
 
-    // Web search badge
-    const searchColors = model.webSearchPricing === 'perplexity'
-      ? { bg: '#F0FDF4', text: '#166534' } // Green for Perplexity
-      : model.webSearchPricing === 'openai'
-        ? { bg: '#FEF3C7', text: '#D97706' } // Amber for OpenAI
-        : { bg: '#EFF6FF', text: '#2563EB' }; // Blue for standard
-
-    badges.push(
-      <span 
-        key="search"
-        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
-        style={{
-          backgroundColor: searchColors.bg,
-          color: searchColors.text
-        }}
-      >
-        🔍 
-        {model.webSearchMode === 'forced' 
-          ? 'Built-in Web Search' 
-          : 'Web Search Available'}
-        {model.webSearchPricing === 'perplexity' && ' (Cheaper)'}
-        {model.webSearchPricing === 'openai' && ' (Premium)'}
-      </span>
-    );
+    // Web search badge - pricing tier info only since all models support search
+    if (model.webSearchPricing === 'perplexity') {
+      badges.push(
+        <span 
+          key="search"
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"
+        >
+          🔍 Web Search (Cheaper)
+        </span>
+      );
+    } else if (model.webSearchPricing === 'openai') {
+      badges.push(
+        <span 
+          key="search"
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700"
+        >
+          🔍 Web Search (Premium)
+        </span>
+      );
+    }
   
 
     return badges;
@@ -211,10 +191,9 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                 {model.name}
               </span>
               
-              {/* Icons: Brain and Search */}
+              {/* Icons: Brain only (Search moved to dedicated toggle) */}
               <div className="flex items-center gap-1">
                 {getBrainIcon(model)}
-                {getSearchIcon(model)}
               </div>
 
               {/* Active Indicator Dot */}

@@ -275,7 +275,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             loading={modelsLoading}
           />
 
-          {/* Feature Toggles for Reasoning and Web Search */}
+          {/* Web Search Toggle - Available for ALL Models */}
+          {availableModels[selectedModel] && (
+            <div className="flex items-center flex-wrap gap-3 mb-3">
+              <SearchToggle
+                enabled={useWebSearch}
+                onChange={setUseWebSearch}
+                webSearchMode={
+                  availableModels[selectedModel].webSearchMode === 'none' 
+                    ? 'optional' 
+                    : availableModels[selectedModel].webSearchMode as 'forced' | 'optional'
+                }
+                webSearchPricing={availableModels[selectedModel]?.webSearchPricing}
+                modelName={availableModels[selectedModel]?.name}
+              />
+            </div>
+          )}
+
+          {/* Feature Toggles for Reasoning */}
           {(isReasoningModel()) && (
             <div className="space-y-3">
               <div className="flex items-center flex-wrap gap-3">
@@ -285,17 +302,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     enabled={useReasoning}
                     onChange={setUseReasoning}
                     reasoningMode={availableModels[selectedModel]?.reasoningMode || 'none'}
-                    modelName={availableModels[selectedModel]?.name}
-                  />
-                )}
-
-                {/* Web Search Toggle for Models with Optional Web Search */}
-                {availableModels[selectedModel]?.webSearchMode === 'optional' && (
-                  <SearchToggle
-                    enabled={useWebSearch}
-                    onChange={setUseWebSearch}
-                    webSearchMode={availableModels[selectedModel]?.webSearchMode || 'none'}
-                    webSearchPricing={availableModels[selectedModel]?.webSearchPricing}
                     modelName={availableModels[selectedModel]?.name}
                   />
                 )}

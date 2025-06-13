@@ -10,7 +10,7 @@
  *   - Visual toggle with search icon
  *   - Color-coded states (inactive/active)
  *   - Tooltip explaining search functionality
- *   - Disabled state for non-search models
+ *   - Support for forced and optional modes (all models now support search)
  *   - Pricing tier awareness (Perplexity models get different styling)
  * 
  * Usage: <SearchToggle enabled={useSearch} onChange={setUseSearch} webSearchMode={model.webSearchMode} />
@@ -21,7 +21,7 @@ import { BaseToggle, type BaseToggleProps } from './BaseToggle';
 interface SearchToggleProps {
   enabled: boolean;
   onChange: (enabled: boolean) => void;
-  webSearchMode: 'forced' | 'optional' | 'none';
+  webSearchMode: 'forced' | 'optional'; // Removed 'none' since all models now support search
   webSearchPricing?: 'standard' | 'perplexity' | 'openai';
   modelName?: string;
   className?: string;
@@ -32,7 +32,7 @@ interface SearchToggleProps {
  * 
  * @param enabled - Whether search is currently enabled
  * @param onChange - Callback when toggle state changes
- * @param webSearchMode - The web search mode of the current model
+ * @param webSearchMode - The web search mode of the current model ('forced' or 'optional')
  * @param webSearchPricing - Pricing tier for web search (affects styling)
  * @param modelName - Name of the current model for tooltip
  * @param className - Additional CSS classes

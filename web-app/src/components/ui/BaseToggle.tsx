@@ -109,7 +109,14 @@ export const BaseToggle: React.FC<BaseToggleProps> = ({
     if (isDisabled) return disabledColors;
     if (isForced) return forcedColors;
     if (enabled) return enabledColors;
-    return disabledColors;
+    
+    // For optional mode when disabled, use a neutral inactive state
+    // instead of the disabled colors which are too muted
+    return {
+      bg: '#F9FAFB', // Gray-50 - neutral background
+      border: '#D1D5DB', // Gray-300 - visible but muted border
+      text: '#6B7280' // Gray-500 - readable but muted text
+    };
   };
 
   const colors = getCurrentColors();
