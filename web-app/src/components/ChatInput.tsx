@@ -188,13 +188,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
           {/* Token Metrics Display */}
           {(currentTokenMetrics || isGenerating) && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">Performance Metrics</h3>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-1.5 mt-2">
+              <div className="flex items-center justify-between">
                 {isGenerating && (
-                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full animate-pulse">
-                    Generating...
-                  </span>
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full animate-pulse">Generating...</span>
                 )}
               </div>
               {currentTokenMetrics && (
