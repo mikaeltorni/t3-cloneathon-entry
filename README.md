@@ -1,513 +1,233 @@
-# OpenRouter Chat App
+# 🎯 T3 Cloneathon Entry - AI Chat Application
 
-A modern, full-stack chat application built with React + TypeScript + Tailwind CSS, featuring AI chat capabilities powered by OpenRouter's API with comprehensive Firebase authentication and security.
+A modern full-stack chat application built with React, TypeScript, Express.js, and Firebase, featuring AI-powered conversations and simplified rate limiting.
 
 ## 🚀 Features
 
-### Core Functionality
-- **Multi-Model AI Chat**: Switch between different AI models from OpenRouter
-- **Real-time Streaming**: Live message streaming with reasoning display
-- **Image Analysis**: Upload and analyze images with AI models
-- **Persistent Chat History**: Firebase-backed conversation storage
-- **Reasoning Models**: Advanced AI models with visible thinking process
-
-### Security & Authentication
-- **Firebase Authentication**: Secure Google Sign-In integration
-- **Database-Level Security**: Firestore security rules for user data isolation
-- **Comprehensive Cache Management**: Multi-layer cache clearing for privacy
-- **Server-Side Validation**: Enhanced authentication middleware with user verification
-- **Resource Ownership Validation**: Ensures users can only access their own data
-
-### Modern Architecture
-- **Component-Based Design**: Extracted and reusable UI components
-- **Custom Hooks**: Organized state management with specialized hooks
-- **Error Handling**: Comprehensive error boundaries and user feedback
-- **Responsive Design**: Mobile-first approach with sidebar management
-- **Performance Optimized**: React.memo, memoized callbacks, and efficient re-renders
-
-## 🚀 Enhanced Features
-
-### 🎨 **Slick Chat Sidebar**
-- **Modern Design**: Beautiful gradient backgrounds, rounded corners, and smooth animations
-- **Model Information Display**: Each conversation shows the AI model being used with color-coded indicators
-- **Smart Model Switching**: Sidebar displays the currently selected model and updates in real-time
-- **Enhanced Timestamps**: Smart relative time formatting ("Just now", "5m ago", "Yesterday")
-- **Improved Message Previews**: Clean design without robot emojis, showing "You:" and "AI:" prefixes
-- **Loading Skeletons**: Elegant loading states with model indicator placeholders
-
-### 🤖 **Advanced Model Management**
-- **Per-Thread Model Tracking**: Each conversation remembers its model preferences
-- **Real-time Model Display**: Sidebar shows which model is currently selected for each thread
-- **Model Persistence**: Current and last-used models are saved in cache and Firestore
-- **Visual Model Indicators**: Color-coded dots and badges for each AI model
-- **Seamless Model Switching**: Switch between models per conversation with full persistence
-
-### 💾 **Enhanced Caching & Storage**
-- **Thread-Level Model Caching**: Model preferences cached per conversation
-- **Firestore Integration**: Model information stored persistently in the database
-- **Smart Cache Management**: Efficient session-based caching with validation
-- **Real-time Synchronization**: Cache and database stay in sync automatically
-
-### 🎯 **UI/UX Improvements**
-- **Responsive Design**: Mobile-first approach with perfect desktop scaling
-- **Smooth Animations**: Butter-smooth transitions and hover effects
-- **Custom Scrollbars**: Elegant scrolling experience in the sidebar
-- **Visual Feedback**: Scale animations, shadow effects, and color transitions
-- **Improved Typography**: Better font weights, spacing, and readability
+- **Modern Tech Stack**: React 18+ with TypeScript, Express.js backend, Firebase integration
+- **AI Chat Integration**: OpenRouter API integration for AI conversations
+- **Firebase Rate Limiting**: Simple and effective rate limiting using firebase-functions-rate-limiter
+- **Real-time User Experience**: Client-side throttling with visual feedback
+- **Responsive Design**: Tailwind CSS with mobile-first approach
+- **Production Ready**: Firebase/Google Cloud optimized architecture
 
 ## 🛠️ Technology Stack
 
+### Backend
+- **Runtime**: Node.js with Express.js
+- **Database**: Firebase Firestore
+- **Authentication**: Firebase Auth
+- **Rate Limiting**: firebase-functions-rate-limiter
+- **AI Integration**: OpenRouter API
+
 ### Frontend
-- **React 18+** with TypeScript for type safety
-- **Tailwind CSS 3+** for responsive styling
-- **Vite** for fast development and optimized builds
-- **Custom Hooks** for state management and business logic
+- **Framework**: React 18+ with TypeScript
+- **Build Tool**: Vite for fast development
+- **Styling**: Tailwind CSS 3+ with responsive design
+- **State Management**: React hooks + context
+- **HTTP Client**: Fetch API with error handling
 
-### Backend & Services
-- **Express.js** server with TypeScript
-- **Firebase Admin SDK** for server-side operations
-- **Firestore** for persistent chat storage
-- **OpenRouter API** for AI model integration
+### DevOps & Deployment
+- **Hosting**: Firebase Hosting
+- **Functions**: Firebase Cloud Functions
+- **Development**: Hot reload, TypeScript compilation
+- **Linting**: ESLint with TypeScript rules
 
-### Security & Infrastructure
-- **Firebase Authentication** with ID token verification
-- **Firestore Security Rules** for database-level protection
-- **CORS Protection** and request validation
-- **Comprehensive Logging** for debugging and monitoring
+## 🛡️ Rate Limiting
+
+Simple server-side rate limiting using `firebase-functions-rate-limiter`:
+
+### Rate Limit
+- **All API Requests**: 100 requests per 15 minutes
+- **Per User/IP**: Tracks authenticated users by user ID, anonymous by IP
+- **Firebase Storage**: Uses Firestore for persistence
+
+### Implementation
+```typescript
+// Server - applies to ALL /api/* routes
+const rateLimiter = new RateLimiter({
+  database: admin.firestore(),
+  collection: 'rateLimits',
+  periodSeconds: 15 * 60, // 15 minutes
+  maxCalls: 100,
+});
+
+app.use('/api', rateLimit); // Applied to all API routes
+```
+
+### Error Response
+```json
+{
+  "error": "Rate limit exceeded",
+  "message": "Too many requests. Please wait before trying again.",
+  "retryAfter": 900
+}
+```
 
 ## 📦 Installation
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/mikaeltorni/t3-cloneathon-entry
+   git clone <repository-url>
    cd t3-cloneathon-entry
    ```
 
 2. **Install dependencies:**
    ```bash
-   npm run install:all  # Installs both server and client packages
-   
-   # Or install separately:
-   # npm install              # Server dependencies only
-   # npm install --prefix web-app  # Client dependencies only
+   npm install
    ```
 
 3. **Set up environment variables:**
    ```bash
    cp env.template .env
    # Edit .env with your configuration
-
-   [ADD INSTRUCTIONS HERE HOW TO SETUP THE ENV FILE PROPERLY]
    ```
 
-4. **Configure Firebase:**
-   - Create a Firebase project
-   - Enable Authentication and Firestore
-   - Download service account key
-   - Run: `firebase init`
-     - y
-     - select all but the App Hosting
-     - y
-     - select both React and Angular
-     - y
-     - y to genkit functions
-     - y to eslint
-     - y to deps
-     - select globally
-     - select None
-     - x2 select Set if unset 
-     - y for sample flow
-     - n for telemetry
-     - overwrite
-     - TypeScript
-     - y for ESLink again
-     - x3 y
-     - Just press enter for the public dir
-     - n for single page app
-     - n for GitHub automation
-     - storage.rules, default, just press enter
-     - select all but App Hosting Emulator
-     - x9 for the default ports, just keep pressing enter
-     - y for persistent Postgres data
-     - 9499 (default) for the tasks emulator port
-     - y for Emulator UI
-     - Leave empty for the emulator port
-     - y to download the emulators
-     - select default remote config template
-     - y to overwrite
-     - default for the database.rules.json
-     - n for the realitime database initilization (we use firestore!)
-     - Finished
-
+4. **Required Environment Variables:**
+   ```bash
+   # Firebase Configuration
+   FIREBASE_API_KEY=your_api_key
+   FIREBASE_AUTH_DOMAIN=your_auth_domain
+   FIREBASE_PROJECT_ID=your_project_id
    
-   , use our cleanup script:
-     ```bash
-     npm run setup:firebase
-     ```
+   # OpenRouter API (for AI chat)
+   OPENROUTER_API_KEY=your_openrouter_key
+   
+   # Server Configuration
+   PORT=5000
+   NODE_ENV=development
+   ```
 
-## 🚀 Development
+## 🏃‍♂️ Development
 
 ### Start Development Servers
+
+**Backend server:**
 ```bash
-# Start both frontend and backend
 npm run dev
-
-# Or start individually
-npm run server:dev  # Backend server on port 3000
-npm run web:dev     # Frontend on port 5173
+# Server runs on http://localhost:5000
 ```
 
-### Firebase Setup
+**Frontend (in separate terminal):**
 ```bash
-# Clean up after firebase init and deploy security rules
-npm run setup:firebase
-
-# Or for Windows PowerShell
-npm run setup:firebase:windows
-
-# Start Firebase emulators (optional)
-firebase emulators:start
+cd web-app
+npm run dev
+# Frontend runs on http://localhost:5173
 ```
 
-**📖 See detailed Firebase setup instructions below in the Firebase Setup section**
+### Available Scripts
 
-## 🔧 Available Scripts
+**Root project:**
+- `npm run dev` - Start backend development server
+- `npm run build` - Build backend for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint on backend code
 
-- `npm run install:all` - Install both server and client dependencies
-- `npm run dev` - Start both frontend and backend servers
-- `npm run server:dev` - Start Express server with hot reload
-- `npm run web:dev` - Start Vite development server
-- `npm run build` - Build both frontend and backend for production
-- `npm run server:build` - Compile TypeScript server code
-- `npm run web:build` - Build frontend with Vite
-- `npm run lint` - Run ESLint on all files
-- `npm run type-check` - Run TypeScript compiler checks
-- `npm run setup:firebase` - Clean up and configure Firebase after `firebase init`
-- `npm run setup:firebase:windows` - Windows PowerShell version of Firebase setup
+**Web app (cd web-app):**
+- `npm run dev` - Start frontend development server
+- `npm run build` - Build frontend for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint on frontend code
 
 ## 🏗️ Production Build
 
 For production deployment:
 
 ```bash
-# Full production build
+# Build backend
 npm run build
 
-# Individual builds
-npm run server:build  # TypeScript compilation
-npm run web:build     # Vite build
+# Build frontend
+cd web-app && npm run build
 
-# Alternative build commands for complex setups
-cd web-app && npm run build  # Build from web-app directory
-tsc -b && vite build         # Direct TypeScript + Vite build
+# For monorepo builds
+npm run web:build
+
+# Full TypeScript compilation and Vite build
+tsc -b && cd web-app && vite build
 ```
 
 ## 📁 Project Structure
 
 ```
-├── src/                    # Backend server code
-│   ├── server/            # Express server and API routes
-│   │   ├── controllers/   # Route controllers
-│   │   ├── middleware/    # Authentication and validation
+t3-cloneathon-entry/
+├── src/                    # Backend source code
+│   ├── server/            # Express.js server
+│   │   ├── controllers/   # API route controllers
+│   │   ├── middleware/    # Express middleware (auth, rate limiting)
 │   │   ├── services/      # Business logic services
 │   │   └── config/        # Configuration files
-│   └── shared/            # Shared types and utilities
-├── web-app/               # React frontend application
+│   └── shared/            # Shared utilities and types
+├── web-app/               # Frontend React application
 │   ├── src/
 │   │   ├── components/    # React components
+│   │   │   ├── ui/        # Reusable UI components
 │   │   │   ├── auth/      # Authentication components
-│   │   │   ├── error/     # Error handling components
-│   │   │   └── ui/        # Reusable UI components
+│   │   │   └── examples/  # Example components
 │   │   ├── hooks/         # Custom React hooks
-│   │   │   ├── useAuth.ts        # Authentication management
-│   │   │   ├── useChat.ts        # Chat state and operations
-│   │   │   ├── useModels.ts      # AI model management
-│   │   │   ├── useMessageForm.ts # Form handling
-│   │   │   └── useReasoningState.ts # Reasoning UI state
-│   │   ├── services/      # API and external services
-│   │   ├── utils/         # Utility functions and helpers
-│   │   └── config/        # Configuration files
-├── firebase-config/       # Firebase configuration templates
-│   ├── firestore.rules.template  # Security rules template
-│   └── firebase.json.template    # Firebase config template
-├── firestore.rules       # Firestore security rules (generated)
-├── firebase.json          # Firebase project configuration (generated)
-├── scripts/              # Setup and utility scripts
-│   ├── setup-firebase.js # Cross-platform Firebase setup
-│   └── setup-firebase.ps1 # Windows Firebase setup
-└── README.md              # This file
+│   │   ├── services/      # API services and utilities
+│   │   └── utils/         # Utility functions
+├── functions/             # Firebase Cloud Functions
+├── firebase_config/       # Firebase configuration
+├── dataconnect/          # Firebase Data Connect
+└── docs/                 # Documentation
 ```
 
-## 🎨 Component Architecture
+## 🎨 Usage
 
-### Custom Hooks
-- **`useAuth`** - Firebase authentication management
-- **`useChat`** - Chat operations and state management
-- **`useModels`** - AI model selection and configuration
-- **`useMessageForm`** - Form handling with validation
-- **`useReasoningState`** - Reasoning display state management
-- **`useInputBarHeight`** - Dynamic UI spacing calculations
+Rate limiting is applied automatically on the server side to all API requests. When the limit is exceeded, the server returns a `429` status code with a JSON error response.
 
-### Key Components
-- **`ChatInterface`** - Main chat layout and orchestration
-- **`ChatInput`** - Message composition with auto-resize
-- **`MessageList`** - Optimized message rendering
-- **`ChatSidebar`** - Thread management and navigation
-- **`ConnectionError`** - Server connection error handling
-- **`ErrorBanner`** - Dismissible error notifications
+## 🔧 Configuration
 
-## 🔐 Security Features
+### Firebase Setup
+1. Create a Firebase project at https://console.firebase.google.com
+2. Enable Firestore Database
+3. Enable Firebase Authentication
+4. Download configuration and update `.env`
 
-### Firebase Security Rules
-```javascript
-// users/{userId}/chats/{chatId} - User can only access own chats
-// users/{userId}/chats/{chatId}/messages/{messageId} - Message access control
+### OpenRouter Setup
+1. Sign up at https://openrouter.ai
+2. Generate API key
+3. Add to `.env` as `OPENROUTER_API_KEY`
+
+### Rate Limiting Configuration
+Rate limits are configured in `src/server/middleware/rateLimit.ts`:
+
+```typescript
+const RATE_LIMITERS = {
+  chat: new RateLimiter({
+    database: admin.firestore(),
+    collection: 'rateLimits',
+    periodSeconds: 15 * 60, // 15 minutes
+    maxCalls: 50,           // 50 requests max
+  }),
+  // ... other configurations
+};
 ```
 
-### Authentication Flow
-1. **Client Authentication**: Google Sign-In with Firebase
-2. **Token Verification**: Server-side ID token validation
-3. **Resource Ownership**: User ID verification for all operations
-4. **Cache Security**: Comprehensive cache clearing on login/logout
+## 🧪 Testing Rate Limits
 
-### Data Protection
-- **User Isolation**: Firestore collections scoped by user ID
-- **Server-Side Validation**: All requests authenticated and authorized
-- **Privacy Controls**: Multi-layer cache clearing prevents data leakage
-
-## 🌐 API Endpoints
-
-### Authentication Required
-- `GET /api/chats` - Get all user chat threads
-- `GET /api/chats/:threadId` - Get specific chat thread
-- `POST /api/chats/message` - Send new message
-- `DELETE /api/chats/:threadId` - Delete chat thread
-
-### Public Endpoints
-- `GET /api/health` - Server health check
-- `GET /api/config/firebase` - Firebase client configuration
-- `GET /api/models` - Available AI models
-
-## 🎯 Performance Optimizations
-
-- **React.memo** for component memoization
-- **useCallback** and **useMemo** for expensive operations
-- **Virtualization-ready** message list structure
-- **Optimized re-renders** with targeted state updates
-- **Efficient caching** with selective invalidation
+1. Make more than 100 API requests within 15 minutes
+2. Server will return `429` status with rate limit error
+3. Check `/api/rate-limit-status` to see current rate limit info
 
 ## 🚀 Deployment
 
-### Firebase Hosting
+### Firebase Hosting + Functions
 ```bash
+# Build everything
+npm run build
+cd web-app && npm run build && cd ..
+
+# Deploy to Firebase
 firebase deploy
 ```
 
 ### Manual Deployment
-1. Build the application: `npm run build`
-2. Deploy server to your hosting platform
-3. Configure environment variables
-4. Deploy Firestore security rules
-
-## 🔥 Firebase Setup Guide
-
-### 🚨 Important: Firebase Init Cleanup Required
-
-When you run `firebase init`, it creates many unnecessary files and can overwrite our carefully crafted security rules. This guide ensures you get a clean, secure setup.
-
-### 📋 Quick Setup (Recommended)
-
-After cloning the repository and running `firebase init`, use our automated cleanup script:
-
-#### Option A: Cross-Platform (Node.js)
-```bash
-npm run setup:firebase
-```
-
-#### Option B: Windows PowerShell
-```bash
-npm run setup:firebase:windows
-```
-
-#### Option C: Manual Script Execution
-```bash
-# Cross-platform
-node scripts/setup-firebase.js
-
-# Windows
-powershell -ExecutionPolicy Bypass -File scripts/setup-firebase.ps1
-```
-
-### 🔧 Manual Setup (Step by Step)
-
-If you prefer to do it manually or the scripts don't work:
-
-#### 1. Prerequisites
-```bash
-# Install Firebase CLI globally
-npm install -g firebase-tools
-
-# Login to Firebase
-firebase login
-```
-
-#### 2. Initialize Firebase (if not done)
-```bash
-firebase init
-```
-
-**Important**: When prompted, only select **Firestore** (not Functions, Hosting, etc.)
-
-#### 3. Clean Up Unnecessary Files
-
-Remove these directories (if they exist):
-```bash
-# Remove unnecessary directories
-rm -rf functions/
-rm -rf public/
-rm -rf extensions/
-rm -rf dataconnect/
-rm -rf dataconnect-generated/
-
-# Remove unnecessary files
-rm database.rules.json
-rm remoteconfig.template.json
-rm storage.rules
-```
-
-#### 4. Restore Configuration Files
-
-Replace `firebase.json` with minimal configuration:
-```json
-{
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  }
-}
-```
-
-Ensure `firestore.rules` contains our security rules:
-```javascript
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Users can only access their own data
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      // Users can only access their own chat collections
-      match /chats/{chatId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-        
-        // Users can only access messages within their own chats
-        match /messages/{messageId} {
-          allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
-      }
-    }
-    
-    // Deny access to all other documents
-    match /{document=**} {
-      allow read, write: if false;
-    }
-  }
-}
-```
-
-#### 5. Deploy Security Rules
-```bash
-firebase deploy --only firestore:rules
-```
-
-### 🔍 What the Setup Scripts Do
-
-Our automated scripts perform these actions:
-
-1. **Verify Firebase CLI** - Ensures Firebase CLI is installed and accessible
-2. **Clean Up Files** - Removes unnecessary directories and files created by `firebase init`
-3. **Restore Configuration** - Copies our secure configuration from templates
-4. **Deploy Rules** - Automatically deploys the Firestore security rules
-5. **Verify Setup** - Confirms everything is configured correctly
-
-### 📁 File Structure After Setup
-
-After proper setup, your Firebase files should look like this:
-
-```
-├── .firebaserc              # Firebase project configuration
-├── firebase.json             # Minimal Firestore configuration
-├── firestore.rules          # Security rules (CRITICAL)
-├── firestore.indexes.json   # Database indexes
-├── firebase-config/         # Template files directory
-│   ├── firestore.rules.template
-│   └── firebase.json.template
-└── scripts/
-    ├── setup-firebase.js    # Cross-platform setup script
-    └── setup-firebase.ps1   # Windows PowerShell script
-```
-
-### 🚫 What Gets Removed
-
-These files/directories are removed because they're not needed for our app:
-
-- `functions/` - We don't use Cloud Functions
-- `public/` - We don't use Firebase Hosting  
-- `extensions/` - We don't use Firebase Extensions
-- `dataconnect/` - We don't use Firebase Data Connect
-- `dataconnect-generated/` - Generated code we don't need
-- `database.rules.json` - We use Firestore, not Realtime Database
-- `remoteconfig.template.json` - We don't use Remote Config
-- `storage.rules` - We don't use Cloud Storage
-
-### 🔐 Security Verification
-
-After setup, verify your security rules are active:
-
-1. **Check Firebase Console**:
-   - Go to [Firebase Console](https://console.firebase.google.com/)
-   - Select your project
-   - Navigate to "Firestore Database" → "Rules"
-   - Confirm the rules match our secure configuration
-
-2. **Test Access Control**:
-   - Rules should restrict access to `/users/{userId}` where `userId` must match `request.auth.uid`
-   - All other paths should be denied
-
-### 🐛 Troubleshooting
-
-#### "Firebase CLI not found"
-```bash
-npm install -g firebase-tools
-firebase login
-```
-
-#### "Permission denied during deployment"
-```bash
-firebase login
-firebase use --add  # If multiple projects
-```
-
-#### "Rules compilation failed"
-Check `firestore.rules` syntax - ensure proper JavaScript formatting
-
-#### "Template files not found"
-Run the setup script from the project root directory:
-```bash
-cd /path/to/openrouter-chat-app
-npm run setup:firebase
-```
-
-#### "Rules not taking effect"
-Wait 1-2 minutes after deployment, then verify in Firebase Console
-
-### 💡 Tips for Contributors
-
-1. **Always run setup after `firebase init`** - Never commit the extra files
-2. **Test security rules** - Verify user isolation is working
-3. **Update templates** - If you modify rules, update the template files in `firebase-config/`
-4. **Check .gitignore** - Ensure unnecessary Firebase files are ignored
+1. Build both backend and frontend
+2. Deploy backend to your server/cloud platform
+3. Deploy frontend static files to CDN/hosting
+4. Configure environment variables in production
 
 ## 🤝 Contributing
 
@@ -517,44 +237,17 @@ Wait 1-2 minutes after deployment, then verify in Firebase Console
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 Development Guidelines
+## 📝 License
 
-- **TypeScript First**: All new code must be properly typed
-- **Component Patterns**: Follow existing hook and component patterns
-- **Error Handling**: Implement comprehensive error boundaries
-- **Performance**: Use React optimization patterns (memo, callbacks)
-- **Security**: Validate all user inputs and authenticate all requests
-- **Documentation**: Update README and add JSDoc comments
+This project is licensed under the MIT License - see the LICENSE.md file for details.
 
-## 🐛 Troubleshooting
+## 🙏 Acknowledgments
 
-### Common Issues
-
-**Windows Installation Errors:**
-- If you see infinite NPM loops or "EPERM" errors, the `postinstall` hook was causing recursion
-- Solution: Use `npm run install:all` instead of `npm install`
-- This installs server packages first, then client packages separately
-
-**Build Errors:**
-- Ensure all TypeScript types are properly defined
-- Check for missing dependencies in package.json
-
-**Authentication Issues:**
-- Verify Firebase configuration in environment variables
-- Check Firestore security rules deployment
-
-**Server Connection:**
-- Ensure backend server is running on port 3000
-- Verify OpenRouter API key configuration
-
-**Cache Issues:**
-- Clear browser cache and localStorage
-- Restart development servers
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+- Firebase team for firebase-functions-rate-limiter
+- OpenRouter for AI API access
+- React and TypeScript communities
+- Tailwind CSS for styling utilities
 
 ---
 
-**Built with using React, Tailwind, TypeScript, and Firebase**
+**🎯 T3 Cloneathon Entry**: This project demonstrates modern full-stack development with effective rate limiting using Firebase-native solutions, providing an excellent balance of simplicity and functionality.

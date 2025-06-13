@@ -26,6 +26,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { createChatController } from './controllers/ChatController';
 import { createModelsController } from './controllers/ModelsController';
+import { rateLimit } from './middleware/rateLimit';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -102,8 +103,11 @@ const errorHandler = (error: Error, req: Request, res: Response, next: NextFunct
   });
 };
 
-// Apply request logging
+// Apply request logging and rate limiting
 app.use(requestLogger);
+
+// Apply rate limiting to all API requests
+app.use('/api', rateLimit);
 
 // API Routes using controllers
 app.use('/api/chats', chatController.getRoutes());
@@ -122,6 +126,37 @@ app.get('/api/health', (req: Request, res: Response) => {
     version: process.env.npm_package_version || '1.0.0',
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+/**
+ * Rate limit status endpoint for debugging
+ * 
+ * @route GET /api/rate-limit-status
+ */
+app.get('/api/rate-limit-status', async (req: Request, res: Response) => {
+  try {
+    const authReq = req as any;
+    const key = authReq.user?.uid ? `user_${authReq.user.uid}` : `ip_${req.ip}`;
+    
+    res.json({
+      userKey: key,
+      userType: authReq.user ? 'authenticated' : 'anonymous',
+      userId: authReq.user?.uid || null,
+      ip: req.ip || 'unknown',
+      rateLimit: {
+        maxRequests: 100,
+        period: '15 minutes',
+        description: 'All API requests are limited to 100 requests per 15 minutes'
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('[RateLimit] Error getting rate limit status:', error);
+    res.status(500).json({
+      error: 'Failed to get rate limit status',
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 /**
