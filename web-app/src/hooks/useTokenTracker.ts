@@ -170,7 +170,7 @@ export function useTokenTracker(
         inputTokens = await tokenizerService.countTokens(inputText, model);
       } catch (error) {
         logger.warn('Failed to count input tokens, using estimation', error as Error);
-        inputTokens = tokenizerService.estimateTokensInChunk(inputText, model);
+        inputTokens = tokenizerService.estimateTokensInChunkSync(inputText, model);
       }
     }
 
@@ -203,7 +203,7 @@ export function useTokenTracker(
   const updateTokens = useCallback((chunk: string) => {
     if (!tokenTrackerRef.current || !tokenMetrics.isTracking) return;
 
-    const estimatedTokens = tokenizerService.estimateTokensInChunk(chunk, model);
+    const estimatedTokens = tokenizerService.estimateTokensInChunkSync(chunk, model);
     tokenTrackerRef.current.addTokens(estimatedTokens);
 
     logger.debug(`Added ${estimatedTokens} tokens from chunk: "${chunk.substring(0, 50)}..."`);

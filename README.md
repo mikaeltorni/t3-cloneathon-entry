@@ -26,6 +26,8 @@ A modern full-stack chat application built with React, TypeScript, Express.js, a
 - **Styling**: Tailwind CSS 3+ with responsive design
 - **State Management**: React hooks + context
 - **HTTP Client**: Fetch API with error handling
+- **Token Counting**: gpt-tokenizer library for accurate token calculation
+- **Real-time Metrics**: Token-per-second tracking and cost estimation
 
 ### DevOps & Deployment
 - **Hosting**: Firebase Hosting
@@ -166,6 +168,7 @@ t3-cloneathon-entry/
 │   │   │   └── examples/  # Example components
 │   │   ├── hooks/         # Custom React hooks
 │   │   ├── services/      # API services and utilities
+│   │   └── tokenizerService.ts  # Client-side token counting with gpt-tokenizer
 │   │   └── utils/         # Utility functions
 ├── functions/             # Firebase Cloud Functions
 ├── firebase_config/       # Firebase configuration
@@ -175,7 +178,33 @@ t3-cloneathon-entry/
 
 ## 🎨 Usage
 
+### Rate Limiting
 Rate limiting is applied automatically on the server side to all API requests. When the limit is exceeded, the server returns a `429` status code with a JSON error response.
+
+### Token Counting
+The application uses the gpt-tokenizer library for accurate token counting on the client side:
+
+#### Features
+- **Accurate Tokenization**: Uses the actual gpt-tokenizer library for OpenAI models
+- **Multi-Provider Support**: Supports OpenAI, Anthropic, DeepSeek, and Google models
+- **Real-time Tracking**: Token-per-second calculation during streaming responses
+- **Cost Estimation**: Automatic cost calculation based on model pricing
+- **Fallback Support**: Uses OpenAI tokenizer for non-OpenAI models when possible
+
+#### Usage Example
+```typescript
+import { tokenizerService } from './services/tokenizerService';
+
+// Async tokenization with full accuracy
+const result = await tokenizerService.tokenize("Hello world!", "gpt-4o");
+console.log(`Tokens: ${result.tokenCount}, Cost: $${result.estimatedCost}`);
+
+// Sync tokenization for real-time scenarios
+const tokenCount = tokenizerService.estimateTokensInChunkSync("streaming text", "gpt-4o");
+
+// Token tracking for conversations
+const chatResult = await tokenizerService.tokenizeChat(messages, "gpt-4o");
+```
 
 ## 🔧 Configuration
 

@@ -29,8 +29,21 @@ import type {
   ChatMessage
 } from '../../shared/types';
 
-// Import tokenizer for real-time tracking
-import { TokenTracker } from '../services/tokenizerService';
+// Simple metrics tracking interface matching TokenMetrics
+interface SimpleMetrics {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  tokensPerSecond: number;
+  startTime: number;
+  duration: number;
+  estimatedCost: {
+    input: number;
+    output: number;
+    total: number;
+    currency: string;
+  };
+}
 
 /**
  * Controller for chat operations
@@ -432,12 +445,31 @@ export class ChatController {
 
       console.log(`[ChatController] Streaming AI response with model: ${modelId}`);
       
-      // Initialize token tracker for this response
-      const tokenTracker = new TokenTracker(modelId || 'google/gemini-2.5-flash-preview-05-20');
+      // Initialize simple metrics tracking for this response
+      const streamStartTime = Date.now();
+      let totalChunkCount = 0;
       
-      // Start tracking with the full conversation context
-      const conversationText = updatedThread.messages.map(msg => `${msg.role}: ${msg.content}`).join('\n');
-      tokenTracker.startTracking(conversationText);
+      // Simple metrics calculation
+      const getSimpleMetrics = (): SimpleMetrics => {
+        const duration = Date.now() - streamStartTime;
+        const estimatedTokens = totalChunkCount * 10; // Rough estimate
+        const tokensPerSecond = duration > 0 ? estimatedTokens / (duration / 1000) : 0;
+        const cost = estimatedTokens * 0.00001; // Rough cost estimate
+        return {
+          inputTokens: 0,
+          outputTokens: estimatedTokens,
+          totalTokens: estimatedTokens,
+          tokensPerSecond: Math.round(tokensPerSecond * 100) / 100,
+          startTime: streamStartTime,
+          duration,
+          estimatedCost: {
+            input: 0,
+            output: cost,
+            total: cost,
+            currency: 'USD'
+          }
+        };
+      };
       
       // Stream the AI response
       res.write(`data: ${JSON.stringify({ type: 'ai_start' })}\n\n`);
@@ -474,18 +506,16 @@ export class ChatController {
             fullReasoning += reasoningChunk;
             hasContent = true;
             
-            // Update token tracker with reasoning chunk
-            const currentTPS = tokenTracker.addTokensFromChunk(reasoningChunk);
+            // Update chunk count for metrics
+            totalChunkCount++;
+            const currentMetrics = getSimpleMetrics();
             
             // Stream reasoning in real-time with token metrics
             res.write(`data: ${JSON.stringify({ 
               type: 'reasoning_chunk', 
               content: reasoningChunk,
               fullReasoning: fullReasoning,
-              tokenMetrics: {
-                ...tokenTracker.getCurrentMetrics(),
-                tokensPerSecond: currentTPS
-              }
+              tokenMetrics: currentMetrics
             })}\n\n`);
           } else if (chunk.startsWith('content:')) {
             // Extract content chunk
@@ -493,43 +523,39 @@ export class ChatController {
             fullContent += contentChunk;
             hasContent = true;
             
-            // Update token tracker with content chunk
-            const currentTPS = tokenTracker.addTokensFromChunk(contentChunk);
+            // Update chunk count for metrics
+            totalChunkCount++;
+            const currentMetrics = getSimpleMetrics();
             
             // Stream content chunk with token metrics
             res.write(`data: ${JSON.stringify({ 
               type: 'ai_chunk', 
               content: contentChunk, 
               fullContent: fullContent,
-              tokenMetrics: {
-                ...tokenTracker.getCurrentMetrics(),
-                tokensPerSecond: currentTPS
-              }
+              tokenMetrics: currentMetrics
             })}\n\n`);
           } else {
             // Fallback for chunks without prefix (backward compatibility)
             fullContent += chunk;
             hasContent = true;
             
-            // Update token tracker with chunk
-            const currentTPS = tokenTracker.addTokensFromChunk(chunk);
+            // Update chunk count for metrics
+            totalChunkCount++;
+            const currentMetrics = getSimpleMetrics();
             
             res.write(`data: ${JSON.stringify({ 
               type: 'ai_chunk', 
               content: chunk, 
               fullContent: fullContent,
-              tokenMetrics: {
-                ...tokenTracker.getCurrentMetrics(),
-                tokensPerSecond: currentTPS
-              }
+              tokenMetrics: currentMetrics
             })}\n\n`);
           }
         }
 
         // Only create and save message if we actually received content
         if (hasContent && (fullContent.trim() || fullReasoning.trim())) {
-          // Stop tracking and get final metrics
-          const finalTokenMetrics = tokenTracker.stopTracking();
+          // Get final metrics
+          const finalTokenMetrics = getSimpleMetrics();
           
           // Create assistant message with full response
           const assistantMessage = firestoreChatStorage.createMessage(
@@ -567,7 +593,7 @@ export class ChatController {
         res.write('data: [DONE]\n\n');
         res.end();
 
-        const finalMetrics = tokenTracker.getCurrentMetrics();
+        const finalMetrics = getSimpleMetrics();
         console.log(`[ChatController] Successfully streamed message for thread: ${currentThread.id} (${fullContent.length} characters content, ${fullReasoning.length} characters reasoning, ${finalMetrics.totalTokens} tokens, ${finalMetrics.tokensPerSecond?.toFixed(2)} TPS)`);
 
       } catch (streamError) {

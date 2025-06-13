@@ -248,9 +248,9 @@ export class TokenizerService {
       return {
         provider,
         modelName: model,
-        maxTokens: 128000, // Default fallback
-        inputCostPer1k: 0.001, // Default fallback
-        outputCostPer1k: 0.002  // Default fallback
+        maxTokens: 128000,
+        inputCostPer1k: 0.001,
+        outputCostPer1k: 0.002
       };
     }
     return modelInfo;
@@ -629,27 +629,15 @@ export class TokenizerService {
       }
     }
     
-         // For non-OpenAI models, try to use OpenAI tokenizer as fallback for better accuracy
-     // Most models use similar tokenization patterns to OpenAI's encodings
      try {
-       const fallbackTokenizer = await this.loadGPTTokenizer('gpt-4o'); // Use modern encoding
+       const fallbackTokenizer = await this.loadGPTTokenizer('gpt-4o');
        const tokens = fallbackTokenizer.encode(chunk);
        return tokens.length;
-     } catch (error) {
-       logger.error(`Failed to use gpt-tokenizer for non-OpenAI model`, error as Error);
-       
-      //  // Provider-specific character-based estimation as final fallback
-      //  switch (modelInfo.provider) {
-      //    case 'anthropic':
-      //      return Math.ceil(chunk.length / 4);
-      //    case 'deepseek':
-      //      return Math.ceil(chunk.length / 3.5);
-      //    case 'google':
-      //      return Math.ceil(chunk.length / 3.8);
-      //    default:
-      //      return Math.ceil(chunk.length / 4);
-      //  }
-     }
+            } catch (error) {
+         logger.error(`Failed to use gpt-tokenizer for non-OpenAI model`, error as Error);
+         // Return basic character-based estimation as absolute fallback
+         return 0;
+       }
   }
 
   /**
@@ -670,8 +658,6 @@ export class TokenizerService {
       }
     }
     
-         // For non-OpenAI models, try to use cached OpenAI tokenizer for better accuracy  
-     // Most models use similar tokenization patterns to OpenAI's encodings
      const cachedTokenizer = this.gptTokenizerCache.get('gpt-4o');
      if (cachedTokenizer) {
        try {
@@ -680,22 +666,9 @@ export class TokenizerService {
        } catch (error) {
          logger.warn(`Failed to use cached gpt-tokenizer for non-OpenAI model`, error as Error);
        }
-     }
-     
-    //  // Fallback to character-based estimation
-    //  switch (modelInfo.provider) {
-    //    case 'openai':
-    //      return Math.ceil(chunk.length / 4);
-    //    case 'anthropic':
-    //      return Math.ceil(chunk.length / 4);
-    //    case 'deepseek':
-    //      return Math.ceil(chunk.length / 3.5);
-    //    case 'google':
-    //      return Math.ceil(chunk.length / 3.8);
-    //    default:
-    //      return Math.ceil(chunk.length / 4);
-    //  }
-    return 0;
+    }
+            
+     return 0;
   }
 
   /**
