@@ -281,24 +281,13 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
                           {getBrainIcon(model)}
                         </div>
                         
-                        <div className="flex items-center gap-1">
-                          {/* Pin Indicator */}
-                          {isPinned && (
-                            <div className="text-amber-600">
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M14,4V2H10V4H4V6H5.5L6.5,17H17.5L18.5,6H20V4H14M12,7.1L16.05,11.5L15.6,12.5L12,10.4L8.4,12.5L7.95,11.5L12,7.1Z" />
-                              </svg>
-                            </div>
-                          )}
-                          
-                          {/* Active Indicator */}
-                          {isSelected && (
-                            <div 
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: model.color }}
-                            />
-                          )}
-                        </div>
+                        {/* Active Indicator */}
+                        {isSelected && (
+                          <div 
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: model.color }}
+                          />
+                        )}
                       </div>
 
                       {/* Capability Badges */}
