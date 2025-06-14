@@ -164,6 +164,9 @@ export class StreamingService {
       case 'thread_info':
         result.threadId = parsed.threadId;
         logger.debug(`Stream using thread: ${parsed.threadId}`);
+        if (callbacks.onThreadCreated) {
+          callbacks.onThreadCreated(parsed.threadId);
+        }
         break;
         
       case 'user_message':

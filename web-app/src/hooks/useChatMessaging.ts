@@ -28,7 +28,8 @@ interface ChatApiService {
     onError: (error: Error) => void,
     onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void,
     onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void,
-    onAnnotationsChunk?: (annotations: any[]) => void
+    onAnnotationsChunk?: (annotations: any[]) => void,
+    onThreadCreated?: (threadId: string) => void
   ) => Promise<void>;
 }
 
@@ -58,7 +59,7 @@ export const useChatMessaging = (
   const {
     currentThread,
     setCurrentThread,
-    setLoading,
+    setIsSending,
     setError,
     setCurrentTokenMetrics,
     clearAttachments
@@ -75,7 +76,7 @@ export const useChatMessaging = (
     }
 
     try {
-      setLoading(true);
+      setIsSending(true);
       setError(null);
 
       debug('🚀 Starting message send', {
@@ -300,6 +301,41 @@ export const useChatMessaging = (
               tempThread = updatedThread;
             }
           }
+        },
+        // onThreadCreated callback - handle new thread creation during streaming
+        (threadId: string) => {
+          debug('🆕 New thread created during streaming', { threadId });
+          
+          // Create a temporary thread structure for new chats
+          if (isNewThread && !tempThread) {
+            // Create user message for the temporary thread
+            const userMessage = {
+              id: `temp-user-${Date.now()}`,
+              role: 'user' as const,
+              content: request.content || '',
+              timestamp: new Date(),
+              imageUrl: request.imageUrl,
+              images: request.images,
+              documents: request.documents
+            };
+            
+            // Create temporary thread with the user message
+            tempThread = {
+              id: threadId,
+              title: request.content && request.content.length > 50 ? request.content.substring(0, 50) + '...' : request.content || 'New Chat',
+              messages: [userMessage],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+            
+            // Set as current thread so UI can display it
+            setCurrentThread(tempThread);
+            
+            debug('✅ Created temporary thread for streaming', { 
+              threadId, 
+              messageCount: tempThread.messages.length 
+            });
+          }
         }
       );
 
@@ -308,9 +344,9 @@ export const useChatMessaging = (
       setError(errorMessage);
       logError('Failed to send message', err as Error);
     } finally {
-      setLoading(false);
+      setIsSending(false);
     }
-  }, [currentThread, chatApiService, debug, log, logError, loadThreads, setCurrentThread, setLoading, setError, setCurrentTokenMetrics, clearAttachments]);
+  }, [currentThread, chatApiService, debug, log, logError, loadThreads, setCurrentThread, setIsSending, setError, setCurrentTokenMetrics, clearAttachments]);
 
   return {
     sendMessage

@@ -53,6 +53,7 @@ export interface StreamingCallbacks {
   onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void;
   onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void;
   onAnnotationsChunk?: (annotations: any[]) => void;
+  onThreadCreated?: (threadId: string) => void;
 }
 
 /**
