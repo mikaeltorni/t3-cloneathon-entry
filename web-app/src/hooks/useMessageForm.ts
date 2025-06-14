@@ -174,29 +174,19 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
 
     const trimmedMessage = message.trim();
     
-    // Append ":online" to model ID if web search is enabled
-    // Also append for models with forced web search mode (like Perplexity models)
-    const modelConfig = availableModels[selectedModel];
-    const shouldUseOnline = useWebSearch || modelConfig?.webSearchMode === 'forced';
-    const alreadyHasOnline = selectedModel.includes(':online');
-    const effectiveModelId = (shouldUseOnline && !alreadyHasOnline) ? `${selectedModel}:online` : selectedModel;
-    
     try {
       debug('Submitting message', { 
         messageLength: trimmedMessage.length, 
         imageCount: images.length,
         modelId: selectedModel,
-        effectiveModelId: effectiveModelId,
         useReasoning: useReasoning && isReasoningModel(),
-        useWebSearch: useWebSearch,
-        webSearchMode: modelConfig?.webSearchMode,
-        shouldUseOnline: shouldUseOnline
+        useWebSearch: useWebSearch
       });
 
       onSendMessage(
         trimmedMessage,
         images,
-        effectiveModelId,
+        selectedModel,
         useReasoning && isReasoningModel(),
         reasoningEffort,
         useWebSearch,
