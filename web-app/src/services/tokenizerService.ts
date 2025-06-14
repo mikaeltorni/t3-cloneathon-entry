@@ -185,6 +185,18 @@ export class TokenizerService {
   }
 
   /**
+   * Map our model names to the format expected by gpt-tokenizer
+   */
+  private mapModelNameForTokenizer(model: string): string | undefined {
+    // Map our model names to the format expected by gpt-tokenizer
+    if (model.includes('gpt-4o')) {
+      return 'gpt-4o';
+    }
+    // Return undefined to let the tokenizer use its default
+    return undefined;
+  }
+
+  /**
    * Load appropriate gpt-tokenizer module for OpenAI models
    */
   private async loadGPTTokenizer(model: string): Promise<GPTTokenizerModule> {
@@ -372,7 +384,9 @@ export class TokenizerService {
     if (modelInfo.provider === 'openai') {
       try {
         const tokenizer = await this.loadGPTTokenizer(model);
-        const tokens = tokenizer.encodeChat(messages, model);
+        // Map model name to the format expected by gpt-tokenizer
+        const tokenizerModel = this.mapModelNameForTokenizer(model);
+        const tokens = tokenizer.encodeChat(messages, tokenizerModel);
         
         const estimatedCost = this.calculateCost(tokens.length, 0, modelInfo);
 
@@ -386,6 +400,7 @@ export class TokenizerService {
         };
       } catch (error) {
         logger.error(`OpenAI chat tokenization failed`, error as Error);
+        // Don't rethrow the error, fall through to fallback method
       }
     }
 
