@@ -226,8 +226,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       className={cn(
         'fixed bottom-0 bg-white border-t border-gray-200 p-4 shadow-lg z-40 transition-all duration-300',
         sidebarOpen ? 'left-80' : 'left-0',
-        // Leave space for ModelSidebar on the right
-        'right-16'
+        // Extend fully to the right edge
+        'right-0'
       )}
     >
       <div className="max-w-4xl mx-auto">
