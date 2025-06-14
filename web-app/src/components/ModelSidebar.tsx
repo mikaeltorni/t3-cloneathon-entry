@@ -185,9 +185,10 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
           className
         )}
         style={{
-          // Dynamic height that scales with screen size (70% of available height)
-          height: `calc(70vh - ${Math.floor(inputBarHeight * 0.3)}px)`,
-          maxHeight: '600px' // Prevent it from getting too tall on large screens
+          // Start from top of screen, extend down to 20px above ChatInput bar
+          top: '0',
+          height: `calc(100vh - ${inputBarHeight + 20}px)`,
+          bottom: 'auto'
         }}
       >
         <div className="bg-white border-l border-gray-200 shadow-lg h-full p-4">
@@ -212,11 +213,10 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
         className
       )}
       style={{
-        // Dynamic height that scales with screen size (70% of available height)
-        height: `calc(70vh - ${Math.floor(inputBarHeight * 0.3)}px)`,
-        maxHeight: '600px', // Prevent it from getting too tall on large screens
-        top: '5vh', // Start 5% from the top of the screen
-        bottom: 'auto' // Allow it to be positioned from top
+        // Start from top of screen, extend down to 20px above ChatInput bar
+        top: '0',
+        height: `calc(100vh - ${inputBarHeight + 20}px)`,
+        bottom: 'auto'
       }}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
