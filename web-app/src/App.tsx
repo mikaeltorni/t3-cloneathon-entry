@@ -45,7 +45,7 @@ function AppContent() {
   const { debug } = useLogger('App');
 
   // Track current model selection (for sidebar display)
-  const [currentModel, setCurrentModel] = useState<string>('google/gemini-2.5-flash-preview-05-20');
+  const [currentModel, setCurrentModel] = useState<string>('google/gemini-2.5-flash-preview');
 
   // Sync currentModel when thread changes
   useEffect(() => {
@@ -53,7 +53,7 @@ function AppContent() {
       // Use the thread's current model, or last used model, or fall back to default
       const threadModel = chat.currentThread.currentModel || 
                           chat.currentThread.lastUsedModel || 
-                          'google/gemini-2.5-flash-preview-05-20';
+                          'google/gemini-2.5-flash-preview';
       setCurrentModel(threadModel);
       debug(`Synced current model for thread ${chat.currentThread.id}: ${threadModel}`);
     }

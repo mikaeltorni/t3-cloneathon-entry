@@ -77,7 +77,7 @@ export interface UseMessageFormReturn {
  * @returns Form state and operations
  */
 export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormReturn => {
-  const { onSendMessage, availableModels, loading, images, defaultModel = 'google/gemini-2.5-flash-preview-05-20' } = config;
+  const { onSendMessage, availableModels, loading, images, defaultModel = 'google/gemini-2.5-flash-preview' } = config;
   
   const [message, setMessage] = useState('');
   const [selectedModel, setSelectedModel] = useState(defaultModel);
