@@ -283,16 +283,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <div className="text-xs text-gray-500">
                   (Use sidebar on the right to change model)
                 </div>
-                {/* Debug info - show external vs internal model */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="text-xs text-blue-500">
-                    External: {externalSelectedModel || 'undefined'} | Using: {selectedModel}
-                    <br/>
-                    Props: ext={!!externalSelectedModel}, onChange={!!onModelChange}
-                    <br/>
-                    Time: {new Date().toLocaleTimeString()}
-                  </div>
-                )}
+
               </div>
             </div>
           )}

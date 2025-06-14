@@ -62,10 +62,9 @@ function AppContent() {
       
       // Only update if this is a genuine thread switch AND the model is different
       if (threadModel !== currentModel) {
-        debug(`🔄 Thread model sync: changing from ${currentModel} to ${threadModel} for thread ${chat.currentThread.id} (thread switch: ${isThreadSwitch})`);
-        console.log(`🚨 [DEBUG] Thread sync would change model from ${currentModel} to ${threadModel} - SUPPRESSED during message generation`);
+        debug(`🔄 Thread model sync: would change from ${currentModel} to ${threadModel} for thread ${chat.currentThread.id}`);
         
-        // For now, let's disable this automatic sync to prevent overriding user selections
+        // Disabled automatic sync to preserve user model selection during message generation
         // setCurrentModel(threadModel);
         debug(`⚠️ Thread model sync DISABLED to preserve user model selection`);
       } else {
@@ -128,11 +127,9 @@ function AppContent() {
    * Handle model change from ChatInterface (current conversation)
    */
   const handleCurrentModelChange = (modelId: string) => {
-    console.log(`🚨 [DEBUG] ModelSidebar onChange called with: ${modelId}`);
     debug(`🔄 Model change requested: ${modelId} (previous: ${currentModel})`);
     setCurrentModel(modelId);
     debug(`✅ Current model changed to: ${modelId}`);
-    console.log(`🚨 [DEBUG] App currentModel state updated to: ${modelId}`);
     // If there's an active thread, update its model preference
     if (chat.currentThread?.id) {
       handleModelChange(chat.currentThread.id, modelId);
