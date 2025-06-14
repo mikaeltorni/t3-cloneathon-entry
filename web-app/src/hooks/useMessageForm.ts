@@ -174,6 +174,18 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
 
     const trimmedMessage = message.trim();
     
+    // // Log all variables above the try block using console.log
+    // console.log('[useMessageForm] Form submission variables', {
+    //   trimmedMessage,
+    //   images,
+    //   selectedModel,
+    //   useReasoning,
+    //   isReasoningModel: isReasoningModel(),
+    //   reasoningEffort,
+    //   useWebSearch,
+    //   webSearchEffort
+    // });
+
     try {
       debug('Submitting message', { 
         messageLength: trimmedMessage.length, 

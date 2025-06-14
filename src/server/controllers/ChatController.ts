@@ -389,7 +389,7 @@ export class ChatController {
         return;
       }
 
-      const { threadId, content, imageUrl, images, modelId, useReasoning, reasoningEffort }: any = req.body;
+      const { threadId, content, imageUrl, images, modelId, useReasoning, reasoningEffort, useWebSearch, webSearchEffort }: any = req.body;
 
       // Validate request
       if (!content?.trim() && (!imageUrl?.trim()) && (!images || images.length === 0)) {
@@ -520,7 +520,9 @@ export class ChatController {
           conversationHistory, 
           modelId as any, 
           useReasoning || false,
-          reasoningEffort || 'high'
+          reasoningEffort || 'high',
+          useWebSearch || false,
+          webSearchEffort || 'medium'
         );
         
         for await (const chunk of responseStream) {

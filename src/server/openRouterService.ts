@@ -74,8 +74,8 @@ interface ImageAttachment {
  * OpenRouter service interface
  */
 interface OpenRouterService {
-  sendMessage(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high'): Promise<{ content: string; reasoning?: string }>;
-  sendMessageStream(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high'): Promise<AsyncIterable<string>>;
+  sendMessage(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high'): Promise<{ content: string; reasoning?: string }>;
+  sendMessageStream(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high'): Promise<AsyncIterable<string>>;
   getAvailableModels(): typeof AVAILABLE_MODELS;
 }
 
