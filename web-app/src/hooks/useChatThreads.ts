@@ -20,6 +20,7 @@ import { useAuth } from './useAuth';
 import { useLogger } from './useLogger';
 import { useErrorHandler } from './useErrorHandler';
 import type { UseChatStateReturn } from './useChatState';
+import type { ChatThread } from '../../../src/shared/types';
 import { 
   getCachedThreads, 
   setCachedThreads, 
@@ -31,7 +32,7 @@ interface ChatApiService {
   getAllChatsEfficient: (limit: number) => Promise<{ threads: any[], hasMore: boolean }>;
   getChat: (threadId: string) => Promise<any>;
   deleteChat: (threadId: string) => Promise<void>;
-  toggleThreadPin: (threadId: string, isPinned: boolean) => Promise<void>;
+  toggleThreadPin: (threadId: string, isPinned: boolean) => Promise<any>; // Returns ChatThread
 }
 
 interface UseChatThreadsReturn {
