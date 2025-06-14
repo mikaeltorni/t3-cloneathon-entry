@@ -269,22 +269,26 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
           {/* Current Model Indicator - Shows selected model from ModelSidebar */}
           {selectedModel && availableModels[selectedModel] && (
-            <div className="flex items-center justify-between p-2 bg-gray-50 border border-gray-200 rounded-lg mb-3">
-              <div className="flex items-center gap-2">
-                <div 
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: availableModels[selectedModel].color }}
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  Current Model: {availableModels[selectedModel].name}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg mb-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: availableModels[selectedModel].color }}
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Current Model: {availableModels[selectedModel].name}
+                  </span>
+                </div>
                 <div className="text-xs text-gray-500">
                   (Use sidebar on the right to change model)
                 </div>
-
               </div>
+              
+              {/* Model Description */}
+              <p className="text-xs text-gray-600 leading-relaxed">
+                {availableModels[selectedModel].description}
+              </p>
             </div>
           )}
 

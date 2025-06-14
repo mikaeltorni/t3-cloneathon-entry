@@ -342,26 +342,8 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
               })}
             </div>
 
-            {/* Footer - Current Model Details and Stats */}
+            {/* Footer - Model Stats Only */}
             <div className="p-4 border-t border-gray-100 bg-gray-50">
-              {currentModel && (
-                <div className="mb-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: currentModel.color }}
-                    />
-                    <span className="font-semibold text-gray-900 text-sm">
-                      Currently Selected
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-600">
-                    {currentModel.name} - {currentModel.description}
-                  </p>
-                </div>
-              )}
-              
-              {/* Model Stats */}
               <div className="text-xs text-gray-500 text-center">
                 {Object.keys(models).length} models available
                 {pinnedModels.length > 0 && (
