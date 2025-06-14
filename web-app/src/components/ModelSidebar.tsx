@@ -177,7 +177,7 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
   return (
     <div 
       className={cn(
-        'fixed right-0 top-0 h-full z-50 transition-all duration-300 ease-in-out',
+        'fixed right-0 top-0 z-50 transition-all duration-300 ease-in-out',
         isExpanded ? 'w-80' : 'w-16',
         className
       )}
@@ -189,34 +189,15 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
       onMouseLeave={() => setIsExpanded(false)}
     >
       <div className="bg-white border-l border-gray-200 shadow-lg h-full overflow-hidden">
-        {/* Collapsed Tab - Shows Current Model */}
+        {/* Collapsed Tab - Clean blank bar */}
         <div 
           className={cn(
             'transition-all duration-300',
             isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
           )}
         >
-          <div className="p-2 border-b border-gray-100">
-            <div className="flex flex-col items-center text-center">
-              {/* Vertical "Models" Text */}
-              <div className="writing-mode-vertical text-xs font-medium text-gray-500 mb-2 transform rotate-180">
-                Models
-              </div>
-              
-              {/* Current Model Indicator */}
-              {currentModel && (
-                <div className="flex flex-col items-center gap-1">
-                  <div 
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                    style={{ backgroundColor: currentModel.color }}
-                  >
-                    {currentModel.name.charAt(0)}
-                  </div>
-                  {getBrainIcon(currentModel)}
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Empty div for clean blank appearance */}
+          <div className="h-full"></div>
         </div>
 
         {/* Expanded Sidebar Content */}
