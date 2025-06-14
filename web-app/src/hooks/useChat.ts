@@ -345,7 +345,13 @@ export const useChat = (): UseChatReturn => {
         },
         // onChunk callback - update the streaming message content
         (chunk: string, fullContent: string) => {
-          debug('📝 Received content chunk', { chunkLength: chunk.length, totalLength: fullContent.length, wasReasoning: tempAiMessage.metadata?.isReasoning });
+          debug('📝 Received content chunk', { 
+            chunkLength: chunk.length, 
+            totalLength: fullContent.length, 
+            wasReasoning: tempAiMessage.metadata?.isReasoning,
+            chunkPreview: chunk.substring(0, 50) + '...',
+            fullContentPreview: fullContent.substring(0, 100) + '...'
+          });
           
           // IMPORTANT: If we're receiving content chunks, reasoning has definitely ended
           if (tempAiMessage.metadata?.isReasoning === true) {
@@ -358,6 +364,13 @@ export const useChat = (): UseChatReturn => {
           }
           
           // Update the temporary message with the streaming content
+          debug('📝 Updating temp message content', {
+            oldLength: tempAiMessage.content.length,
+            newLength: fullContent.length,
+            oldPreview: tempAiMessage.content.substring(0, 50) + '...',
+            newPreview: fullContent.substring(0, 50) + '...'
+          });
+          
           tempAiMessage.content = fullContent;
           
           if (tempThread) {
@@ -373,6 +386,13 @@ export const useChat = (): UseChatReturn => {
                 messages: updatedMessages,
                 updatedAt: new Date()
               };
+              
+              debug('📝 Updated existing temp message in thread', {
+                messageIndex: existingTempIndex,
+                contentLength: tempAiMessage.content.length,
+                contentPreview: tempAiMessage.content.substring(0, 50) + '...'
+              });
+              
               setCurrentThread(updatedThread);
               tempThread = updatedThread;
             } else {
@@ -382,6 +402,12 @@ export const useChat = (): UseChatReturn => {
                 messages: [...tempThread.messages, tempAiMessage],
                 updatedAt: new Date()
               };
+              
+              debug('📝 Added new temp message to thread', {
+                contentLength: tempAiMessage.content.length,
+                contentPreview: tempAiMessage.content.substring(0, 50) + '...'
+              });
+              
               setCurrentThread(updatedThread);
               tempThread = updatedThread;
             }

@@ -504,6 +504,8 @@ export class ChatController {
       let fullAnnotations: any[] = [];
       let hasContent = false;
       
+      console.log(`[ChatController] Starting streaming for model: ${modelId}, useWebSearch: ${useWebSearch}, useReasoning: ${useReasoning}`);
+      
       try {
         // Use OpenRouter service directly for streaming (could be abstracted to AIService)
         const { createOpenRouterService } = await import('../openRouterService');
@@ -517,6 +519,9 @@ export class ChatController {
           images: msg.images
         }));
         
+        console.log(`[ChatController] Conversation history prepared: ${conversationHistory.length} messages`);
+        console.log(`[ChatController] Last user message: "${conversationHistory[conversationHistory.length - 1]?.content?.substring(0, 100)}..."`);
+        
         const responseStream = await openRouterService.sendMessageStream(
           conversationHistory, 
           modelId as any, 
@@ -526,13 +531,23 @@ export class ChatController {
           webSearchEffort || 'medium'
         );
         
+        console.log(`[ChatController] Stream started successfully`);
+        let chunkCount = 0;
+        
         for await (const chunk of responseStream) {
+          chunkCount++;
+          console.log(`[ChatController] Chunk ${chunkCount}: type="${chunk.split(':')[0]}", length=${chunk.length}, preview="${chunk.substring(0, 100)}..."`);
+          
           // Handle reasoning and content chunks with prefixes from OpenRouter
           if (chunk.startsWith('reasoning:')) {
             // Extract reasoning content
             const reasoningChunk = chunk.slice(10); // Remove 'reasoning:' prefix
+            console.log(`[ChatController] Processing reasoning chunk: length=${reasoningChunk.length}, preview="${reasoningChunk.substring(0, 50)}..."`);
+            
             fullReasoning += reasoningChunk;
             hasContent = true;
+            
+            console.log(`[ChatController] Full reasoning so far: length=${fullReasoning.length}, preview="${fullReasoning.substring(0, 50)}..."`);
             
             // Update chunk count for metrics
             totalChunkCount++;
@@ -549,9 +564,17 @@ export class ChatController {
             // Extract annotations content
             try {
               const annotationsChunk = chunk.slice(12); // Remove 'annotations:' prefix
+              console.log(`[ChatController] Processing annotations chunk: length=${annotationsChunk.length}, preview="${annotationsChunk.substring(0, 100)}..."`);
+              
               const newAnnotations = JSON.parse(annotationsChunk);
               fullAnnotations = [...fullAnnotations, ...newAnnotations];
-              hasContent = true;
+              
+              console.log(`[ChatController] Annotations processed: ${newAnnotations.length} new, ${fullAnnotations.length} total`);
+              console.log(`[ChatController] Full content at annotations time: length=${fullContent.length}, preview="${fullContent.substring(0, 50)}..."`);
+              
+              // Don't set hasContent=true for annotations alone - only for actual content
+              // This fixes the issue where Google models with web search would send annotations first,
+              // causing hasContent=true but fullContent="" which led to text being cut off
               
               // Stream annotations update
               res.write(`data: ${JSON.stringify({ 
@@ -564,8 +587,13 @@ export class ChatController {
           } else if (chunk.startsWith('content:')) {
             // Extract content chunk
             const contentChunk = chunk.slice(8); // Remove 'content:' prefix
+            console.log(`[ChatController] Processing content chunk: length=${contentChunk.length}, preview="${contentChunk.substring(0, 50)}..."`);
+            console.log(`[ChatController] Full content BEFORE adding chunk: length=${fullContent.length}, preview="${fullContent.substring(0, 50)}..."`);
+            
             fullContent += contentChunk;
             hasContent = true;
+            
+            console.log(`[ChatController] Full content AFTER adding chunk: length=${fullContent.length}, preview="${fullContent.substring(0, 50)}..."`);
             
             // Update chunk count for metrics
             totalChunkCount++;
@@ -578,10 +606,17 @@ export class ChatController {
               fullContent: fullContent,
               tokenMetrics: currentMetrics
             })}\n\n`);
+            
+            console.log(`[ChatController] Sent ai_chunk to frontend: chunkLength=${contentChunk.length}, fullContentLength=${fullContent.length}`);
           } else {
             // Fallback for chunks without prefix (backward compatibility)
+            console.log(`[ChatController] Processing fallback chunk: length=${chunk.length}, preview="${chunk.substring(0, 50)}..."`);
+            console.log(`[ChatController] Full content BEFORE adding fallback chunk: length=${fullContent.length}, preview="${fullContent.substring(0, 50)}..."`);
+            
             fullContent += chunk;
             hasContent = true;
+            
+            console.log(`[ChatController] Full content AFTER adding fallback chunk: length=${fullContent.length}, preview="${fullContent.substring(0, 50)}..."`);
             
             // Update chunk count for metrics
             totalChunkCount++;
@@ -593,11 +628,20 @@ export class ChatController {
               fullContent: fullContent,
               tokenMetrics: currentMetrics
             })}\n\n`);
+            
+            console.log(`[ChatController] Sent fallback ai_chunk to frontend: chunkLength=${chunk.length}, fullContentLength=${fullContent.length}`);
           }
         }
 
+        console.log(`[ChatController] Streaming completed. Total chunks: ${chunkCount}, hasContent: ${hasContent}`);
+        console.log(`[ChatController] Final fullContent: length=${fullContent.length}, preview="${fullContent.substring(0, 100)}..."`);
+        console.log(`[ChatController] Final fullReasoning: length=${fullReasoning.length}, preview="${fullReasoning.substring(0, 50)}..."`);
+        console.log(`[ChatController] Final fullAnnotations: count=${fullAnnotations.length}`);
+
         // Only create and save message if we actually received content
         if (hasContent && (fullContent.trim() || fullReasoning.trim())) {
+          console.log(`[ChatController] Creating final message with content length: ${fullContent.length}`);
+          
           // Get final metrics
           const finalTokenMetrics = getSimpleMetrics();
           
@@ -609,20 +653,26 @@ export class ChatController {
             modelId
           );
           
+          console.log(`[ChatController] Created assistant message with content: "${assistantMessage.content.substring(0, 100)}..."`);
+          
           // Add real reasoning from OpenRouter if we collected any
           if (fullReasoning) {
             assistantMessage.reasoning = fullReasoning;
+            console.log(`[ChatController] Added reasoning to message: length=${fullReasoning.length}`);
           }
           
           // Add web search annotations if we collected any
           if (fullAnnotations.length > 0) {
             assistantMessage.annotations = fullAnnotations;
+            console.log(`[ChatController] Added annotations to message: count=${fullAnnotations.length}`);
           }
           
           // Attach token metrics to the assistant message
           assistantMessage.tokenMetrics = finalTokenMetrics;
           
           await firestoreChatStorage.addMessageToThread(req.user.uid, currentThread.id, assistantMessage);
+
+          console.log(`[ChatController] Saved message to database`);
 
           // Send completion with final token metrics
           res.write(`data: ${JSON.stringify({ 
@@ -631,7 +681,11 @@ export class ChatController {
             fullContent: fullContent,
             tokenMetrics: finalTokenMetrics
           })}\n\n`);
+          
+          console.log(`[ChatController] Sent ai_complete to frontend with fullContent length: ${fullContent.length}`);
         } else {
+          console.log(`[ChatController] No content received - hasContent: ${hasContent}, fullContent.trim(): "${fullContent.trim()}", fullReasoning.trim(): "${fullReasoning.trim()}"`);
+          
           // No content received, send error
           res.write(`data: ${JSON.stringify({ 
             type: 'error', 

@@ -503,28 +503,41 @@ class ChatApiService {
       const decoder = new TextDecoder();
       let threadId: string | null = null;
       let userMessage: any = null;
+      
+      logger.info('Starting to read streaming response from server');
+      let totalChunks = 0;
+      let contentChunks = 0;
+      let annotationChunks = 0;
+      let reasoningChunks = 0;
 
       while (true) {
         const { done, value } = await reader.read();
         
         if (done) {
-          logger.info('Streaming completed');
+          logger.info(`Streaming completed. Total chunks: ${totalChunks}, content: ${contentChunks}, annotations: ${annotationChunks}, reasoning: ${reasoningChunks}`);
           break;
         }
 
         const chunk = decoder.decode(value, { stream: true });
+        logger.debug(`Raw chunk received: length=${chunk.length}, preview="${chunk.substring(0, 200)}..."`);
+        
         const lines = chunk.split('\n').filter(line => line.trim());
+        logger.debug(`Found ${lines.length} lines in chunk`);
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
+            logger.debug(`Processing data line: "${data.substring(0, 200)}..."`);
             
             if (data === '[DONE]') {
+              logger.info('Received [DONE] signal from server');
               return;
             }
 
             try {
               const parsed = JSON.parse(data);
+              totalChunks++;
+              logger.debug(`Parsed chunk ${totalChunks}: type=${parsed.type}, data=${JSON.stringify(parsed).substring(0, 200)}...`);
               
               switch (parsed.type) {
                 case 'thread_info':
@@ -545,6 +558,8 @@ class ChatApiService {
                   break;
                   
                 case 'reasoning_chunk':
+                  reasoningChunks++;
+                  logger.debug(`Reasoning chunk ${reasoningChunks}: length=${parsed.content?.length || 0}, fullLength=${parsed.fullReasoning?.length || 0}`);
                   if (onReasoningChunk) {
                     onReasoningChunk(parsed.content, parsed.fullReasoning);
                   }
@@ -555,12 +570,17 @@ class ChatApiService {
                   break;
                   
                 case 'annotations_chunk':
+                  annotationChunks++;
+                  logger.debug(`Annotations chunk ${annotationChunks}: count=${parsed.annotations?.length || 0}`);
                   if (onAnnotationsChunk && parsed.annotations) {
                     onAnnotationsChunk(parsed.annotations);
                   }
                   break;
                   
                 case 'ai_chunk':
+                  contentChunks++;
+                  logger.debug(`Content chunk ${contentChunks}: chunkLength=${parsed.content?.length || 0}, fullLength=${parsed.fullContent?.length || 0}, preview="${parsed.content?.substring(0, 50)}..."`);
+                  logger.debug(`Full content so far: "${parsed.fullContent?.substring(0, 100)}..."`);
                   onChunk(parsed.content, parsed.fullContent);
                   // Handle token metrics if available
                   if (onTokenMetrics && parsed.tokenMetrics) {
@@ -569,6 +589,8 @@ class ChatApiService {
                   break;
                   
                 case 'ai_complete':
+                  logger.info(`AI response completed. Final content length: ${parsed.assistantMessage?.content?.length || 0}`);
+                  logger.debug(`Final message content: "${parsed.assistantMessage?.content?.substring(0, 100)}..."`);
                   const completeResponse: CreateMessageResponse = {
                     threadId: threadId!,
                     message: userMessage,
@@ -582,11 +604,15 @@ class ChatApiService {
                   break;
                   
                 case 'error':
+                  logger.error(`Received error from server: ${parsed.error}`);
                   onError(new Error(parsed.error));
                   return;
+                  
+                default:
+                  logger.warn(`Unknown chunk type: ${parsed.type}`);
               }
             } catch (parseError) {
-              logger.warn('Failed to parse streaming chunk:', data);
+              logger.warn('Failed to parse streaming chunk:', data.substring(0, 200), 'Error:', parseError);
             }
           }
         }

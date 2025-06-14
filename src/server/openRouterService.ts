@@ -408,7 +408,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
           if (annotations && annotations.length > 0) {
             console.log(`[OpenRouter] ✅ Web search enabled for ${actualModelId} with ${annotations.length} citations`);
           } else {
-            console.log(`[OpenRouter] ✅ Web search enabled for ${actualModelId}`);
+          console.log(`[OpenRouter] ✅ Web search enabled for ${actualModelId}`);
           }
         }
 
@@ -568,49 +568,120 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         return (async function* () {
           const reader = response.body!.getReader();
           const decoder = new TextDecoder();
+          
+          console.log(`[OpenRouter] Starting to read streaming response`);
+          let totalChunks = 0;
+          let totalContentChunks = 0;
+          let totalAnnotationChunks = 0;
+          let totalReasoningChunks = 0;
+          let buffer = '';
 
           try {
             while (true) {
               const { done, value } = await reader.read();
-              if (done) break;
+              if (done) {
+                console.log(`[OpenRouter] Stream ended. Total chunks processed: ${totalChunks}, content: ${totalContentChunks}, annotations: ${totalAnnotationChunks}, reasoning: ${totalReasoningChunks}`);
+                break;
+              }
 
               const chunk = decoder.decode(value, { stream: true });
-              const lines = chunk.split('\n').filter(line => line.trim().startsWith('data: '));
-
+              console.log(`[OpenRouter] Raw chunk received: length=${chunk.length}, preview="${chunk.substring(0, 100).replace(/\n/g, '\\n').replace(/\r/g, '\\r')}..."`);
+              
+              // Add chunk to buffer
+              buffer += chunk;
+              
+              // Split buffer into lines and process complete lines
+              const lines = buffer.split('\n');
+              // Keep the last line in buffer (might be incomplete)
+              buffer = lines.pop() || '';
+              
               for (const line of lines) {
-                const data = line.slice(6); // Remove 'data: ' prefix
+                const trimmedLine = line.trim();
+                if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
+                
+                const data = trimmedLine.slice(6); // Remove 'data: ' prefix
+                console.log(`[OpenRouter] Processing data line: "${data.substring(0, 100)}..."`);
                 
                 if (data === '[DONE]') {
+                  console.log(`[OpenRouter] Received [DONE] signal`);
                   return;
                 }
 
                 try {
                   const parsed = JSON.parse(data);
+                  console.log(`[OpenRouter] Parsed JSON successfully: ${JSON.stringify(parsed).substring(0, 100)}...`);
+                  
                   const delta = parsed.choices?.[0]?.delta;
+                  console.log(`[OpenRouter] Delta object: ${JSON.stringify(delta).substring(0, 100)}...`);
 
                   if (delta) {
+                    totalChunks++;
+                    
                     // Handle reasoning tokens - yield with special prefix
                     if (delta.reasoning) {
+                      totalReasoningChunks++;
+                      console.log(`[OpenRouter] Yielding reasoning chunk ${totalReasoningChunks}: length=${delta.reasoning.length}, preview="${delta.reasoning.substring(0, 50)}..."`);
                       yield `reasoning:${delta.reasoning}`;
                     }
                     
                     // Handle content tokens
                     if (delta.content) {
+                      totalContentChunks++;
+                      console.log(`[OpenRouter] Yielding content chunk ${totalContentChunks}: length=${delta.content.length}, preview="${delta.content.substring(0, 50)}..."`);
                       yield `content:${delta.content}`;
                     }
                     
                     // Handle web search annotations - yield with special prefix
                     if (delta.annotations) {
+                      totalAnnotationChunks++;
+                      console.log(`[OpenRouter] Yielding annotations chunk ${totalAnnotationChunks}: count=${delta.annotations.length}, preview="${JSON.stringify(delta.annotations).substring(0, 100)}..."`);
                       yield `annotations:${JSON.stringify(delta.annotations)}`;
                     }
+                    
+                    // Log if delta exists but has no recognized content
+                    if (!delta.reasoning && !delta.content && !delta.annotations) {
+                      console.log(`[OpenRouter] Delta exists but no recognized content: ${JSON.stringify(delta)}`);
+                    }
+                  } else {
+                    console.log(`[OpenRouter] No delta in parsed response: ${JSON.stringify(parsed)}`);
                   }
                 } catch (parseError) {
-                  console.warn('[OpenRouter] Failed to parse streaming chunk:', data);
+                  console.warn('[OpenRouter] Failed to parse streaming chunk:', data.substring(0, 100), 'Error:', parseError);
+                  // Don't throw, just log and continue - this might be a partial JSON chunk
+                }
+              }
+            }
+            
+            // Process any remaining data in buffer
+            if (buffer.trim()) {
+              const trimmedBuffer = buffer.trim();
+              if (trimmedBuffer.startsWith('data: ')) {
+                const data = trimmedBuffer.slice(6);
+                if (data !== '[DONE]') {
+                  try {
+                    const parsed = JSON.parse(data);
+                    const delta = parsed.choices?.[0]?.delta;
+                    if (delta?.content) {
+                      console.log(`[OpenRouter] Yielding final buffered content: length=${delta.content.length}`);
+                      yield `content:${delta.content}`;
+                    }
+                    if (delta?.reasoning) {
+                      console.log(`[OpenRouter] Yielding final buffered reasoning: length=${delta.reasoning.length}`);
+                      yield `reasoning:${delta.reasoning}`;
+                    }
+                    if (delta?.annotations) {
+                      console.log(`[OpenRouter] Yielding final buffered annotations: count=${delta.annotations.length}`);
+                      yield `annotations:${JSON.stringify(delta.annotations)}`;
+                    }
+                  } catch (parseError) {
+                    console.warn('[OpenRouter] Failed to parse final buffer:', data.substring(0, 100), 'Error:', parseError);
+                  }
                 }
               }
             }
           } finally {
             reader.releaseLock();
+            console.log(`[OpenRouter] Reader released. Final stats - Total: ${totalChunks}, Content: ${totalContentChunks}, Annotations: ${totalAnnotationChunks}, Reasoning: ${totalReasoningChunks}`);
           }
         })();
 
