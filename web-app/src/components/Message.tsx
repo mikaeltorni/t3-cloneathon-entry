@@ -10,7 +10,7 @@
  *   - User and assistant message styling
  *   - Image rendering with responsive grid
  *   - Reasoning toggle and collapsible display
- *   - Web search source citations with numbered buttons
+ *   - Inline bracketed source citations within message text
  *   - Timestamp formatting
  *   - Copy message functionality
  *   - Performance optimized with React.memo
@@ -20,9 +20,8 @@
  */
 import React, { useState, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import type { ChatMessage } from '../../../src/shared/types';
+import type { ChatMessage, WebSearchAnnotation } from '../../../src/shared/types';
 import { CopyButton } from './ui/CopyButton';
-import { SourceCitations } from './ui/SourceCitations';
 
 interface MessageProps {
   message: ChatMessage;
@@ -71,6 +70,34 @@ const Message: React.FC<MessageProps> = React.memo(({
       minute: '2-digit' 
     });
   }, [message.timestamp]);
+
+  /**
+   * Process message content to add brackets around citations
+   */
+  const processedContent = useMemo(() => {
+    if (!message.annotations || message.annotations.length === 0) {
+      return message.content;
+    }
+
+    let content = message.content;
+    const urlCitations = message.annotations.filter(
+      (annotation): annotation is WebSearchAnnotation => 
+        annotation.type === 'url_citation' && !!annotation.url_citation
+    );
+
+    // Sort citations by start_index in descending order to process from end to beginning
+    // This prevents index shifting when inserting brackets
+    urlCitations
+      .sort((a, b) => b.url_citation.start_index - a.url_citation.start_index)
+      .forEach(annotation => {
+        const { start_index, end_index, url } = annotation.url_citation;
+        const citedText = content.slice(start_index, end_index);
+        const bracketedCitation = `[${citedText}](${url})`;
+        content = content.slice(0, start_index) + bracketedCitation + content.slice(end_index);
+      });
+
+    return content;
+  }, [message.content, message.annotations]);
 
   /**
    * Memoized image grid rendering - handles both single imageUrl and multiple images
@@ -197,7 +224,7 @@ const Message: React.FC<MessageProps> = React.memo(({
                   },
                 }}
               >
-                {message.content}
+                {processedContent}
               </ReactMarkdown>
             </div>
           </div>
@@ -253,13 +280,21 @@ const Message: React.FC<MessageProps> = React.memo(({
                     </div>
                   );
                 },
+                // Style citation links to look like simple bracketed text
+                a: ({ href, children }) => (
+                  <a 
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 no-underline"
+                  >
+                    {children}
+                  </a>
+                ),
               }}
             >
-              {message.content}
+              {processedContent}
             </ReactMarkdown>
-            
-            {/* Web Search Source Citations */}
-            <SourceCitations annotations={message.annotations} />
           </div>
         </div>
         <div className="flex items-center justify-start gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -270,7 +305,7 @@ const Message: React.FC<MessageProps> = React.memo(({
             title="Copy message"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           </button>
         </div>
