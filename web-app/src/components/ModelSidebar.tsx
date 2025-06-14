@@ -28,6 +28,7 @@ interface ModelSidebarProps {
   models: Record<string, ModelConfig>;
   loading?: boolean;
   className?: string;
+  inputBarHeight?: number; // Height of the input bar to avoid overlap
 }
 
 /**
@@ -45,7 +46,8 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
   onChange,
   models,
   loading = false,
-  className
+  className,
+  inputBarHeight = 300 // Default fallback height
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const currentModel = models[value];
@@ -147,11 +149,17 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
 
   if (loading) {
     return (
-      <div className={cn(
-        'fixed right-0 top-0 h-full z-50 transition-all duration-300',
-        isExpanded ? 'w-80' : 'w-16',
-        className
-      )}>
+      <div 
+        className={cn(
+          'fixed right-0 top-0 z-50 transition-all duration-300',
+          isExpanded ? 'w-80' : 'w-16',
+          className
+        )}
+        style={{
+          // Dynamic height that leaves space for the input bar
+          height: `calc(100vh - ${inputBarHeight}px)`
+        }}
+      >
         <div className="bg-white border-l border-gray-200 shadow-lg h-full p-4">
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -173,6 +181,10 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
         isExpanded ? 'w-80' : 'w-16',
         className
       )}
+      style={{
+        // Dynamic height that leaves space for the input bar
+        height: `calc(100vh - ${inputBarHeight}px)`
+      }}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
