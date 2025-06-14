@@ -198,19 +198,19 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
         setCurrentThread((prev: ChatThread | null) => prev ? { ...prev, isPinned } : null);
       }
 
-      // API call
-      await apiService.toggleThreadPin(threadId, isPinned);
+      // API call - returns the updated thread from server
+      const updatedThread = await apiService.toggleThreadPin(threadId, isPinned);
       
-      // Update with server response
+      // Update with server response (this ensures consistency with server state)
       setThreads((prevThreads: ChatThread[]) => prevThreads.map(t =>
-        t.id === threadId ? { ...t, isPinned: !isPinned } : t
+        t.id === threadId ? updatedThread : t
       ));
 
       if (currentThread?.id === threadId) {
-        setCurrentThread((prev: ChatThread | null) => prev ? { ...prev, isPinned: !isPinned } : null);
+        setCurrentThread(updatedThread);
       }
 
-      logger.info(`Successfully ${isPinned ? 'pinned' : 'unpinned'} thread: ${threadId}`);
+      logger.info(`Successfully ${updatedThread.isPinned ? 'pinned' : 'unpinned'} thread: ${threadId}`);
     } catch (error) {
       // Revert optimistic update on error
       const thread = threads.find(t => t.id === threadId);
