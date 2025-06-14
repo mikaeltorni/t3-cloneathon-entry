@@ -137,22 +137,22 @@ class ChatApiService {
     }
   }
 
-  /**
-   * Get all chat threads (LEGACY - consider using getAllChatsEfficient)
-   * 
-   * @returns Promise with array of chat threads
-   */
-  async getAllChats(): Promise<ChatThread[]> {
-    try {
-      logger.info('Fetching all chat threads (LEGACY)');
-      const response = await this.makeRequest<GetChatsResponse>('/chats');
-      logger.info(`Successfully fetched ${response.threads.length} chat threads`);
-      return response.threads;
-    } catch (error) {
-      logger.error('Failed to fetch chat threads', error as Error);
-      throw new Error('Failed to load chat history. Please try again.');
-    }
-  }
+  // /**
+  //  * Get all chat threads (LEGACY - consider using getAllChatsEfficient)
+  //  * 
+  //  * @returns Promise with array of chat threads
+  //  */
+  // async getAllChats(): Promise<ChatThread[]> {
+  //   try {
+  //     logger.info('Fetching all chat threads (LEGACY)');
+  //     const response = await this.makeRequest<GetChatsResponse>('/chats');
+  //     logger.info(`Successfully fetched ${response.threads.length} chat threads`);
+  //     return response.threads;
+  //   } catch (error) {
+  //     logger.error('Failed to fetch chat threads', error as Error);
+  //     throw new Error('Failed to load chat history. Please try again.');
+  //   }
+  // }
 
   /**
    * Get all chat threads with efficient pagination
@@ -421,7 +421,7 @@ class ChatApiService {
       logger.debug('Checking API health');
       
       // Try to fetch threads as a health check
-      await this.getAllChats();
+      await this.getAllChatsEfficient();
       
       logger.info('API health check passed');
       return true;
