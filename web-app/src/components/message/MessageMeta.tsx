@@ -11,7 +11,7 @@
 import React, { useCallback, useMemo } from 'react';
 
 interface MessageMetaProps {
-  timestamp: Date;
+  timestamp: Date | string | number;
   content: string;
   isUserMessage?: boolean;
 }
@@ -19,7 +19,7 @@ interface MessageMetaProps {
 /**
  * Message metadata component (timestamp and copy functionality)
  * 
- * @param timestamp - Message timestamp as Date object
+ * @param timestamp - Message timestamp as Date object, string, or number
  * @param content - Message content for copying
  * @param isUserMessage - Whether this is a user message
  * @returns React component
@@ -45,7 +45,8 @@ export const MessageMeta: React.FC<MessageMetaProps> = ({
    * Format timestamp for display
    */
   const formattedTime = useMemo(() => {
-    return timestamp.toLocaleTimeString([], { 
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    return date.toLocaleTimeString([], { 
       hour: '2-digit', 
       minute: '2-digit' 
     });
