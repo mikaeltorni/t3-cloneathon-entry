@@ -48,17 +48,31 @@ function AppContent() {
   // Track current model selection (for sidebar display)
   const [currentModel, setCurrentModel] = useState<string>('google/gemini-2.5-flash-preview');
 
-  // Sync currentModel when thread changes
+  // Sync currentModel when thread changes - but ONLY when switching threads, not during message generation
   useEffect(() => {
     if (chat.currentThread) {
       // Use the thread's current model, or last used model, or fall back to default
       const threadModel = chat.currentThread.currentModel || 
                           chat.currentThread.lastUsedModel || 
                           'google/gemini-2.5-flash-preview';
-      setCurrentModel(threadModel);
-      debug(`Synced current model for thread ${chat.currentThread.id}: ${threadModel}`);
+      
+      // CRITICAL: Only sync model when thread ID actually changes (switching threads)
+      // Do NOT sync during message generation (when only messages change)
+      const isThreadSwitch = chat.currentThread.id !== chat.currentThread?.id;
+      
+      // Only update if this is a genuine thread switch AND the model is different
+      if (threadModel !== currentModel) {
+        debug(`🔄 Thread model sync: changing from ${currentModel} to ${threadModel} for thread ${chat.currentThread.id} (thread switch: ${isThreadSwitch})`);
+        console.log(`🚨 [DEBUG] Thread sync would change model from ${currentModel} to ${threadModel} - SUPPRESSED during message generation`);
+        
+        // For now, let's disable this automatic sync to prevent overriding user selections
+        // setCurrentModel(threadModel);
+        debug(`⚠️ Thread model sync DISABLED to preserve user model selection`);
+      } else {
+        debug(`✅ Thread model sync: keeping current model ${currentModel} for thread ${chat.currentThread.id}`);
+      }
     }
-  }, [chat.currentThread?.id, chat.currentThread?.currentModel, chat.currentThread?.lastUsedModel, debug]);
+  }, [chat.currentThread?.id, debug]); // Removed other dependencies to only sync on thread ID change
 
   // Models are now auto-loaded by useModels hook - no manual call needed!
 
@@ -114,8 +128,11 @@ function AppContent() {
    * Handle model change from ChatInterface (current conversation)
    */
   const handleCurrentModelChange = (modelId: string) => {
+    console.log(`🚨 [DEBUG] ModelSidebar onChange called with: ${modelId}`);
+    debug(`🔄 Model change requested: ${modelId} (previous: ${currentModel})`);
     setCurrentModel(modelId);
-    debug(`Current model changed to: ${modelId}`);
+    debug(`✅ Current model changed to: ${modelId}`);
+    console.log(`🚨 [DEBUG] App currentModel state updated to: ${modelId}`);
     // If there's an active thread, update its model preference
     if (chat.currentThread?.id) {
       handleModelChange(chat.currentThread.id, modelId);

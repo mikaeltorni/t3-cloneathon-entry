@@ -269,7 +269,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
           {/* Current Model Indicator - Shows selected model from ModelSidebar */}
           {selectedModel && availableModels[selectedModel] && (
-            <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg mb-3">
+            <div className="flex items-center justify-between p-2 bg-gray-50 border border-gray-200 rounded-lg mb-3">
               <div className="flex items-center gap-2">
                 <div 
                   className="w-3 h-3 rounded-full"
@@ -279,8 +279,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   Current Model: {availableModels[selectedModel].name}
                 </span>
               </div>
-              <div className="text-xs text-gray-500">
-                (Use sidebar on the right to change model)
+              <div className="flex items-center gap-2">
+                <div className="text-xs text-gray-500">
+                  (Use sidebar on the right to change model)
+                </div>
+                {/* Debug info - show external vs internal model */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="text-xs text-blue-500">
+                    External: {externalSelectedModel || 'undefined'} | Using: {selectedModel}
+                    <br/>
+                    Props: ext={!!externalSelectedModel}, onChange={!!onModelChange}
+                    <br/>
+                    Time: {new Date().toLocaleTimeString()}
+                  </div>
+                )}
               </div>
             </div>
           )}

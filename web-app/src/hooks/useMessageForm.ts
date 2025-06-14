@@ -83,12 +83,29 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
   
   const [message, setMessage] = useState('');
   // Use external model selection if provided, otherwise use internal state
-  const selectedModel = externalSelectedModel || defaultModel;
+  // IMPORTANT: Only fallback to defaultModel if externalSelectedModel is truly undefined/null
+  // Empty string should be preserved as it might be intentional
+  const selectedModel = externalSelectedModel !== undefined && externalSelectedModel !== null 
+    ? externalSelectedModel 
+    : defaultModel;
+  
   const setSelectedModel = useCallback((model: string) => {
     if (onModelChange) {
       onModelChange(model);
     }
   }, [onModelChange]);
+
+  // Debug logging to track model changes
+  const { debug: formDebug } = useLogger('useMessageForm');
+  
+  useEffect(() => {
+    formDebug('Model selection changed', {
+      externalSelectedModel,
+      selectedModel,
+      defaultModel,
+      fallbackUsed: externalSelectedModel === undefined || externalSelectedModel === null
+    });
+  }, [externalSelectedModel, selectedModel, defaultModel, formDebug]);
   const [useReasoning, setUseReasoning] = useState(false);
   const [reasoningEffort, setReasoningEffort] = useState<'low' | 'medium' | 'high'>('high');
   const [useWebSearch, setUseWebSearch] = useState(() => {
@@ -195,12 +212,14 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
     // });
 
     try {
-      debug('Submitting message', { 
+      debug('📤 Submitting message', { 
         messageLength: trimmedMessage.length, 
         imageCount: images.length,
         modelId: selectedModel,
+        externalSelectedModel,
         useReasoning: useReasoning && isReasoningModel(),
-        useWebSearch: useWebSearch
+        useWebSearch: useWebSearch,
+        fallbackUsed: externalSelectedModel === undefined || externalSelectedModel === null
       });
 
       onSendMessage(
