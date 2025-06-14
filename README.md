@@ -279,6 +279,9 @@ firebase deploy
 3. Deploy frontend static files to CDN/hosting
 4. Configure environment variables in production
 
+# TROUBLESHOOTING
+- Getting errors on startup of the server/frontend:
+Kill the node process, sometimes this is left on the background for no apparent reason.
 
 ## 📝 License
 
