@@ -360,8 +360,12 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
 
         // Add web search configuration for models that support web search effort control
         if (useWebSearch && modelConfig.supportsWebEffortControl) {
-          // Only add web_search_options for models that are not Perplexity (they handle this internally)
-          if (modelConfig.webSearchMode !== 'forced') {
+          // Only add web_search_options for models that actually support the parameter
+          // OpenAI models (via Azure) support :online suffix but NOT web_search_options
+          // Google models support both :online suffix AND web_search_options
+          const supportsWebSearchOptions = modelConfig.provider === 'google';
+          
+          if (modelConfig.webSearchMode !== 'forced' && supportsWebSearchOptions) {
             const effortToContextSize: Record<string, 'low' | 'medium' | 'high'> = {
               low: 'low',
               medium: 'medium', 
@@ -372,9 +376,9 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
               search_context_size: effortToContextSize[webSearchEffort]
             };
             
-            console.log(`[OpenRouter] Configured web search for ${actualModelId} (${modelConfig.name}) - effort: ${webSearchEffort}, pricing: ${modelConfig.webSearchPricing}`);
+            console.log(`[OpenRouter] Configured web search with options for ${actualModelId} (${modelConfig.name}) - effort: ${webSearchEffort}, pricing: ${modelConfig.webSearchPricing}`);
           } else {
-            console.log(`[OpenRouter] Using built-in web search for ${actualModelId} (${modelConfig.name}) - effort: ${webSearchEffort}, pricing: ${modelConfig.webSearchPricing}`);
+            console.log(`[OpenRouter] Using web search via :online suffix for ${actualModelId} (${modelConfig.name}) - effort: ${webSearchEffort}, pricing: ${modelConfig.webSearchPricing}`);
           }
         }
 
@@ -506,8 +510,12 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
 
         // Add web search configuration for models that support web search effort control
         if (useWebSearch && modelConfig.supportsWebEffortControl) {
-          // Only add web_search_options for models that are not Perplexity (they handle this internally)
-          if (modelConfig.webSearchMode !== 'forced') {
+          // Only add web_search_options for models that actually support the parameter
+          // OpenAI models (via Azure) support :online suffix but NOT web_search_options
+          // Google models support both :online suffix AND web_search_options
+          const supportsWebSearchOptions = modelConfig.provider === 'google';
+          
+          if (modelConfig.webSearchMode !== 'forced' && supportsWebSearchOptions) {
             const effortToContextSize: Record<string, 'low' | 'medium' | 'high'> = {
               low: 'low',
               medium: 'medium', 
@@ -518,9 +526,9 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
               search_context_size: effortToContextSize[webSearchEffort]
             };
             
-            console.log(`[OpenRouter] Configured web search for ${actualModelId} (${modelConfig.name}) - effort: ${webSearchEffort}, pricing: ${modelConfig.webSearchPricing}`);
+            console.log(`[OpenRouter] Configured web search with options for ${actualModelId} (${modelConfig.name}) - effort: ${webSearchEffort}, pricing: ${modelConfig.webSearchPricing}`);
           } else {
-            console.log(`[OpenRouter] Using built-in web search for ${actualModelId} (${modelConfig.name}) - effort: ${webSearchEffort}, pricing: ${modelConfig.webSearchPricing}`);
+            console.log(`[OpenRouter] Using web search via :online suffix for ${actualModelId} (${modelConfig.name}) - effort: ${webSearchEffort}, pricing: ${modelConfig.webSearchPricing}`);
           }
         }
 
