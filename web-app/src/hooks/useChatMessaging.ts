@@ -33,7 +33,22 @@ interface ChatApiService {
   ) => Promise<void>;
 }
 
-// Return interface
+// Interface for chat state
+interface UseChatStateReturn {
+  currentThread: ChatThread | null;
+  setCurrentThread: (thread: ChatThread | null | ((prev: ChatThread | null) => ChatThread | null)) => void;
+  setIsSending: (sending: boolean) => void;
+  setError: (error: string | null) => void;
+  setCurrentTokenMetrics: (metrics: TokenMetrics | null) => void;
+  clearAttachments: () => void;
+}
+
+// Interface for thread operations
+interface ThreadOperations {
+  addThreadToList: (thread: ChatThread) => void;
+}
+
+// Interface for the hook return
 interface UseChatMessagingReturn {
   sendMessage: (request: CreateMessageRequest) => Promise<void>;
 }
@@ -46,13 +61,13 @@ interface UseChatMessagingReturn {
  * 
  * @param chatState - Chat state management
  * @param chatApiService - Chat API service
- * @param loadThreads - Function to reload threads
+ * @param threadOps - Thread operations for optimistic updates
  * @returns Message operation functions
  */
 export const useChatMessaging = (
   chatState: UseChatStateReturn,
   chatApiService: ChatApiService,
-  loadThreads: () => Promise<void>
+  threadOps: ThreadOperations
 ): UseChatMessagingReturn => {
   const { debug, log, error: logError } = useLogger('useChatMessaging');
 
@@ -174,10 +189,10 @@ export const useChatMessaging = (
             }
           }
           
-          // Reload threads to get the updated thread from server
-          if (isNewThread) {
-            log('Reloading threads after new message sent');
-            loadThreads();
+          // Add new thread to cache without server refresh for better UX
+          if (isNewThread && tempThread) {
+            log('Adding new thread to cache without server refresh');
+            threadOps.addThreadToList(tempThread);
           }
         },
         // onError callback
@@ -346,7 +361,7 @@ export const useChatMessaging = (
     } finally {
       setIsSending(false);
     }
-  }, [currentThread, chatApiService, debug, log, logError, loadThreads, setCurrentThread, setIsSending, setError, setCurrentTokenMetrics, clearAttachments]);
+  }, [currentThread, chatApiService, debug, log, logError, threadOps, setCurrentThread, setIsSending, setError, setCurrentTokenMetrics, clearAttachments]);
 
   return {
     sendMessage

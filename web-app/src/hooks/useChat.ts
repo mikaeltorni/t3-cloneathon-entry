@@ -96,8 +96,8 @@ export function useChat(): UseChatReturn {
   const chatState = useChatState();
   const chatApiService = useChatApiService();
   const threadOps = useChatThreads(chatState, chatApiService);
-  const messagingOps = useChatMessaging(chatState, chatApiService, async () => {
-    await threadOps.loadThreads();
+  const messagingOps = useChatMessaging(chatState, chatApiService, {
+    addThreadToList: threadOps.addThreadToList
   });
 
   // Wrapper functions to match expected interface
