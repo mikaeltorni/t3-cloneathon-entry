@@ -17,11 +17,13 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Play, Square, RotateCcw, Zap } from 'lucide-react';
-import { cn } from '../utils/cn';
 import { useTokenTracker } from '../hooks/useTokenTracker';
-import { TokenMetricsDisplay } from './TokenMetricsDisplay';
 import { tokenizerService } from '../services/tokenizerService';
+import { TokenizerControls } from './tokenizer/TokenizerControls';
+import { TokenizerActions } from './tokenizer/TokenizerActions';
+import { TokenizerInput } from './tokenizer/TokenizerInput';
+import { TokenizerMetrics } from './tokenizer/TokenizerMetrics';
+import { TokenizerResults } from './tokenizer/TokenizerResults';
 
 /**
  * Sample texts for different use cases
@@ -68,7 +70,6 @@ export const TokenizerDemo: React.FC = () => {
     updateTokens, 
     stopTracking, 
     reset
-    // getFormattedMetrics // Available for future formatting needs
   } = useTokenTracker(selectedModel, {
     onComplete: (metrics) => {
       console.log('Token tracking completed:', metrics);
@@ -92,19 +93,16 @@ export const TokenizerDemo: React.FC = () => {
    */
   const handleSimulateStreaming = useCallback(async () => {
     if (isSimulating) {
-      // Stop simulation
       stopTracking();
       setIsSimulating(false);
       return;
     }
 
-    // Start simulation
     setIsSimulating(true);
     await startTracking(inputText);
 
-    // Simulate streaming chunks
     const words = inputText.split(' ');
-    const chunkSize = Math.max(1, Math.floor(words.length / 20)); // 20 chunks
+    const chunkSize = Math.max(1, Math.floor(words.length / 20));
     
     for (let i = 0; i < words.length; i += chunkSize) {
       if (!isSimulating) break;
@@ -112,7 +110,6 @@ export const TokenizerDemo: React.FC = () => {
       const chunk = words.slice(i, i + chunkSize).join(' ') + ' ';
       updateTokens(chunk);
       
-      // Simulate realistic streaming delay
       await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
     }
 
@@ -138,7 +135,15 @@ export const TokenizerDemo: React.FC = () => {
     setTokenizationResult(null);
   }, [reset]);
 
-  // const formattedMetrics = getFormattedMetrics(); // Available for future use
+  /**
+   * Handle reset
+   */
+  const handleReset = useCallback(() => {
+    reset();
+    setTokenizationResult(null);
+    setIsSimulating(false);
+  }, [reset]);
+
   const supportedModels = tokenizerService.getSupportedModels();
 
   return (
@@ -156,227 +161,41 @@ export const TokenizerDemo: React.FC = () => {
 
       {/* Controls */}
       <div className="bg-white rounded-lg border p-6">
-        <div className="flex flex-wrap gap-4 mb-4">
-          {/* Model Selection */}
-          <div className="flex-1 min-w-48">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              AI Model
-            </label>
-            <select
-              value={selectedModel}
-              onChange={(e) => handleModelChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isTracking}
-            >
-              {supportedModels.map(model => {
-                const modelInfo = tokenizerService.getModelInfo(model);
-                return (
-                  <option key={model} value={model}>
-                    {model} ({modelInfo.provider})
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+        <TokenizerControls
+          selectedModel={selectedModel}
+          onModelChange={handleModelChange}
+          onLoadSample={loadSampleText}
+          disabled={isTracking}
+        />
+      </div>
 
-          {/* Sample Text Buttons */}
-          <div className="flex-1 min-w-48">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Sample Texts
-            </label>
-            <div className="flex gap-2">
-              {Object.keys(SAMPLE_TEXTS).map(key => (
-                <button
-                  key={key}
-                  onClick={() => loadSampleText(key as keyof typeof SAMPLE_TEXTS)}
-                  className={cn(
-                    'px-3 py-1 text-xs rounded-md border transition-colors',
-                    'hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  )}
-                  disabled={isTracking}
-                >
-                  {key}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={handleTokenize}
-            disabled={!inputText.trim() || isTracking}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors',
-              'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
-            )}
-          >
-            <Zap className="w-4 h-4" />
-            Tokenize
-          </button>
-
-          <button
-            onClick={handleSimulateStreaming}
-            disabled={!inputText.trim()}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors',
-              isSimulating 
-                ? 'bg-red-600 text-white hover:bg-red-700' 
-                : 'bg-green-600 text-white hover:bg-green-700',
-              'focus:outline-none focus:ring-2 focus:ring-offset-2',
-              isSimulating ? 'focus:ring-red-500' : 'focus:ring-green-500',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
-            )}
-          >
-            {isSimulating ? (
-              <>
-                <Square className="w-4 h-4" />
-                Stop Simulation
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4" />
-                Simulate Streaming
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={() => {
-              reset();
-              setTokenizationResult(null);
-              setIsSimulating(false);
-            }}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors',
-              'border border-gray-300 text-gray-700 hover:bg-gray-50',
-              'focus:outline-none focus:ring-2 focus:ring-gray-500'
-            )}
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset
-          </button>
-        </div>
+      {/* Actions */}
+      <div className="bg-white rounded-lg border p-6">
+        <TokenizerActions
+          onTokenize={handleTokenize}
+          onSimulateStreaming={handleSimulateStreaming}
+          onReset={handleReset}
+          canTokenize={!!inputText.trim() && !isTracking}
+          canSimulate={!!inputText.trim()}
+          isSimulating={isSimulating}
+        />
       </div>
 
       {/* Text Input */}
-      <div className="bg-white rounded-lg border p-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Input Text
-        </label>
-        <textarea
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Enter text to tokenize..."
-          className="w-full h-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={isTracking}
-        />
-        <div className="mt-2 text-sm text-gray-500">
-          {inputText.length} characters
-        </div>
-      </div>
+      <TokenizerInput
+        value={inputText}
+        onChange={setInputText}
+        disabled={isTracking}
+      />
 
       {/* Real-time Token Metrics */}
-      {(isTracking || tokenMetrics.totalTokens > 0) && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">Real-time Metrics</h2>
-          
-          {/* Full Variant */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Full Display</h3>
-            <TokenMetricsDisplay 
-              metrics={{
-                inputTokens: tokenMetrics.inputTokens,
-                outputTokens: tokenMetrics.outputTokens,
-                totalTokens: tokenMetrics.totalTokens,
-                tokensPerSecond: tokenMetrics.tokensPerSecond,
-                startTime: tokenMetrics.startTime,
-                endTime: tokenMetrics.endTime,
-                duration: tokenMetrics.duration,
-                estimatedCost: tokenMetrics.estimatedCost
-              }}
-              variant="detailed"
-            />
-          </div>
-        </div>
-      )}
+      <TokenizerMetrics
+        metrics={tokenMetrics}
+        isVisible={isTracking || tokenMetrics.totalTokens > 0}
+      />
 
       {/* Tokenization Results */}
-      {tokenizationResult && (
-        <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Tokenization Result</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Basic Info */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Basic Information</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Model:</span>
-                  <span className="font-mono">{tokenizationResult.model}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Provider:</span>
-                  <span className="font-mono capitalize">{tokenizationResult.provider}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Token Count:</span>
-                  <span className="font-mono">{tokenizationResult.tokenCount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Estimated Cost:</span>
-                  <span className="font-mono">${tokenizationResult.estimatedCost?.toFixed(6) || '0.000000'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Token Array Preview */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Token Array (First 20)</h3>
-              <div className="bg-gray-50 rounded p-3 font-mono text-xs overflow-x-auto">
-                [{tokenizationResult.tokens.slice(0, 20).join(', ')}{tokenizationResult.tokens.length > 20 ? ', ...' : ''}]
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Usage Examples */}
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Usage Examples</h2>
-        
-        <div className="space-y-4 text-sm">
-          <div>
-            <h3 className="font-medium text-gray-700 mb-2">Basic Tokenization</h3>
-            <pre className="bg-white rounded p-3 overflow-x-auto">
-{`import { tokenizerService } from './services/tokenizerService';
-
-const result = await tokenizerService.tokenize(text, 'gpt-4o');
-console.log(\`Tokens: \${result.tokenCount}, Cost: $\${result.estimatedCost}\`);`}
-            </pre>
-          </div>
-
-          <div>
-            <h3 className="font-medium text-gray-700 mb-2">Real-time Token Tracking</h3>
-            <pre className="bg-white rounded p-3 overflow-x-auto">
-{`import { useTokenTracker } from './hooks/useTokenTracker';
-
-const { tokenMetrics, startTracking, updateTokens, stopTracking } = useTokenTracker('gpt-4o');
-
-// Start tracking
-await startTracking(inputText);
-
-// Update during streaming
-onStreamChunk((chunk) => updateTokens(chunk));
-
-// Stop and get final metrics
-const finalMetrics = stopTracking();`}
-            </pre>
-          </div>
-        </div>
-      </div>
+      <TokenizerResults result={tokenizationResult} />
     </div>
   );
 }; 

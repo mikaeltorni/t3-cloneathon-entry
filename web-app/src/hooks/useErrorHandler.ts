@@ -12,9 +12,9 @@ import { useCallback } from 'react';
 import { logger } from '../utils/logger';
 
 /**
- * Custom hook for consistent error handling across components
+ * Custom hook for standardized error handling
  * 
- * @returns Object with error handling methods
+ * @returns Object with error handling functions
  */
 export function useErrorHandler() {
   const handleError = useCallback((error: Error, context?: string) => {

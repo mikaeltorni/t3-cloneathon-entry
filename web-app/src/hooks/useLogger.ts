@@ -15,7 +15,7 @@ import { logger } from '../utils/logger';
  * Custom hook for component-scoped logging
  * 
  * @param componentName - Name of the component for log prefixing
- * @returns Object with logging methods (log, debug, warn, error)
+ * @returns Object with log functions
  */
 export function useLogger(componentName: string) {
   const logPrefix = `[${componentName}]`;
