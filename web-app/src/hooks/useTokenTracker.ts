@@ -21,6 +21,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { logger } from '../utils/logger';
 import { tokenizerService, TokenTracker } from '../services/tokenizerService';
 import type { TokenMetrics } from '../../../src/shared/types';
+import type { CostBreakdown } from '../services/types/tokenizer';
 
 /**
  * Token tracking state interface
@@ -34,7 +35,7 @@ interface TokenTrackingState {
   startTime: number;
   endTime?: number;
   duration: number;
-  estimatedCost: {
+  estimatedCost?: {
     input: number;
     output: number;
     total: number;
@@ -99,12 +100,7 @@ export function useTokenTracker(
     tokensPerSecond: 0,
     startTime: 0,
     duration: 0,
-    estimatedCost: {
-      input: 0,
-      output: 0,
-      total: 0,
-      currency: 'USD'
-    }
+    estimatedCost: undefined
   });
 
   /**
@@ -118,11 +114,15 @@ export function useTokenTracker(
   // }, [model]);
 
   /**
-   * Calculate cost estimation based on current token counts
+   * Calculate cost for current token usage
    */
-  const calculateCost = useCallback((inputTokens: number, outputTokens: number) => {
-    const modelInfo = tokenizerService.getModelInfo(model);
-    return tokenizerService.calculateCost(inputTokens, outputTokens, modelInfo);
+  const calculateCost = useCallback((inputTokens: number, outputTokens: number): CostBreakdown | null => {
+    try {
+      return tokenizerService.calculateCost(inputTokens, outputTokens, model);
+    } catch (error) {
+      logger.warn('Failed to calculate cost', error as Error);
+      return null;
+    }
   }, [model]);
 
   /**
@@ -142,7 +142,12 @@ export function useTokenTracker(
       totalTokens: tokenMetrics.inputTokens + tracker.getTotalTokens(),
       tokensPerSecond: tracker.getCurrentTPS(),
       duration,
-      estimatedCost: cost
+      estimatedCost: cost ? {
+        input: cost.input,
+        output: cost.output,
+        total: cost.total,
+        currency: cost.currency
+      } : undefined
     };
 
     setTokenMetrics(updatedMetrics);
@@ -188,7 +193,12 @@ export function useTokenTracker(
       tokensPerSecond: 0,
       startTime,
       duration: 0,
-      estimatedCost: cost
+      estimatedCost: cost ? {
+        input: cost.input,
+        output: cost.output,
+        total: cost.total,
+        currency: cost.currency
+      } : undefined
     });
 
     // Start update interval
@@ -250,7 +260,12 @@ export function useTokenTracker(
       startTime: tokenMetrics.startTime,
       endTime,
       duration,
-      estimatedCost: cost
+      estimatedCost: cost ? {
+        input: cost.input,
+        output: cost.output,
+        total: cost.total,
+        currency: cost.currency
+      } : undefined
     };
 
     // Update state
@@ -262,7 +277,12 @@ export function useTokenTracker(
       tokensPerSecond,
       endTime,
       duration,
-      estimatedCost: cost
+      estimatedCost: cost ? {
+        input: cost.input,
+        output: cost.output,
+        total: cost.total,
+        currency: cost.currency
+      } : undefined
     }));
 
     // Clear interval
@@ -305,12 +325,7 @@ export function useTokenTracker(
       tokensPerSecond: 0,
       startTime: 0,
       duration: 0,
-      estimatedCost: {
-        input: 0,
-        output: 0,
-        total: 0,
-        currency: 'USD'
-      }
+      estimatedCost: undefined
     });
 
     logger.debug('Token tracking reset');
@@ -330,7 +345,7 @@ export function useTokenTracker(
     return {
       tps: `${tokenMetrics.tokensPerSecond.toFixed(1)} tokens/s`,
       totalTokens: `${tokenMetrics.totalTokens.toLocaleString()} tokens`,
-      cost: `$${tokenMetrics.estimatedCost.total.toFixed(4)}`,
+      cost: `$${tokenMetrics.estimatedCost?.total?.toFixed(4) || 'N/A'}`,
       duration: `${(tokenMetrics.duration / 1000).toFixed(1)}s`
     };
   }, [tokenMetrics]);

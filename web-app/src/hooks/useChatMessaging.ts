@@ -1,31 +1,30 @@
 /**
  * useChatMessaging.ts
  * 
- * Message sending and streaming hook
+ * Message streaming and sending operations hook
  * 
- * Hooks:
+ * Hook:
  *   useChatMessaging
  * 
  * Features:
- *   - Message sending with streaming
- *   - Real-time updates during streaming
+ *   - Real-time message streaming
  *   - Token metrics tracking
  *   - Reasoning support
  *   - Web search integration
  * 
- * Usage: const messaging = useChatMessaging(chatState, chatApiService, loadThreads);
+ * Usage: const messagingOps = useChatMessaging(chatState, apiService, loadThreads);
  */
 import { useCallback } from 'react';
 import { useLogger } from './useLogger';
-import { useErrorHandler } from './useErrorHandler';
 import type { UseChatStateReturn } from './useChatState';
-import type { ChatMessage, ImageAttachment, DocumentAttachment, TokenMetrics } from '../../../src/shared/types';
+import type { CreateMessageRequest, CreateMessageResponse, TokenMetrics } from '../../../src/shared/types';
 
+// Interface for the API service
 interface ChatApiService {
   sendMessageStream: (
-    request: any,
+    request: CreateMessageRequest,
     onChunk: (chunk: string, fullContent: string) => void,
-    onComplete: (response: any) => void,
+    onComplete: (response: CreateMessageResponse) => void,
     onError: (error: Error) => void,
     onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void,
     onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void,
@@ -33,29 +32,21 @@ interface ChatApiService {
   ) => Promise<void>;
 }
 
+// Return interface
 interface UseChatMessagingReturn {
-  handleSendMessage: (
-    content: string,
-    images?: ImageAttachment[],
-    documents?: DocumentAttachment[],
-    modelId?: string,
-    useReasoning?: boolean,
-    reasoningEffort?: 'low' | 'medium' | 'high',
-    useWebSearch?: boolean,
-    webSearchEffort?: 'low' | 'medium' | 'high'
-  ) => Promise<void>;
+  sendMessage: (request: CreateMessageRequest) => Promise<void>;
 }
 
 /**
- * Message sending and streaming hook
+ * Message streaming and sending operations hook
  * 
- * Handles message sending with real-time streaming support,
- * including reasoning, web search, and token metrics.
+ * Handles real-time message streaming with support for reasoning,
+ * token metrics, and web search annotations.
  * 
- * @param chatState - Chat state management hook return
- * @param chatApiService - Chat API service instance
- * @param loadThreads - Function to reload threads after message
- * @returns Message sending functions
+ * @param chatState - Chat state management
+ * @param chatApiService - Chat API service
+ * @param loadThreads - Function to reload threads
+ * @returns Message operation functions
  */
 export const useChatMessaging = (
   chatState: UseChatStateReturn,
@@ -63,7 +54,6 @@ export const useChatMessaging = (
   loadThreads: () => Promise<void>
 ): UseChatMessagingReturn => {
   const { debug, log, error: logError } = useLogger('useChatMessaging');
-  const { handleError } = useErrorHandler();
 
   const {
     currentThread,
@@ -75,106 +65,57 @@ export const useChatMessaging = (
   } = chatState;
 
   /**
-   * Handle sending a message with streaming
+   * Send message with streaming support
+   * 
+   * @param request - Create message request
    */
-  const handleSendMessage = useCallback(async (
-    content: string,
-    images?: ImageAttachment[],
-    documents?: DocumentAttachment[],
-    modelId?: string,
-    useReasoning?: boolean,
-    reasoningEffort?: 'low' | 'medium' | 'high',
-    useWebSearch?: boolean,
-    webSearchEffort?: 'low' | 'medium' | 'high'
-  ) => {
-    setLoading(true);
-    setError(null);
-    setCurrentTokenMetrics(null);
+  const sendMessage = useCallback(async (request: CreateMessageRequest) => {
+    if (!request.content?.trim() && !request.imageUrl?.trim() && (!request.images || request.images.length === 0)) {
+      throw new Error('Message content or image is required');
+    }
 
     try {
+      setLoading(true);
+      setError(null);
+
+      debug('🚀 Starting message send', {
+        threadId: request.threadId || 'new',
+        hasContent: !!request.content,
+        hasImages: !!(request.images && request.images.length > 0),
+        imageCount: request.images?.length || 0,
+        modelId: request.modelId,
+        useReasoning: request.useReasoning,
+        useWebSearch: request.useWebSearch
+      });
+
+      const isNewThread = !request.threadId;
       let tempThread = currentThread;
-      let isNewThread = false;
 
-      // Create user message immediately for instant feedback
-      const userMessage: ChatMessage = {
-        id: `user-${Date.now()}`,
-        content,
-        role: 'user',
-        timestamp: new Date(),
-        images: images,
-        documents: documents,
-        imageUrl: images && images.length === 1 ? images[0].url : undefined
-      };
-
-      // If no current thread, create a temporary one
-      if (!currentThread) {
-        tempThread = {
-          id: `temp-${Date.now()}`,
-          title: content.length > 50 ? content.substring(0, 50) + '...' : content,
-          messages: [userMessage],
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        setCurrentThread(tempThread);
-        isNewThread = true;
-      } else {
-        // Add user message to existing thread immediately
-        tempThread = {
-          ...currentThread,
-          messages: [...currentThread.messages, userMessage],
-          updatedAt: new Date()
-        };
-        setCurrentThread(tempThread);
-        isNewThread = true;
-      }
-
-      // Create a temporary streaming message for the AI response
-      const tempAiMessage: ChatMessage = {
+      // Create temporary AI message for streaming
+      const tempAiMessage: any = {
         id: `temp-${Date.now()}`,
-        content: '',
         role: 'assistant',
+        content: '',
         timestamp: new Date(),
-        modelId,
-        reasoning: ''
+        metadata: {
+          isStreaming: true,
+          isReasoning: false
+        }
       };
 
-      // Clear attachments after creating user message
-      clearAttachments();
-
+      // Start streaming
       await chatApiService.sendMessageStream(
-        {
-          threadId: currentThread?.id, // Use original thread ID for server
-          content,
-          imageUrl: images && images.length > 1 ? undefined : images?.[0]?.url, // Only for single image
-          images: images,
-          documents: documents,
-          modelId,
-          useReasoning,
-          reasoningEffort,
-          useWebSearch,
-          webSearchEffort
-        },
-        // onChunk callback - update the streaming message content
+        request,
+        // onChunk callback - update streaming content
         (chunk: string, fullContent: string) => {
           debug('📝 Received content chunk', { 
             chunkLength: chunk.length, 
-            totalLength: fullContent.length, 
-            wasReasoning: tempAiMessage.metadata?.isReasoning,
+            totalLength: fullContent.length,
             chunkPreview: chunk.substring(0, 50) + '...',
             fullContentPreview: fullContent.substring(0, 100) + '...'
           });
           
-          // IMPORTANT: If we're receiving content chunks, reasoning has definitely ended
-          if (tempAiMessage.metadata?.isReasoning === true) {
-            debug('🔄 Reasoning ended (content streaming started)');
-            
-            tempAiMessage.metadata = {
-              ...tempAiMessage.metadata,
-              isReasoning: false
-            };
-          }
-          
-          // Update the temporary message with the streaming content
+          // Update the temporary message content
           tempAiMessage.content = fullContent;
           
           if (tempThread) {
@@ -207,7 +148,7 @@ export const useChatMessaging = (
           }
         },
         // onComplete callback - replace temp message with final message
-        (finalResponse: any) => {
+        (finalResponse: CreateMessageResponse) => {
           debug('✅ Message streaming completed', { 
             messageId: finalResponse.assistantResponse?.id,
             contentLength: finalResponse.assistantResponse?.content?.length,
@@ -372,6 +313,6 @@ export const useChatMessaging = (
   }, [currentThread, chatApiService, debug, log, logError, loadThreads, setCurrentThread, setLoading, setError, setCurrentTokenMetrics, clearAttachments]);
 
   return {
-    handleSendMessage
+    sendMessage
   };
 }; 

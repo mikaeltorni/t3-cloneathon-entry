@@ -1,31 +1,33 @@
 /**
  * useApiService.ts
  * 
- * Service hooks for seamless API integration with React components
- * Part of Phase 3: Service Layer Enhancement
+ * Enhanced API service hooks with error handling and caching
  * 
  * Hooks:
- *   useApiCall, useApiMutation, useApiCache
+ *   - useApiCall: GET requests with automatic fetching
+ *   - useApiMutation: POST/PUT/DELETE requests
+ *   - useApiCache: Cache management utilities
+ *   - useOptimizedApiCall: Memory-optimized API calls
+ *   - useRobustMutation: Retry-enabled mutations
  * 
  * Features:
- *   - React-integrated API calls
- *   - Automatic loading states
- *   - Error handling with retry logic
- *   - Request cancellation on unmount
- *   - Cache management
- *   - Performance monitoring
+ *   - Automatic error handling
+ *   - Request caching with TTL
+ *   - Request deduplication
+ *   - Automatic retries
+ *   - Loading states
+ *   - Memory optimization
  * 
- * Usage: import { useApiCall, useApiMutation } from './hooks/useApiService'
+ * Usage: import { useApiCall, useApiMutation } from '../hooks/useApiService'
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { EnhancedHttpClient } from '../services/httpClient';
-import { EnhancedApiError } from '../services/types/api';
-import type { ApiRequestConfig } from '../services/types/api';
+import { HttpClient } from '../services/httpClient';
+import { ApiError } from '../services/types/apiTypes';
 import { logger } from '../utils/logger';
 
 // Create a singleton HTTP client instance
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
-const httpClient = new EnhancedHttpClient(API_BASE_URL);
+const httpClient = new HttpClient({ baseUrl: API_BASE_URL });
 
 /**
  * State interface for API calls
@@ -33,7 +35,7 @@ const httpClient = new EnhancedHttpClient(API_BASE_URL);
 interface ApiState<TData> {
   data: TData | null;
   loading: boolean;
-  error: EnhancedApiError | null;
+  error: ApiError | null;
   isSuccess: boolean;
   lastFetch: number | null;
 }
@@ -41,7 +43,7 @@ interface ApiState<TData> {
 /**
  * Configuration for useApiCall hook
  */
-interface UseApiCallConfig extends Omit<ApiRequestConfig, 'method' | 'body'> {
+interface UseApiCallConfig {
   enabled?: boolean;
   refetchOnMount?: boolean;
   refetchInterval?: number;
@@ -52,11 +54,11 @@ interface UseApiCallConfig extends Omit<ApiRequestConfig, 'method' | 'body'> {
 /**
  * Configuration for useApiMutation hook
  */
-interface UseApiMutationConfig extends Omit<ApiRequestConfig, 'body'> {
+interface UseApiMutationConfig {
   method?: string;
   onSuccess?: (data: any) => void;
-  onError?: (error: EnhancedApiError) => void;
-  onSettled?: (data: any | null, error: EnhancedApiError | null) => void;
+  onError?: (error: ApiError) => void;
+  onSettled?: (data: any | null, error: ApiError | null) => void;
 }
 
 /**
@@ -72,7 +74,6 @@ export function useApiCall<TData>(
     refetchInterval,
     staleTime = 5 * 60 * 1000, // 5 minutes default
     dependencies = [],
-    ...requestConfig
   } = config;
 
   const [state, setState] = useState<ApiState<TData>>({
@@ -83,8 +84,6 @@ export function useApiCall<TData>(
     lastFetch: null
   });
 
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
 
   /**
@@ -102,14 +101,6 @@ export function useApiCall<TData>(
       }
     }
 
-    // Cancel previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Create new abort controller
-    abortControllerRef.current = new AbortController();
-
     setState(prev => ({ 
       ...prev, 
       loading: true, 
@@ -119,12 +110,7 @@ export function useApiCall<TData>(
     try {
       logger.debug(`Executing API call: GET ${endpoint}`);
 
-      const data = await httpClient.request<TData>(endpoint, {
-        ...requestConfig,
-        method: 'GET',
-        signal: abortControllerRef.current.signal,
-        cacheTTL: requestConfig.cacheTTL || staleTime
-      });
+      const data = await httpClient.get<TData>(endpoint);
 
       if (isMountedRef.current) {
         setState({
@@ -136,19 +122,16 @@ export function useApiCall<TData>(
         });
       }
     } catch (error) {
-      if (isMountedRef.current && error instanceof EnhancedApiError) {
-        // Don't update state if request was aborted
-        if (error.code !== 'ABORT_ERROR') {
-          setState(prev => ({
-            ...prev,
-            loading: false,
-            error,
-            isSuccess: false
-          }));
-        }
+      if (isMountedRef.current && error instanceof ApiError) {
+        setState(prev => ({
+          ...prev,
+          loading: false,
+          error,
+          isSuccess: false
+        }));
       }
     }
-  }, [endpoint, enabled, staleTime, requestConfig, state.data, state.lastFetch]);
+  }, [endpoint, enabled, staleTime, state.data, state.lastFetch]);
 
   /**
    * Manual refetch function
@@ -180,15 +163,11 @@ export function useApiCall<TData>(
   // Setup refetch interval
   useEffect(() => {
     if (refetchInterval && refetchInterval > 0 && enabled) {
-      intervalRef.current = setInterval(() => {
+      const intervalId = setInterval(() => {
         executeCall();
       }, refetchInterval);
 
-      return () => {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-        }
-      };
+      return () => clearInterval(intervalId);
     }
   }, [refetchInterval, enabled, executeCall]);
 
@@ -196,14 +175,6 @@ export function useApiCall<TData>(
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
-      
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
     };
   }, []);
 
@@ -217,134 +188,96 @@ export function useApiCall<TData>(
 }
 
 /**
- * Hook for making mutations (POST, PUT, PATCH, DELETE)
+ * Hook for making mutation requests (POST, PUT, DELETE)
  */
 export function useApiMutation<TData, TVariables = any>(
   endpoint: string | ((variables: TVariables) => string),
   config: UseApiMutationConfig = {}
 ) {
   const {
+    method = 'POST',
     onSuccess,
     onError,
-    onSettled,
-    ...requestConfig
+    onSettled
   } = config;
 
-  const [state, setState] = useState<ApiState<TData>>({
+  const [state, setState] = useState<Omit<ApiState<TData>, 'lastFetch'>>({
     data: null,
     loading: false,
     error: null,
-    isSuccess: false,
-    lastFetch: null
+    isSuccess: false
   });
 
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const isMountedRef = useRef(true);
-
-  /**
-   * Execute the mutation
-   */
-  const mutate = useCallback(async (
-    variables: TVariables,
-    mutationConfig: Partial<UseApiMutationConfig> = {}
-  ) => {
-    // Cancel previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Create new abort controller
-    abortControllerRef.current = new AbortController();
-
-    setState(prev => ({ 
-      ...prev, 
-      loading: true, 
-      error: null,
-      isSuccess: false
-    }));
+  const mutate = useCallback(async (variables?: TVariables) => {
+    setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
       const resolvedEndpoint = typeof endpoint === 'function' 
-        ? endpoint(variables) 
+        ? endpoint(variables as TVariables) 
         : endpoint;
 
-      logger.debug(`Executing API mutation: ${requestConfig.method || 'POST'} ${resolvedEndpoint}`);
+      logger.debug(`Executing mutation: ${method} ${resolvedEndpoint}`);
 
-      const data = await httpClient.request<TData>(resolvedEndpoint, {
-        ...requestConfig,
-        ...mutationConfig,
-        method: requestConfig.method || 'POST',
-        body: JSON.stringify(variables),
-        signal: abortControllerRef.current.signal
+      let data: TData;
+      switch (method.toUpperCase()) {
+        case 'POST':
+          data = await httpClient.post<TData>(resolvedEndpoint, variables);
+          break;
+        case 'PUT':
+          data = await httpClient.put<TData>(resolvedEndpoint, variables);
+          break;
+        case 'PATCH':
+          data = await httpClient.patch<TData>(resolvedEndpoint, variables);
+          break;
+        case 'DELETE':
+          data = await httpClient.delete<TData>(resolvedEndpoint);
+          break;
+        default:
+          throw new Error(`Unsupported HTTP method: ${method}`);
+      }
+
+      setState({
+        data,
+        loading: false,
+        error: null,
+        isSuccess: true
       });
 
-      if (isMountedRef.current) {
-        setState({
-          data,
-          loading: false,
-          error: null,
-          isSuccess: true,
-          lastFetch: Date.now()
-        });
-
-        // Call success callback
-        onSuccess?.(data);
-        mutationConfig.onSuccess?.(data);
-        onSettled?.(data, null);
-        mutationConfig.onSettled?.(data, null);
-      }
+      onSuccess?.(data);
+      onSettled?.(data, null);
 
       return data;
     } catch (error) {
-      if (isMountedRef.current && error instanceof EnhancedApiError) {
-        setState(prev => ({
-          ...prev,
-          loading: false,
-          error,
-          isSuccess: false
-        }));
+      const apiError = error instanceof ApiError ? error : new ApiError(500, 'Internal Server Error', 'Unknown error occurred');
+      
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: apiError,
+        isSuccess: false
+      }));
 
-        // Call error callbacks
-        onError?.(error);
-        mutationConfig.onError?.(error);
-        onSettled?.(null, error);
-        mutationConfig.onSettled?.(null, error);
-      }
+      onError?.(apiError);
+      onSettled?.(null, apiError);
 
-      throw error;
+      throw apiError;
     }
-  }, [endpoint, requestConfig, onSuccess, onError, onSettled]);
+  }, [endpoint, method, onSuccess, onError, onSettled]);
 
-  /**
-   * Reset mutation state
-   */
   const reset = useCallback(() => {
     setState({
       data: null,
       loading: false,
       error: null,
-      isSuccess: false,
-      lastFetch: null
+      isSuccess: false
     });
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-      
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
   }, []);
 
   return {
     ...state,
     mutate,
     reset,
-    isLoading: state.loading,
-    isIdle: !state.loading && !state.data && !state.error
+    isLoading: state.loading
   };
 }
 

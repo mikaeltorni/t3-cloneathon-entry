@@ -1,279 +1,250 @@
 /**
  * useChatThreads.ts
  * 
- * Thread management operations hook
+ * Thread management hook extracted from useChat
  * 
- * Hooks:
+ * Hook:
  *   useChatThreads
  * 
  * Features:
  *   - Thread loading with caching
- *   - Thread selection
+ *   - Thread selection and management
  *   - New chat creation
  *   - Thread deletion
  *   - Pin/unpin operations
  * 
- * Usage: const threadOps = useChatThreads(chatState, chatApiService);
+ * Usage: const threadOps = useChatThreads(chatState, apiService);
  */
-import { useCallback, useEffect } from 'react';
-import { useAuth } from './useAuth';
-import { useLogger } from './useLogger';
+import { useCallback } from 'react';
+import { logger } from '../utils/logger';
 import { useErrorHandler } from './useErrorHandler';
-import type { UseChatStateReturn } from './useChatState';
 import type { ChatThread } from '../../../src/shared/types';
-import { 
-  getCachedThreads, 
-  setCachedThreads, 
-  removeThreadFromCache,
-  hasCachedThreads 
-} from '../utils/sessionCache';
+import type { PaginatedResponse } from '../services/types/apiTypes';
 
+// Interface for the API service
 interface ChatApiService {
-  getAllChatsEfficient: (limit: number) => Promise<{ threads: any[], hasMore: boolean }>;
-  getChat: (threadId: string) => Promise<any>;
+  getAllChatsEfficient: (limit: number) => Promise<PaginatedResponse<ChatThread>>;
+  getChat: (threadId: string) => Promise<ChatThread>;
   deleteChat: (threadId: string) => Promise<void>;
-  toggleThreadPin: (threadId: string, isPinned: boolean) => Promise<any>; // Returns ChatThread
+  toggleThreadPin: (threadId: string, isPinned: boolean) => Promise<ChatThread>;
 }
 
-interface UseChatThreadsReturn {
-  loadThreads: (forceRefresh?: boolean) => Promise<void>;
-  handleThreadSelect: (threadId: string) => Promise<void>;
-  handleNewChat: () => void;
-  handleDeleteThread: (threadId: string) => Promise<void>;
-  handleTogglePinThread: (threadId: string, isPinned: boolean) => Promise<void>;
+// Interface for chat state
+interface ChatState {
+  threads: ChatThread[];
+  setThreads: (threads: ChatThread[] | ((prevThreads: ChatThread[]) => ChatThread[])) => void;
+  currentThread: ChatThread | null;
+  setCurrentThread: (thread: ChatThread | null | ((prev: ChatThread | null) => ChatThread | null)) => void;
+  isLoadingThreads: boolean;
+  setIsLoadingThreads: (loading: boolean) => void;
+  threadsError: string | null;
+  setThreadsError: (error: string | null) => void;
 }
 
 /**
  * Thread management operations hook
  * 
- * Handles all thread-related operations including loading, selection,
- * creation, deletion, and pin management with caching support.
- * 
- * @param chatState - Chat state management hook return
- * @param chatApiService - Chat API service instance
+ * @param chatState - Chat state management
+ * @param apiService - Chat API service
  * @returns Thread operation functions
  */
-export const useChatThreads = (
-  chatState: UseChatStateReturn,
-  chatApiService: ChatApiService
-): UseChatThreadsReturn => {
-  const { user } = useAuth();
-  const { log, debug, warn } = useLogger('useChatThreads');
+export function useChatThreads(chatState: ChatState, apiService: ChatApiService) {
   const { handleError } = useErrorHandler();
 
   const {
     threads,
-    currentThread,
     setThreads,
+    currentThread,
     setCurrentThread,
-    setThreadsLoading,
-    setError,
-    resetChatState
+    isLoadingThreads,
+    setIsLoadingThreads,
+    threadsError,
+    setThreadsError
   } = chatState;
 
-  // Reset all chat state when user changes (including logout)
-  useEffect(() => {
-    debug('User state changed, resetting thread state', { 
-      userId: user?.uid || 'null',
-      userEmail: user?.email || 'null'
-    });
-    
-    resetChatState();
-  }, [user?.uid, debug, resetChatState]);
+  /**
+   * Load threads from API
+   */
+  const loadThreads = useCallback(async () => {
+    try {
+      setIsLoadingThreads(true);
+      setThreadsError(null);
+      
+      logger.info('Loading chat threads');
+      
+      const response = await apiService.getAllChatsEfficient(50);
+      const threads = response.data; // Updated to use 'data' property
+      
+      setThreads(threads);
+      logger.info(`Loaded ${threads.length} threads`);
+      
+      return threads;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load threads';
+      logger.error('Failed to load threads:', error as Error);
+      setThreadsError(errorMessage);
+      handleError(error as Error, 'Thread Loading');
+      return [];
+    } finally {
+      setIsLoadingThreads(false);
+    }
+  }, [apiService, setIsLoadingThreads, setThreadsError, setThreads, handleError]);
 
   /**
-   * Load all chat threads (with caching)
-   * 
-   * @param forceRefresh - Force reload from server, ignoring cache
+   * Select a thread and load its full data
    */
-  const loadThreads = useCallback(async (forceRefresh: boolean = false) => {
-    // Ensure user is available before loading threads
-    if (!user) {
-      debug('Cannot load threads: no user authenticated');
-      setThreadsLoading(false);
+  const selectThread = useCallback(async (threadId: string | null) => {
+    if (!threadId) {
+      setCurrentThread(null);
       return;
     }
 
     try {
-      setThreadsLoading(true);
+      logger.info(`Selecting thread: ${threadId}`);
       
-      // Try to load from cache first if not forcing refresh
-      if (!forceRefresh && hasCachedThreads()) {
-        const cachedThreads = getCachedThreads();
-        if (cachedThreads) {
-          debug(`Loading ${cachedThreads.length} threads from cache`);
-          setThreads(cachedThreads);
-          setError(null);
-          log(`Successfully loaded ${cachedThreads.length} threads from cache`);
-          setThreadsLoading(false);
-          return;
-        }
+      // Try to find thread in current threads first
+      const existingThread = threads.find(t => t.id === threadId);
+      if (existingThread) {
+        setCurrentThread(existingThread);
       }
       
-      // Load from server if no cache or forced refresh
-      debug('Loading threads from server...', { 
-        userId: user.uid, 
-        forceRefresh,
-        hasCache: hasCachedThreads() 
-      });
+      // Load full thread data
+      const fullThread = await apiService.getChat(threadId);
+      setCurrentThread(fullThread);
       
-      // Use efficient method with reasonable pagination
-      const result = await chatApiService.getAllChatsEfficient(100);
-      
-      // Update cache with fresh data
-      setCachedThreads(result.threads);
-      
-      setThreads(result.threads);
-      setError(null);
-      log(`Successfully loaded ${result.threads.length} threads from server efficiently (hasMore: ${result.hasMore})`);
-    } catch (err) {
-      const errorMessage = 'Failed to load chat history. Make sure the server is running.';
-      handleError(err as Error, 'LoadThreads');
-      setError(errorMessage);
-      warn(errorMessage);
-      
-      // If server fails, try to fallback to cache
-      if (!forceRefresh && hasCachedThreads()) {
-        const cachedThreads = getCachedThreads();
-        if (cachedThreads) {
-          debug(`Falling back to ${cachedThreads.length} cached threads due to server error`);
-          setThreads(cachedThreads);
-          warn('Using cached chat history due to server error');
-        }
-      }
-    } finally {
-      setThreadsLoading(false);
+      logger.info(`Selected thread: ${fullThread.title}`);
+    } catch (error) {
+      logger.error(`Failed to select thread ${threadId}:`, error as Error);
+      handleError(error as Error, 'Thread Selection');
+      setCurrentThread(null);
     }
-  }, [user, chatApiService, debug, log, warn, handleError, setThreads, setError, setThreadsLoading]);
+  }, [threads, apiService, setCurrentThread, handleError]);
 
   /**
-   * Handle thread selection from sidebar
-   * 
-   * @param threadId - ID of the thread to select
+   * Create a new chat thread
    */
-  const handleThreadSelect = useCallback(async (threadId: string) => {
-    try {
-      debug(`Selecting thread: ${threadId}`, { 
-        hasUser: !!user, 
-        userId: user?.uid,
-        userEmail: user?.email 
-      });
-      
-      // Check if user is still authenticated
-      if (!user) {
-        throw new Error('User not authenticated. Please sign in again.');
-      }
-      
-      const thread = await chatApiService.getChat(threadId);
-      setCurrentThread(thread);
-      setError(null);
-      log(`Thread selected: ${thread.title}`);
-    } catch (err) {
-      const errorMessage = err instanceof Error && err.message.includes('not authenticated') 
-        ? 'Please sign in again to access your chat history'
-        : 'Failed to load chat thread. Please try again.';
-      
-      handleError(err as Error, 'ThreadSelect');
-      setError(errorMessage);
-      warn(errorMessage);
-    }
-  }, [chatApiService, user, debug, log, warn, handleError, setCurrentThread, setError]);
-
-  /**
-   * Handle creating a new chat
-   */
-  const handleNewChat = useCallback(() => {
-    debug('Creating new chat');
+  const createNewChat = useCallback(() => {
+    logger.info('Creating new chat');
     setCurrentThread(null);
-    log('New chat created');
-  }, [debug, log, setCurrentThread]);
+  }, [setCurrentThread]);
 
   /**
-   * Handle deleting a thread
-   * 
-   * @param threadId - ID of the thread to delete
+   * Delete a thread
    */
-  const handleDeleteThread = useCallback(async (threadId: string) => {
+  const deleteThread = useCallback(async (threadId: string) => {
     try {
-      debug(`Deleting thread: ${threadId}`);
-      await chatApiService.deleteChat(threadId);
+      logger.info(`Deleting thread: ${threadId}`);
       
-      // Remove from local state and cache
-      const updatedThreads = threads.filter(t => t.id !== threadId);
-      setThreads(updatedThreads);
+      await apiService.deleteChat(threadId);
       
-      // Update cache
-      removeThreadFromCache(threadId);
+      // Remove from threads list
+      setThreads((prevThreads: ChatThread[]) => prevThreads.filter(t => t.id !== threadId));
       
       // Clear current thread if it was deleted
       if (currentThread?.id === threadId) {
         setCurrentThread(null);
       }
       
-      setError(null);
-      log('Thread deleted successfully');
-    } catch (err) {
-      const errorMessage = 'Failed to delete chat thread';
-      handleError(err as Error, 'DeleteThread');
-      setError(errorMessage);
-      warn(errorMessage);
+      logger.info(`Deleted thread: ${threadId}`);
+    } catch (error) {
+      logger.error(`Failed to delete thread ${threadId}:`, error as Error);
+      handleError(error as Error, 'Thread Deletion');
+      throw error;
     }
-  }, [threads, currentThread?.id, chatApiService, debug, log, warn, handleError, setThreads, setCurrentThread, setError]);
+  }, [apiService, setThreads, currentThread, setCurrentThread, handleError]);
 
   /**
-   * Handle toggling thread pin status
-   * 
-   * @param threadId - ID of the thread to pin/unpin
-   * @param isPinned - New pin status for the thread
+   * Update thread in threads list
    */
-  const handleTogglePinThread = useCallback(async (threadId: string, isPinned: boolean) => {
-    try {
-      debug(`${isPinned ? 'Pinning' : 'Unpinning'} thread: ${threadId}`);
-      
-      // Update local state immediately for responsive UI
-      setThreads((prevThreads: any[]) => prevThreads.map((thread: any) => 
-        thread.id === threadId ? { ...thread, isPinned } : thread
-      ));
-      
-      // Update current thread if it's the one being toggled
-      if (currentThread?.id === threadId) {
-        setCurrentThread((prev: any) => prev ? { ...prev, isPinned } : null);
-      }
-      
-      // Send to server
-      await chatApiService.toggleThreadPin(threadId, isPinned);
-      
-      // Update cache with the new pin status
-      const updatedThreads = threads.map(thread => 
-        thread.id === threadId ? { ...thread, isPinned } : thread
-      );
-      setCachedThreads(updatedThreads);
-      
-      setError(null);
-      log(`Thread ${isPinned ? 'pinned' : 'unpinned'} successfully`);
-    } catch (err) {
-      const errorMessage = `Failed to ${isPinned ? 'pin' : 'unpin'} thread`;
-      handleError(err as Error, 'TogglePinThread');
-      setError(errorMessage);
-      warn(errorMessage);
-      
-      // Revert local state on error
-      setThreads((prevThreads: any[]) => prevThreads.map((thread: any) => 
-        thread.id === threadId ? { ...thread, isPinned: !isPinned } : thread
-      ));
-      
-      // Revert current thread if it's the one being toggled
-      if (currentThread?.id === threadId) {
-        setCurrentThread((prev: any) => prev ? { ...prev, isPinned: !isPinned } : null);
-      }
+  const updateThreadInList = useCallback((updatedThread: ChatThread) => {
+    setThreads((prevThreads: ChatThread[]) => 
+      prevThreads.map(thread => 
+        thread.id === updatedThread.id ? updatedThread : thread
+      )
+    );
+    
+    // Update current thread if it matches
+    if (currentThread?.id === updatedThread.id) {
+      setCurrentThread(updatedThread);
     }
-  }, [threads, currentThread?.id, chatApiService, debug, log, warn, handleError, setThreads, setCurrentThread, setError]);
+  }, [setThreads, currentThread, setCurrentThread]);
+
+  /**
+   * Add new thread to the list
+   */
+  const addThreadToList = useCallback((newThread: ChatThread) => {
+    setThreads((prevThreads: ChatThread[]) => [newThread, ...prevThreads]);
+  }, [setThreads]);
+
+  /**
+   * Pin/unpin a thread
+   */
+  const togglePin = useCallback(async (threadId: string) => {
+    try {
+      const thread = threads.find(t => t.id === threadId);
+      if (!thread) {
+        throw new Error('Thread not found');
+      }
+
+      const isPinned = !thread.isPinned;
+      logger.info(`${isPinned ? 'Pinning' : 'Unpinning'} thread: ${threadId}`);
+
+      // Optimistic update
+      setThreads((prevThreads: ChatThread[]) => prevThreads.map(t =>
+        t.id === threadId ? { ...t, isPinned } : t
+      ));
+
+      if (currentThread?.id === threadId) {
+        setCurrentThread((prev: ChatThread | null) => prev ? { ...prev, isPinned } : null);
+      }
+
+      // API call
+      await apiService.toggleThreadPin(threadId, isPinned);
+      
+      // Update with server response
+      setThreads((prevThreads: ChatThread[]) => prevThreads.map(t =>
+        t.id === threadId ? { ...t, isPinned: !isPinned } : t
+      ));
+
+      if (currentThread?.id === threadId) {
+        setCurrentThread((prev: ChatThread | null) => prev ? { ...prev, isPinned: !isPinned } : null);
+      }
+
+      logger.info(`Successfully ${isPinned ? 'pinned' : 'unpinned'} thread: ${threadId}`);
+    } catch (error) {
+      // Revert optimistic update on error
+      const thread = threads.find(t => t.id === threadId);
+      if (thread) {
+        const originalPinned = thread.isPinned;
+        setThreads((prevThreads: ChatThread[]) => prevThreads.map(t =>
+          t.id === threadId ? { ...t, isPinned: originalPinned } : t
+        ));
+
+        if (currentThread?.id === threadId) {
+          setCurrentThread((prev: ChatThread | null) => prev ? { ...prev, isPinned: originalPinned } : null);
+        }
+      }
+
+      logger.error(`Failed to toggle pin for thread ${threadId}:`, error as Error);
+      handleError(error as Error, 'Thread Pin Toggle');
+      throw error;
+    }
+  }, [threads, currentThread, apiService, setThreads, setCurrentThread, handleError]);
 
   return {
+    // State
+    threads,
+    currentThread,
+    isLoadingThreads,
+    threadsError,
+    
+    // Operations
     loadThreads,
-    handleThreadSelect,
-    handleNewChat,
-    handleDeleteThread,
-    handleTogglePinThread
+    selectThread,
+    createNewChat,
+    deleteThread,
+    updateThreadInList,
+    addThreadToList,
+    togglePin
   };
-}; 
+} 

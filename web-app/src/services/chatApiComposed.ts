@@ -1,20 +1,18 @@
 /**
- * chatApi.ts
+ * chatApiComposed.ts
  * 
- * REFACTORED: Now uses composed services for clean architecture
+ * Composed chat API service using extracted services
  * 
  * Services:
- *   - HttpClient: Base HTTP operations
- *   - StreamingService: Real-time streaming
- *   - MessageService: Message operations
- *   - ThreadService: Thread management
+ *   ChatApiComposed - Main API orchestrator
  * 
  * Features:
  *   - Clean service composition
- *   - Single responsibility principle
- *   - Maintainable and testable code
+ *   - Unified API interface
+ *   - Service dependency injection
+ *   - Streamlined error handling
  * 
- * Usage: import { chatApiService } from './services/chatApi'
+ * Usage: import { createChatApiComposed } from './chatApiComposed'
  */
 import { logger } from '../utils/logger';
 import { HttpClient } from './httpClient';
@@ -35,38 +33,37 @@ import type { StreamingCallbacks, PaginatedResponse } from './types/apiTypes';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 /**
- * REFACTORED Chat API Service (638 lines → 140 lines!)
+ * Composed chat API service
  * 
- * Now uses composed services with clean separation of concerns:
- * - HttpClient handles base HTTP operations
- * - StreamingService handles real-time streaming
- * - MessageService handles message operations
- * 
- * Benefits:
- * - Single responsibility principle
- * - Testable components
- * - Maintainable architecture
- * - Clean error handling
+ * Orchestrates multiple focused services to provide a unified
+ * chat API interface with clean separation of concerns.
  */
-export class ChatApiService {
+export class ChatApiComposed {
   private httpClient: HttpClient;
   private streamingService: StreamingService;
   private messageService: MessageService;
 
-  constructor(baseUrl: string = API_BASE_URL, getAuthToken?: () => Promise<string | null>) {
-    this.httpClient = new HttpClient({
-      baseUrl,
-      getAuthToken,
-      timeout: 10000
-    });
-    
-    this.streamingService = StreamingService.create(this.httpClient);
-    this.messageService = MessageService.create(this.httpClient);
-    
-    logger.info(`ChatApiService initialized with composed services`);
+  constructor(
+    httpClient: HttpClient,
+    streamingService: StreamingService,
+    messageService: MessageService
+  ) {
+    this.httpClient = httpClient;
+    this.streamingService = streamingService;
+    this.messageService = messageService;
+    logger.info('ChatApiComposed initialized with composed services');
   }
 
-  // Thread Operations
+  // Thread Operations (using HttpClient directly for simple operations)
+
+  /**
+   * Get all chat threads with efficient pagination
+   * 
+   * @param limit - Number of threads to fetch (default: 50)
+   * @param cursor - Pagination cursor from previous request
+   * @param summaryOnly - If true, returns thread summaries without messages
+   * @returns Promise with chat threads and pagination info
+   */
   async getAllChatsEfficient(
     limit: number = 50,
     cursor?: string,
@@ -95,6 +92,12 @@ export class ChatApiService {
     };
   }
 
+  /**
+   * Get messages for multiple threads in batch
+   * 
+   * @param threadIds - Array of thread IDs to fetch messages for
+   * @returns Promise with thread ID to messages mapping
+   */
   async getBatchMessages(threadIds: string[]): Promise<Record<string, ChatMessage[]>> {
     if (!threadIds.length) {
       return {};
@@ -110,6 +113,12 @@ export class ChatApiService {
     return response;
   }
 
+  /**
+   * Get single chat thread by ID
+   * 
+   * @param threadId - Thread ID to fetch
+   * @returns Promise with chat thread
+   */
   async getChat(threadId: string): Promise<ChatThread> {
     if (!threadId?.trim()) {
       throw new Error('Thread ID is required');
@@ -123,6 +132,12 @@ export class ChatApiService {
     return thread;
   }
 
+  /**
+   * Delete chat thread
+   * 
+   * @param threadId - Thread ID to delete
+   * @returns Promise that resolves when deletion is complete
+   */
   async deleteChat(threadId: string): Promise<void> {
     if (!threadId?.trim()) {
       throw new Error('Thread ID is required');
@@ -135,6 +150,13 @@ export class ChatApiService {
     logger.info(`Successfully deleted chat thread: ${threadId}`);
   }
 
+  /**
+   * Update thread title
+   * 
+   * @param threadId - Thread ID to update
+   * @param title - New thread title
+   * @returns Promise with updated chat thread
+   */
   async updateThreadTitle(threadId: string, title: string): Promise<ChatThread> {
     if (!threadId?.trim()) {
       throw new Error('Thread ID is required');
@@ -154,6 +176,13 @@ export class ChatApiService {
     return updatedThread;
   }
 
+  /**
+   * Toggle thread pin status
+   * 
+   * @param threadId - Thread ID to pin/unpin
+   * @param isPinned - Pin status to set
+   * @returns Promise with updated chat thread
+   */
   async toggleThreadPin(threadId: string, isPinned: boolean): Promise<ChatThread> {
     if (!threadId?.trim()) {
       throw new Error('Thread ID is required');
@@ -170,15 +199,40 @@ export class ChatApiService {
   }
 
   // Message Operations (delegating to MessageService)
+
+  /**
+   * Send message to chat thread (delegates to MessageService)
+   * 
+   * @param request - Create message request
+   * @returns Promise with create message response
+   */
   async sendMessage(request: CreateMessageRequest): Promise<CreateMessageResponse> {
     return this.messageService.sendMessage(request);
   }
 
+  /**
+   * Get available AI models (delegates to MessageService)
+   * 
+   * @returns Promise with available models response
+   */
   async getAvailableModels(): Promise<AvailableModelsResponse> {
     return this.messageService.getAvailableModels();
   }
 
   // Streaming Operations (delegating to StreamingService)
+
+  /**
+   * Stream message with real-time callbacks (delegates to StreamingService)
+   * 
+   * @param request - Create message request
+   * @param onChunk - Callback for content chunks
+   * @param onComplete - Callback when streaming is complete
+   * @param onError - Callback for errors
+   * @param onReasoningChunk - Optional callback for reasoning chunks
+   * @param onTokenMetrics - Optional callback for real-time token metrics
+   * @param onAnnotationsChunk - Optional callback for annotation chunks
+   * @returns Promise that resolves when streaming starts
+   */
   async sendMessageStream(
     request: CreateMessageRequest,
     onChunk: (chunk: string, fullContent: string) => void,
@@ -201,10 +255,27 @@ export class ChatApiService {
   }
 }
 
-// Export factory function and singleton
-export const createChatApiService = (getAuthToken?: () => Promise<string | null>) => {
-  return new ChatApiService(API_BASE_URL, getAuthToken);
+/**
+ * Create composed chat API service instance
+ * 
+ * @param getAuthToken - Optional auth token getter function
+ * @returns ChatApiComposed instance
+ */
+export const createChatApiComposed = (getAuthToken?: () => Promise<string | null>): ChatApiComposed => {
+  // Create HTTP client
+  const httpClient = new HttpClient({
+    baseUrl: API_BASE_URL,
+    getAuthToken,
+    timeout: 10000
+  });
+
+  // Create specialized services
+  const streamingService = StreamingService.create(httpClient);
+  const messageService = MessageService.create(httpClient);
+
+  // Return composed service
+  return new ChatApiComposed(httpClient, streamingService, messageService);
 };
 
 // Default singleton instance (for backwards compatibility)
-export const chatApiService = new ChatApiService(); 
+export const chatApiComposed = createChatApiComposed(); 

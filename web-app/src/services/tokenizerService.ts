@@ -1,18 +1,18 @@
 /**
- * tokenizerService.ts
+ * tokenizerServiceRefactored.ts
  * 
- * Comprehensive tokenizer service supporting multiple AI providers
+ * Refactored tokenizer service using focused service composition
  * 
  * Classes:
- *   TokenizerService - Main tokenization service with multi-provider support
+ *   TokenizerService - Main orchestrator service
+ *   TokenTracker - Real-time token tracking (preserved from original)
  * 
  * Features:
- *   - OpenAI tokenization using gpt-tokenizer library
- *   - Anthropic, DeepSeek, Google estimation algorithms
- *   - Real-time tokens-per-second calculation
- *   - Cost estimation for supported models
- *   - Token counting for chat messages and streaming responses
- *   - Model auto-detection and appropriate tokenizer selection
+ *   - Service composition following single responsibility principle
+ *   - Multi-provider tokenization support
+ *   - Real-time token tracking and metrics
+ *   - Cost calculation and context window management
+ *   - Backwards compatibility with original API
  * 
  * Usage: 
  *   const tokenizer = new TokenizerService();
@@ -20,51 +20,27 @@
  */
 
 import { logger } from '../utils/logger';
-import { SHARED_MODEL_CONFIG, type SharedModelConfig } from '../../../src/shared/modelConfig';
 import type { TokenMetrics } from '../../../src/shared/types';
 import type { 
-  TokenizerProvider, 
-  ModelInfo, 
+  TokenizerProvider as TokenizerProviderType, 
   TokenizationResult 
 } from './types/api';
 
-// Dynamic imports for gpt-tokenizer to support different models
-type GPTTokenizerModule = {
-  encode: (text: string, options?: any) => number[];
-  decode: (tokens: number[]) => string;
-  encodeChat: (messages: any[], model?: any) => number[];
-  isWithinTokenLimit: (text: string | any[], limit: number) => boolean | number;
-  estimateCost: (tokenCount: number, modelSpec?: any) => any;
-};
-
-/**
- * Model database with provider information and pricing
- * Now uses the shared model configuration for consistency
- */
-const convertSharedConfigToModelInfo = (sharedConfig: SharedModelConfig): ModelInfo => {
-  return {
-    provider: sharedConfig.provider as TokenizerProvider,
-    modelName: sharedConfig.name,
-    encoding: sharedConfig.encoding,
-    maxTokens: sharedConfig.contextLength,
-    inputCostPer1k: sharedConfig.inputCostPer1k,
-    outputCostPer1k: sharedConfig.outputCostPer1k
-  };
-};
-
-/**
- * Legacy MODEL_DATABASE for backward compatibility
- * Automatically generated from SHARED_MODEL_CONFIG
- */
-const MODEL_DATABASE: Record<string, ModelInfo> = Object.fromEntries(
-  Object.entries(SHARED_MODEL_CONFIG).map(([modelId, config]) => [
-    modelId,
-    convertSharedConfigToModelInfo(config)
-  ])
-);
+// Import focused services
+import { modelInfoService } from './modelInfoService';
+import { costCalculationService } from './costCalculationService';
+import { contextWindowService } from './contextWindowService';
+import { 
+  OpenAITokenizerProvider,
+  AnthropicTokenizerProvider,
+  DeepSeekTokenizerProvider,
+  GoogleTokenizerProvider,
+  type TokenizerProvider
+} from './tokenizerProviders';
 
 /**
  * Real-time token tracking for streaming responses
+ * Preserved from original implementation
  */
 export class TokenTracker {
   private startTime: number;
@@ -93,7 +69,6 @@ export class TokenTracker {
         this.tokensPerSecondHistory.shift();
       }
       
-      // Track current time for future use
       return currentTPS;
     }
     
@@ -135,273 +110,67 @@ export class TokenTracker {
 }
 
 /**
- * Comprehensive tokenizer service supporting multiple AI providers
+ * Refactored tokenizer service using focused service composition
  */
 export class TokenizerService {
-  private gptTokenizerCache = new Map<string, GPTTokenizerModule>();
+  private providers: Map<TokenizerProviderType, TokenizerProvider>;
 
   constructor() {
-    logger.info('TokenizerService initialized');
+    // Initialize provider instances using explicit set() calls to avoid TypeScript issues
+    this.providers = new Map<TokenizerProviderType, TokenizerProvider>();
+    this.providers.set('openai', new OpenAITokenizerProvider());
+    this.providers.set('anthropic', new AnthropicTokenizerProvider());
+    this.providers.set('deepseek', new DeepSeekTokenizerProvider());
+    this.providers.set('google', new GoogleTokenizerProvider());
+
+    logger.info('TokenizerService initialized with focused service composition');
   }
 
   /**
-   * Get model information from the database
+   * Get the appropriate tokenizer provider for a model
    */
-  getModelInfo(model: string): ModelInfo {
-    const modelInfo = MODEL_DATABASE[model];
-    if (!modelInfo) {
-      // Try to auto-detect provider based on model name
-      const provider = this.detectProvider(model);
-      logger.warn(`Model ${model} not found in database, using provider: ${provider}`);
-      
-      return {
-        provider,
-        modelName: model,
-        maxTokens: 128000,
-        inputCostPer1k: 0.001,
-        outputCostPer1k: 0.002
-      };
-    }
-    return modelInfo;
-  }
-
-  /**
-   * Auto-detect provider based on model name
-   */
-  private detectProvider(model: string): TokenizerProvider {
-    const lowerModel = model.toLowerCase();
+  private getProvider(model: string): TokenizerProvider {
+    const modelInfo = modelInfoService.getModelInfo(model);
+    const provider = this.providers.get(modelInfo.provider);
     
-    if (lowerModel.includes('gpt') || lowerModel.includes('o1')) {
-      return 'openai';
-    } else if (lowerModel.includes('claude')) {
-      return 'anthropic';
-    } else if (lowerModel.includes('deepseek')) {
-      return 'deepseek';
-    } else if (lowerModel.includes('gemini')) {
-      return 'google';
+    if (!provider) {
+      logger.warn(`No provider found for ${modelInfo.provider}, falling back to OpenAI`);
+      return this.providers.get('openai')!;
     }
     
-    return 'auto';
-  }
-
-  /**
-   * Map our model names to the format expected by gpt-tokenizer
-   */
-  private mapModelNameForTokenizer(model: string): string | undefined {
-    // Map our model names to the format expected by gpt-tokenizer
-    if (model.includes('gpt-4o')) {
-      return 'gpt-4o';
-    }
-    // Return undefined to let the tokenizer use its default
-    return undefined;
-  }
-
-  /**
-   * Load appropriate gpt-tokenizer module for OpenAI models
-   */
-  private async loadGPTTokenizer(model: string): Promise<GPTTokenizerModule> {
-    if (this.gptTokenizerCache.has(model)) {
-      return this.gptTokenizerCache.get(model)!;
-    }
-
-    try {
-      let tokenizer: GPTTokenizerModule;
-      
-      // Import the appropriate tokenizer based on model
-      if (model.includes('gpt-4o') || model.includes('o1')) {
-        // Modern models use o200k_base encoding
-        tokenizer = await import('gpt-tokenizer');
-      } else if (model.includes('gpt-4') || model.includes('gpt-3.5')) {
-        // Legacy models use cl100k_base encoding
-        tokenizer = await import('gpt-tokenizer/model/gpt-3.5-turbo');
-      } else {
-        // Default to latest encoding
-        tokenizer = await import('gpt-tokenizer');
-      }
-
-      this.gptTokenizerCache.set(model, tokenizer);
-      logger.debug(`Loaded gpt-tokenizer for model: ${model}`);
-      
-      return tokenizer;
-    } catch (error) {
-      logger.error(`Failed to load gpt-tokenizer for model: ${model}`, error as Error);
-      // Fallback to default tokenizer
-      const defaultTokenizer = await import('gpt-tokenizer');
-      this.gptTokenizerCache.set(model, defaultTokenizer);
-      return defaultTokenizer;
-    }
-  }
-
-  /**
-   * Tokenize text using OpenAI's gpt-tokenizer
-   */
-  private async tokenizeOpenAI(text: string, model: string): Promise<TokenizationResult> {
-    try {
-      const tokenizer = await this.loadGPTTokenizer(model);
-      const tokens = tokenizer.encode(text);
-      
-      const modelInfo = this.getModelInfo(model);
-      const estimatedCost = this.calculateCost(tokens.length, 0, modelInfo);
-
-      return {
-        tokens,
-        tokenCount: tokens.length,
-        text,
-        model,
-        provider: 'openai',
-        estimatedCost: estimatedCost.total
-      };
-    } catch (error) {
-      logger.error(`OpenAI tokenization failed for model: ${model}`, error as Error);
-      throw new Error(`Failed to tokenize with OpenAI tokenizer: ${error}`);
-    }
-  }
-
-  /**
-   * Estimate tokens for Anthropic models
-   * Uses character-based estimation (approximately 4 characters per token)
-   */
-  private async tokenizeAnthropic(text: string, model: string): Promise<TokenizationResult> {
-    try {
-      // Anthropic estimation: ~4 characters per token
-      const estimatedTokens = Math.ceil(text.length / 4);
-      
-      // Generate dummy token array for compatibility
-      const tokens = new Array(estimatedTokens).fill(0).map((_, i) => i);
-      
-      const modelInfo = this.getModelInfo(model);
-      const estimatedCost = this.calculateCost(estimatedTokens, 0, modelInfo);
-
-      logger.debug(`Anthropic token estimation for ${model}: ${estimatedTokens} tokens`);
-
-      return {
-        tokens,
-        tokenCount: estimatedTokens,
-        text,
-        model,
-        provider: 'anthropic',
-        estimatedCost: estimatedCost.total
-      };
-    } catch (error) {
-      logger.error(`Anthropic tokenization failed for model: ${model}`, error as Error);
-      throw new Error(`Failed to estimate tokens for Anthropic model: ${error}`);
-    }
-  }
-
-  /**
-   * Estimate tokens for DeepSeek models
-   * Uses similar estimation to OpenAI models as a fallback
-   */
-  private async tokenizeDeepSeek(text: string, model: string): Promise<TokenizationResult> {
-    try {
-      // DeepSeek estimation: similar to OpenAI, use character-based estimation
-      // Approximately 3.5 characters per token for code-focused models
-      const estimatedTokens = Math.ceil(text.length / 3.5);
-      
-      // Generate dummy token array for compatibility
-      const tokens = new Array(estimatedTokens).fill(0).map((_, i) => i);
-      
-      const modelInfo = this.getModelInfo(model);
-      const estimatedCost = this.calculateCost(estimatedTokens, 0, modelInfo);
-
-      logger.debug(`DeepSeek token estimation for ${model}: ${estimatedTokens} tokens`);
-
-      return {
-        tokens,
-        tokenCount: estimatedTokens,
-        text,
-        model,
-        provider: 'deepseek',
-        estimatedCost: estimatedCost.total
-      };
-    } catch (error) {
-      logger.error(`DeepSeek tokenization failed for model: ${model}`, error as Error);
-      throw new Error(`Failed to estimate tokens for DeepSeek model: ${error}`);
-    }
-  }
-
-  /**
-   * Estimate tokens for Google models
-   * Uses SentencePiece-like estimation
-   */
-  private async tokenizeGoogle(text: string, model: string): Promise<TokenizationResult> {
-    try {
-      // Google/Gemini estimation: ~3.8 characters per token
-      const estimatedTokens = Math.ceil(text.length / 3.8);
-      
-      // Generate dummy token array for compatibility
-      const tokens = new Array(estimatedTokens).fill(0).map((_, i) => i);
-      
-      const modelInfo = this.getModelInfo(model);
-      const estimatedCost = this.calculateCost(estimatedTokens, 0, modelInfo);
-
-      logger.debug(`Google token estimation for ${model}: ${estimatedTokens} tokens`);
-
-      return {
-        tokens,
-        tokenCount: estimatedTokens,
-        text,
-        model,
-        provider: 'google',
-        estimatedCost: estimatedCost.total
-      };
-    } catch (error) {
-      logger.error(`Google tokenization failed for model: ${model}`, error as Error);
-      throw new Error(`Failed to estimate tokens for Google model: ${error}`);
-    }
+    return provider;
   }
 
   /**
    * Main tokenization method - automatically selects appropriate tokenizer
+   * 
+   * @param text - Text to tokenize
+   * @param model - Model identifier
+   * @returns Tokenization result with tokens, count, and cost
    */
   async tokenize(text: string, model: string): Promise<TokenizationResult> {
-    const modelInfo = this.getModelInfo(model);
+    const modelInfo = modelInfoService.getModelInfo(model);
+    const provider = this.getProvider(model);
     
     logger.debug(`Tokenizing text for model: ${model} (provider: ${modelInfo.provider})`);
-
-    switch (modelInfo.provider) {
-      case 'openai':
-        return this.tokenizeOpenAI(text, model);
-      case 'anthropic':
-        return this.tokenizeAnthropic(text, model);
-      case 'deepseek':
-        return this.tokenizeDeepSeek(text, model);
-      case 'google':
-        return this.tokenizeGoogle(text, model);
-      default:
-        // Auto-detect or fallback to OpenAI
-        logger.warn(`Unknown provider for model: ${model}, falling back to OpenAI tokenizer`);
-        return this.tokenizeOpenAI(text, model);
-    }
+    
+    return provider.tokenize(text, model, modelInfo);
   }
 
   /**
    * Tokenize chat messages (for conversation context)
+   * 
+   * @param messages - Array of chat messages
+   * @param model - Model identifier
+   * @returns Tokenization result
    */
   async tokenizeChat(messages: any[], model: string): Promise<TokenizationResult> {
-    const modelInfo = this.getModelInfo(model);
+    const modelInfo = modelInfoService.getModelInfo(model);
+    const provider = this.getProvider(model);
 
-    if (modelInfo.provider === 'openai') {
-      try {
-        const tokenizer = await this.loadGPTTokenizer(model);
-        // Map model name to the format expected by gpt-tokenizer
-        const tokenizerModel = this.mapModelNameForTokenizer(model);
-        const tokens = tokenizer.encodeChat(messages, tokenizerModel);
-        
-        const estimatedCost = this.calculateCost(tokens.length, 0, modelInfo);
-
-        return {
-          tokens,
-          tokenCount: tokens.length,
-          text: JSON.stringify(messages),
-          model,
-          provider: 'openai',
-          estimatedCost: estimatedCost.total
-        };
-      } catch (error) {
-        logger.error(`OpenAI chat tokenization failed`, error as Error);
-        // Don't rethrow the error, fall through to fallback method
-      }
+    // Use chat tokenization if provider supports it
+    if (provider.tokenizeChat) {
+      return provider.tokenizeChat(messages, model, modelInfo);
     }
 
     // Fallback: tokenize concatenated message content
@@ -414,47 +183,40 @@ export class TokenizerService {
 
   /**
    * Count tokens in text without full tokenization (faster)
+   * 
+   * @param text - Text to count tokens for
+   * @param model - Model identifier
+   * @returns Token count
    */
   async countTokens(text: string, model: string): Promise<number> {
-    const modelInfo = this.getModelInfo(model);
-
-    if (modelInfo.provider === 'openai') {
-      try {
-        const tokenizer = await this.loadGPTTokenizer(model);
-        const result = tokenizer.isWithinTokenLimit(text, Infinity);
-        return typeof result === 'number' ? result : tokenizer.encode(text).length;
-      } catch (error) {
-        logger.error(`OpenAI token counting failed`, error as Error);
-      }
-    }
-
-    // Fallback to provider-specific estimation
-    const result = await this.tokenize(text, model);
-    return result.tokenCount;
+    const modelInfo = modelInfoService.getModelInfo(model);
+    const provider = this.getProvider(model);
+    
+    return provider.countTokens(text, model, modelInfo);
   }
 
   /**
    * Calculate cost based on token counts
+   * 
+   * @param inputTokens - Number of input tokens
+   * @param outputTokens - Number of output tokens
+   * @param model - Model identifier
+   * @returns Cost breakdown
    */
-  calculateCost(inputTokens: number, outputTokens: number, modelInfo: ModelInfo): {
-    input: number;
-    output: number;
-    total: number;
-    currency: string;
-  } {
-    const inputCost = (inputTokens / 1000) * (modelInfo.inputCostPer1k || 0);
-    const outputCost = (outputTokens / 1000) * (modelInfo.outputCostPer1k || 0);
-    
-    return {
-      input: inputCost,
-      output: outputCost,
-      total: inputCost + outputCost,
-      currency: 'USD'
-    };
+  calculateCost(inputTokens: number, outputTokens: number, model: string) {
+    const modelInfo = modelInfoService.getModelInfo(model);
+    return costCalculationService.calculateCost(inputTokens, outputTokens, modelInfo);
   }
 
   /**
    * Create token metrics object for tracking
+   * 
+   * @param inputTokens - Number of input tokens
+   * @param outputTokens - Number of output tokens
+   * @param startTime - Start timestamp
+   * @param endTime - End timestamp (optional)
+   * @param modelId - Model identifier (optional)
+   * @returns TokenMetrics object
    */
   createTokenMetrics(
     inputTokens: number,
@@ -463,154 +225,113 @@ export class TokenizerService {
     endTime?: number,
     modelId?: string
   ): TokenMetrics {
-    const duration = endTime ? endTime - startTime : Date.now() - startTime;
-    const tokensPerSecond = outputTokens > 0 ? (outputTokens / (duration / 1000)) : 0;
+    const modelInfo = modelId ? modelInfoService.getModelInfo(modelId) : undefined;
     
-    const modelInfo = modelId ? this.getModelInfo(modelId) : null;
-    const estimatedCost = modelInfo ? this.calculateCost(inputTokens, outputTokens, modelInfo) : undefined;
-    
-    // Calculate context window usage if model is provided
-    const contextWindow = modelId ? this.calculateContextWindowUsage(inputTokens + outputTokens, modelId) : undefined;
-
-    return {
+    return costCalculationService.createTokenMetricsWithCost(
       inputTokens,
       outputTokens,
-      totalTokens: inputTokens + outputTokens,
-      tokensPerSecond,
       startTime,
       endTime,
-      duration,
-      estimatedCost,
-      contextWindow
-    };
+      modelInfo
+    );
   }
 
   /**
    * Calculate context window usage for a specific model
+   * 
+   * @param usedTokens - Number of tokens currently used
+   * @param modelId - Model identifier
+   * @returns Context window usage information
    */
-  calculateContextWindowUsage(usedTokens: number, modelId: string): {
-    used: number;
-    total: number;
-    percentage: number;
-    modelId: string;
-  } {
-    const modelInfo = this.getModelInfo(modelId);
-    const maxTokens = modelInfo.maxTokens || 128000; // Default to 128k if not specified
-    const percentage = Math.min((usedTokens / maxTokens) * 100, 100);
-
-    return {
-      used: usedTokens,
-      total: maxTokens,
-      percentage: Math.round(percentage * 100) / 100, // Round to 2 decimal places
-      modelId
-    };
+  calculateContextWindowUsage(usedTokens: number, modelId: string) {
+    const modelInfo = modelInfoService.getModelInfo(modelId);
+    return contextWindowService.calculateUsage(usedTokens, modelInfo);
   }
 
   /**
    * Calculate total context window usage including all messages in a conversation
+   * 
+   * @param messages - Array of chat messages
+   * @param modelId - Model identifier
+   * @returns Context window usage information
    */
-  async calculateConversationContextUsage(
-    messages: any[], 
-    modelId: string
-  ): Promise<{
-    used: number;
-    total: number;
-    percentage: number;
-    modelId: string;
-  }> {
+  async calculateConversationContextUsage(messages: any[], modelId: string) {
     const result = await this.tokenizeChat(messages, modelId);
     return this.calculateContextWindowUsage(result.tokenCount, modelId);
   }
 
   /**
    * Check if text is within token limit for a model
+   * 
+   * @param text - Text to check
+   * @param model - Model identifier
+   * @param limit - Optional custom limit
+   * @returns True if within limit
    */
   async isWithinTokenLimit(text: string, model: string, limit?: number): Promise<boolean> {
-    const modelInfo = this.getModelInfo(model);
-    const tokenLimit = limit || modelInfo.maxTokens || 128000;
-    
+    const modelInfo = modelInfoService.getModelInfo(model);
     const tokenCount = await this.countTokens(text, model);
-    return tokenCount <= tokenLimit;
+    
+    return contextWindowService.isWithinLimit(tokenCount, modelInfo, limit);
   }
 
   /**
    * Estimate tokens in streaming chunks (for real-time counting)
-   * Uses actual gpt-tokenizer for OpenAI models when available
+   * 
+   * @param chunk - Text chunk to estimate
+   * @param model - Model identifier
+   * @returns Estimated token count
    */
   async estimateTokensInChunk(chunk: string, model: string): Promise<number> {
-    const modelInfo = this.getModelInfo(model);
+    const modelInfo = modelInfoService.getModelInfo(model);
+    const provider = this.getProvider(model);
     
-    // Use actual tokenizer for OpenAI models
-    if (modelInfo.provider === 'openai') {
-      try {
-        const tokenizer = await this.loadGPTTokenizer(model);
-        const tokens = tokenizer.encode(chunk);
-        return tokens.length;
-      } catch (error) {
-        logger.warn(`Failed to use gpt-tokenizer for chunk estimation, falling back to character-based estimation`, error as Error);
-        // Fallback to character-based estimation if tokenizer fails
-        return Math.ceil(chunk.length / 4);
-      }
-    }
-    
-     try {
-       const fallbackTokenizer = await this.loadGPTTokenizer('gpt-4o');
-       const tokens = fallbackTokenizer.encode(chunk);
-       return tokens.length;
-            } catch (error) {
-         logger.error(`Failed to use gpt-tokenizer for non-OpenAI model`, error as Error);
-         // Return basic character-based estimation as absolute fallback
-         return 0;
-       }
+    return provider.estimateTokensInChunk(chunk, model, modelInfo);
   }
 
   /**
    * Synchronous version of estimateTokensInChunk for when async is not possible
-   * Falls back to character-based estimation
+   * 
+   * @param chunk - Text chunk to estimate
+   * @param model - Model identifier
+   * @returns Estimated token count
    */
   estimateTokensInChunkSync(chunk: string, model: string): number {
-    const modelInfo = this.getModelInfo(model);
+    const modelInfo = modelInfoService.getModelInfo(model);
+    const provider = this.getProvider(model);
     
-    // Check if we have a cached tokenizer for OpenAI models
-    if (modelInfo.provider === 'openai' && this.gptTokenizerCache.has(model)) {
-      try {
-        const tokenizer = this.gptTokenizerCache.get(model)!;
-        const tokens = tokenizer.encode(chunk);
-        return tokens.length;
-      } catch (error) {
-        logger.warn(`Failed to use cached gpt-tokenizer for chunk estimation`, error as Error);
-      }
-    }
-    
-     const cachedTokenizer = this.gptTokenizerCache.get('gpt-4o');
-     if (cachedTokenizer) {
-       try {
-         const tokens = cachedTokenizer.encode(chunk);
-         return tokens.length;
-       } catch (error) {
-         logger.warn(`Failed to use cached gpt-tokenizer for non-OpenAI model`, error as Error);
-       }
-    }
-            
-     return 0;
+    return provider.estimateTokensInChunkSync(chunk, model, modelInfo);
   }
 
   /**
    * Get supported models list
+   * 
+   * @returns Array of supported model identifiers
    */
   getSupportedModels(): string[] {
-    return Object.keys(SHARED_MODEL_CONFIG);
+    return modelInfoService.getSupportedModels();
   }
 
   /**
    * Get models by provider
+   * 
+   * @param provider - TokenizerProvider to filter by
+   * @returns Array of model identifiers for the provider
    */
-  getModelsByProvider(provider: TokenizerProvider): string[] {
-    return Object.entries(MODEL_DATABASE)
-      .filter(([_, info]) => info.provider === provider)
-      .map(([model, _]) => model);
+  getModelsByProvider(provider: TokenizerProviderType): string[] {
+    return modelInfoService.getModelsByProvider(provider);
+  }
+
+  /**
+   * Get model information
+   * 
+   * @param model - Model identifier
+   * @returns Model information object
+   */
+  getModelInfo(model: string) {
+    return modelInfoService.getModelInfo(model);
   }
 }
 
-// Singleton instance
+// Singleton instance for backwards compatibility
 export const tokenizerService = new TokenizerService(); 
