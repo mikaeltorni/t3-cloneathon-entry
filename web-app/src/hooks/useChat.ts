@@ -534,6 +534,31 @@ export const useChat = (): UseChatReturn => {
               tempThread = updatedThread;
             }
           }
+        },
+        // onAnnotationsChunk callback - handle real-time web search annotations
+        (annotations: any[]) => {
+          debug('🔍 Received annotations chunk', { annotationsCount: annotations.length });
+          
+          // Update the temporary message with the streaming annotations
+          tempAiMessage.annotations = annotations;
+          
+          if (tempThread) {
+            // Find if temp message already exists in thread
+            const existingTempIndex = tempThread.messages.findIndex(msg => msg.id === tempAiMessage.id);
+            
+            if (existingTempIndex >= 0) {
+              // Update existing temp message with annotations
+              const updatedMessages = [...tempThread.messages];
+              updatedMessages[existingTempIndex] = { ...tempAiMessage };
+              const updatedThread = {
+                ...tempThread,
+                messages: updatedMessages,
+                updatedAt: new Date()
+              };
+              setCurrentThread(updatedThread);
+              tempThread = updatedThread;
+            }
+          }
         }
       );
 

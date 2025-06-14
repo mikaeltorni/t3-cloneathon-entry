@@ -501,6 +501,7 @@ export class ChatController {
       
       let fullContent = '';
       let fullReasoning = '';
+      let fullAnnotations: any[] = [];
       let hasContent = false;
       
       try {
@@ -544,6 +545,22 @@ export class ChatController {
               fullReasoning: fullReasoning,
               tokenMetrics: currentMetrics
             })}\n\n`);
+          } else if (chunk.startsWith('annotations:')) {
+            // Extract annotations content
+            try {
+              const annotationsChunk = chunk.slice(12); // Remove 'annotations:' prefix
+              const newAnnotations = JSON.parse(annotationsChunk);
+              fullAnnotations = [...fullAnnotations, ...newAnnotations];
+              hasContent = true;
+              
+              // Stream annotations update
+              res.write(`data: ${JSON.stringify({ 
+                type: 'annotations_chunk', 
+                annotations: fullAnnotations
+              })}\n\n`);
+            } catch (error) {
+              console.warn('[ChatController] Failed to parse annotations chunk:', error);
+            }
           } else if (chunk.startsWith('content:')) {
             // Extract content chunk
             const contentChunk = chunk.slice(8); // Remove 'content:' prefix
@@ -595,6 +612,11 @@ export class ChatController {
           // Add real reasoning from OpenRouter if we collected any
           if (fullReasoning) {
             assistantMessage.reasoning = fullReasoning;
+          }
+          
+          // Add web search annotations if we collected any
+          if (fullAnnotations.length > 0) {
+            assistantMessage.annotations = fullAnnotations;
           }
           
           // Attach token metrics to the assistant message

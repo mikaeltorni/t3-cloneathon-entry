@@ -448,7 +448,8 @@ class ChatApiService {
     onComplete: (response: CreateMessageResponse) => void,
     onError: (error: Error) => void,
     onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void,
-    onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void
+    onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void,
+    onAnnotationsChunk?: (annotations: any[]) => void
   ): Promise<void> {
     if (!request.content?.trim() && !request.imageUrl?.trim() && (!request.images || request.images.length === 0)) {
       throw new Error('Message content or image URL is required');
@@ -550,6 +551,12 @@ class ChatApiService {
                   // Handle token metrics if available
                   if (onTokenMetrics && parsed.tokenMetrics) {
                     onTokenMetrics(parsed.tokenMetrics);
+                  }
+                  break;
+                  
+                case 'annotations_chunk':
+                  if (onAnnotationsChunk && parsed.annotations) {
+                    onAnnotationsChunk(parsed.annotations);
                   }
                   break;
                   

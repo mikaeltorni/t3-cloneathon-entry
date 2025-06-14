@@ -26,6 +26,7 @@
  * @property images - Optional array of image attachments
  * @property modelId - AI model used for processing (for assistant messages)
  * @property reasoning - Optional reasoning content for reasoning models (raw text)
+ * @property annotations - Optional web search annotations with URL citations
  * @property tokenMetrics - Optional token usage and performance metrics (for assistant messages)
  * @property metadata - Optional metadata for additional message information
  */
@@ -38,6 +39,7 @@ export interface ChatMessage {
   images?: ImageAttachment[]; // Multiple image support
   modelId?: string; // AI model used (for assistant messages)
   reasoning?: string; // Raw reasoning content for reasoning models
+  annotations?: WebSearchAnnotation[]; // Web search citations
   tokenMetrics?: TokenMetrics; // Token usage and performance metrics (for assistant messages)
   metadata?: { // Additional message metadata
     reasoningDuration?: number; // Duration in milliseconds for reasoning
@@ -237,6 +239,27 @@ export interface OpenRouterRequest {
 }
 
 /**
+ * Web search URL citation annotation structure
+ * Based on OpenRouter's standardized annotation schema
+ */
+export interface UrlCitation {
+  url: string;
+  title: string;
+  content?: string; // Added by OpenRouter if available
+  start_index: number; // The index of the first character of the URL citation in the message
+  end_index: number; // The index of the last character of the URL citation in the message
+}
+
+/**
+ * Web search annotation structure
+ * Based on OpenRouter's annotation schema
+ */
+export interface WebSearchAnnotation {
+  type: 'url_citation';
+  url_citation: UrlCitation;
+}
+
+/**
  * OpenRouter API response structure
  * 
  * @interface OpenRouterResponse
@@ -248,10 +271,12 @@ export interface OpenRouterResponse {
     message?: {
       content: string;
       reasoning?: string; // Real reasoning tokens from OpenRouter
+      annotations?: WebSearchAnnotation[]; // Web search citations
     };
     delta?: {
       content?: string;
       reasoning?: string; // Streaming reasoning tokens
+      annotations?: WebSearchAnnotation[]; // Streaming web search citations
     };
     finish_reason?: string;
   }>;

@@ -197,6 +197,66 @@ t3-cloneathon-entry/
 └── docs/                 # Documentation
 ```
 
+## 🔍 Universal Web Search with Source Citations
+
+All AI models now support web search capabilities through OpenRouter's unified web search system, complete with clickable source citations.
+
+### 🌐 Web Search Features
+
+- **Universal Support**: Every model can perform web search using OpenRouter's plugin system
+- **Source Citations**: Numbered buttons linking to original sources after each AI response
+- **Two Search Modes**:
+  - **Plugin-based Search** (Universal): Uses Exa.ai for $4/1K results - works with ALL models
+  - **Native Search** (Model-specific): Built into certain models with advanced context integration
+- **Effort Control**: Adjustable search context size (low/medium/high) for supported models
+- **Smart Pricing**: Automatic selection of most cost-effective search method
+- **Real-time Integration**: Search results and citations seamlessly integrated into AI responses
+
+### 📚 Source Citation System
+
+- **Numbered Citations**: Each unique source gets a numbered button (1, 2, 3, etc.)
+- **Click to Open**: Buttons open source URLs in new tabs with security measures
+- **Hover Tooltips**: Show source titles and descriptions on hover
+- **Real-time Updates**: Citations appear as they're received during streaming
+- **Deduplication**: Automatically removes duplicate URLs from the same response
+- **Accessibility**: Full keyboard navigation and screen reader support
+
+### 🎯 Model-Specific Search Capabilities
+
+#### Perplexity Models (Built-in Web Search)
+- **Sonar Reasoning**: Always-on web search with reasoning capabilities + citations
+- **Sonar Pro**: Professional-grade web search with advanced context + citations
+- **Sonar**: Fast, lightweight web search optimization + citations
+- **Pricing**: $5-12/1K requests (cheaper than OpenAI native search)
+
+#### OpenAI Models (Azure-hosted)
+- **GPT-4o**: Web search via `:online` suffix + citations
+- **o1/o3 Series**: Advanced reasoning + web search capabilities + citations
+- **Pricing**: $25-50/1K requests (premium native search)
+
+#### Google Models (Full Search Control)
+- **Gemini 2.5 Pro/Flash**: Web search with effort control + citations
+- **Search Options**: Full `web_search_options` parameter support + citations
+- **Pricing**: $4-8/1K requests (standard plugin pricing)
+
+### ⚙️ Technical Implementation
+
+The system automatically:
+1. **Detects Model Capabilities**: Checks if model supports native vs plugin search
+2. **Applies Correct Suffix**: Adds `:online` for plugin-based search
+3. **Configures Parameters**: Sets `web_search_options` for supported models
+4. **Handles Pricing**: Routes to most cost-effective search method
+5. **Processes Citations**: Extracts and displays URL annotations from OpenRouter responses
+6. **Streams Citations**: Real-time citation updates during response generation
+
+### 🎛️ User Interface
+
+- **Search Toggle**: Enable/disable web search per message
+- **Effort Selector**: Choose search context size (low/medium/high)
+- **Visual Indicators**: Color-coded pricing tiers (green=cheap, amber=premium)
+- **Model Awareness**: UI adapts based on selected model's capabilities
+- **Citation Display**: Numbered source buttons appear after AI responses with web search enabled
+
 ## 🎨 Usage
 
 ### Rate Limiting

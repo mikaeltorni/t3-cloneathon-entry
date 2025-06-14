@@ -74,7 +74,7 @@ interface ImageAttachment {
  * OpenRouter service interface
  */
 interface OpenRouterService {
-  sendMessage(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high'): Promise<{ content: string; reasoning?: string }>;
+  sendMessage(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high'): Promise<{ content: string; reasoning?: string; annotations?: any[] }>;
   sendMessageStream(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high'): Promise<AsyncIterable<string>>;
   getAvailableModels(): typeof AVAILABLE_MODELS;
 }
@@ -289,7 +289,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
      * @param reasoningEffort - Reasoning effort level (low, medium, high)
      * @param useWebSearch - Whether to enable web search for supported models
      * @param webSearchEffort - Web search effort level (low, medium, high)
-     * @returns Promise with AI response text
+     * @returns Promise with AI response text, reasoning, and annotations
      */
     async sendMessage(
       messages: ConversationMessage[], 
@@ -298,7 +298,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
       reasoningEffort: 'low' | 'medium' | 'high' = 'high',
       useWebSearch: boolean = false,
       webSearchEffort: 'low' | 'medium' | 'high' = 'medium'
-    ): Promise<{ content: string; reasoning?: string }> {
+    ): Promise<{ content: string; reasoning?: string; annotations?: any[] }> {
       try {
         // Validate input
         validateMessages(messages);
@@ -388,6 +388,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         // Extract response content
         const aiResponse = response.choices[0]?.message?.content;
         const reasoning = response.choices[0]?.message?.reasoning; // Real reasoning from API
+        const annotations = response.choices[0]?.message?.annotations; // Web search annotations
         
         if (!aiResponse?.trim()) {
           throw new Error('Empty response received from OpenRouter API');
@@ -404,14 +405,19 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
 
         // Log web search status
         if (useWebSearch) {
-          console.log(`[OpenRouter] ✅ Web search enabled for ${actualModelId}`);
+          if (annotations && annotations.length > 0) {
+            console.log(`[OpenRouter] ✅ Web search enabled for ${actualModelId} with ${annotations.length} citations`);
+          } else {
+            console.log(`[OpenRouter] ✅ Web search enabled for ${actualModelId}`);
+          }
         }
 
-        console.log(`[OpenRouter] Response received (${aiResponse.length} characters)${reasoning ? ` with reasoning (${reasoning.length} characters)` : ''}`);
+        console.log(`[OpenRouter] Response received (${aiResponse.length} characters)${reasoning ? ` with reasoning (${reasoning.length} characters)` : ''}${annotations ? ` with ${annotations.length} citations` : ''}`);
           
         return {
           content: aiResponse.trim(),
-          reasoning: reasoning || undefined // Real reasoning tokens from OpenRouter
+          reasoning: reasoning || undefined, // Real reasoning tokens from OpenRouter
+          annotations: annotations || undefined // Web search annotations
         };
 
       } catch (error) {
@@ -591,6 +597,11 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
                     // Handle content tokens
                     if (delta.content) {
                       yield `content:${delta.content}`;
+                    }
+                    
+                    // Handle web search annotations - yield with special prefix
+                    if (delta.annotations) {
+                      yield `annotations:${JSON.stringify(delta.annotations)}`;
                     }
                   }
                 } catch (parseError) {
