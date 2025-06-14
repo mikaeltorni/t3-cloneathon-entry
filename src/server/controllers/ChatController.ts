@@ -389,12 +389,12 @@ export class ChatController {
         return;
       }
 
-      const { threadId, content, imageUrl, images, modelId, useReasoning, reasoningEffort, useWebSearch, webSearchEffort }: any = req.body;
+      const { threadId, content, imageUrl, images, documents, modelId, useReasoning, reasoningEffort, useWebSearch, webSearchEffort }: any = req.body;
 
       // Validate request
-      if (!content?.trim() && (!imageUrl?.trim()) && (!images || images.length === 0)) {
+      if (!content?.trim() && (!imageUrl?.trim()) && (!images || images.length === 0) && (!documents || documents.length === 0)) {
         res.status(400).json({ 
-          error: 'Content, image URL, or images are required',
+          error: 'Content, image URL, images, or documents are required',
           timestamp: new Date().toISOString()
         });
         return;
@@ -421,7 +421,7 @@ export class ChatController {
         }
       } else {
         // Create new thread with the message content as title (truncated)
-        const title = content?.length > 50 ? content.substring(0, 50) + '...' : content || 'Image Analysis';
+        const title = content?.length > 50 ? content.substring(0, 50) + '...' : content || (documents?.length > 0 ? 'Document Analysis' : 'Image Analysis');
         currentThread = await firestoreChatStorage.createThread(req.user.uid, title);
         console.log(`[ChatController] Created new thread for streaming: ${currentThread.id}`);
       }
@@ -432,9 +432,36 @@ export class ChatController {
         threadId: currentThread.id 
       })}\n\n`);
 
-      // Create user message with multiple images support
+      // Prepare enhanced content that includes document text for AI analysis
+      let enhancedContent = content || '';
+      
+      // If no content provided, use appropriate default
+      if (!enhancedContent.trim()) {
+        if (documents && documents.length > 0) {
+          enhancedContent = 'Analyze this document';
+        } else if (images && images.length > 0) {
+          enhancedContent = 'Analyze this image';
+        }
+      }
+      
+      // Add document content to the message for AI analysis
+      if (documents && documents.length > 0) {
+        enhancedContent += '\n\n--- Document Content ---\n';
+        documents.forEach((doc: any, index: number) => {
+          enhancedContent += `\n**Document ${index + 1}: ${doc.name}**\n`;
+          enhancedContent += `Type: ${doc.category}\n`;
+          enhancedContent += `Content:\n${doc.content}\n`;
+          if (index < documents.length - 1) {
+            enhancedContent += '\n---\n';
+          }
+        });
+        enhancedContent += '\n--- End of Document Content ---\n';
+        console.log(`[ChatController] Enhanced content with ${documents.length} document(s), total length: ${enhancedContent.length}`);
+      }
+
+      // Create user message with multiple images and documents support
       const userMessage = firestoreChatStorage.createMessage(
-        content || 'Analyze this image',
+        enhancedContent,
         'user',
         imageUrl // Keep backward compatibility for single imageUrl
       );
@@ -443,6 +470,12 @@ export class ChatController {
       if (images && images.length > 0) {
         userMessage.images = images;
         console.log(`[ChatController] Added ${images.length} image(s) to streaming user message`);
+      }
+      
+      // Add documents to the message if provided
+      if (documents && documents.length > 0) {
+        userMessage.documents = documents;
+        console.log(`[ChatController] Added ${documents.length} document(s) to streaming user message`);
       }
 
       // Add user message to thread
@@ -456,7 +489,8 @@ export class ChatController {
           role: userMessage.role,
           content: userMessage.content,
           timestamp: userMessage.timestamp,
-          imageCount: images?.length || (imageUrl ? 1 : 0)
+          imageCount: images?.length || (imageUrl ? 1 : 0),
+          documentCount: documents?.length || 0
         }
       })}\n\n`);
 
@@ -516,7 +550,8 @@ export class ChatController {
           role: msg.role as any,
           content: msg.content,
           imageUrl: msg.imageUrl,
-          images: msg.images
+          images: msg.images,
+          documents: msg.documents
         }));
         
         console.log(`[ChatController] Conversation history prepared: ${conversationHistory.length} messages`);

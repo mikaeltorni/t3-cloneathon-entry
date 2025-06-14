@@ -20,7 +20,7 @@ import { createChatApiService } from '../services/chatApi';
 import { useAuth } from './useAuth';
 import { useLogger } from './useLogger';
 import { useErrorHandler } from './useErrorHandler';
-import type { ChatThread, ChatMessage, ImageAttachment, TokenMetrics } from '../../../src/shared/types';
+import type { ChatThread, ChatMessage, ImageAttachment, DocumentAttachment, TokenMetrics } from '../../../src/shared/types';
 import { 
   getCachedThreads, 
   setCachedThreads, 
@@ -40,17 +40,19 @@ interface UseChatReturn {
   threadsLoading: boolean;
   error: string | null;
   images: ImageAttachment[];
+  documents: DocumentAttachment[];
   currentTokenMetrics: TokenMetrics | null;
   
   // Actions
   loadThreads: (forceRefresh?: boolean) => Promise<void>;
   handleThreadSelect: (threadId: string) => Promise<void>;
   handleNewChat: () => void;
-  handleSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
+  handleSendMessage: (content: string, images?: ImageAttachment[], documents?: DocumentAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
   handleDeleteThread: (threadId: string) => Promise<void>;
   handleTogglePinThread: (threadId: string, isPinned: boolean) => Promise<void>;
   clearError: () => void;
   handleImagesChange: (images: ImageAttachment[]) => void;
+  handleDocumentsChange: (documents: DocumentAttachment[]) => void;
 }
 
 /**
@@ -70,6 +72,7 @@ export const useChat = (): UseChatReturn => {
   const [threadsLoading, setThreadsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [images, setImages] = useState<ImageAttachment[]>([]);
+  const [documents, setDocuments] = useState<DocumentAttachment[]>([]);
   const [currentTokenMetrics, setCurrentTokenMetrics] = useState<TokenMetrics | null>(null);
 
   const { user } = useAuth();
@@ -89,6 +92,7 @@ export const useChat = (): UseChatReturn => {
     setLoading(false);
     setError(null);
     setImages([]);
+    setDocuments([]);
     
     // Reset loading state appropriately
     setThreadsLoading(!!user); // Only set loading if user exists
@@ -265,6 +269,7 @@ export const useChat = (): UseChatReturn => {
   const handleSendMessage = useCallback(async (
     content: string, 
     images?: ImageAttachment[], 
+    documents?: DocumentAttachment[], 
     modelId?: string, 
     useReasoning?: boolean, 
     reasoningEffort?: 'low' | 'medium' | 'high', 
@@ -293,6 +298,7 @@ export const useChat = (): UseChatReturn => {
         role: 'user',
         timestamp: new Date(),
         images: images,
+        documents: documents,
         imageUrl: images && images.length === 1 ? images[0].url : undefined // For backward compatibility
       };
 
@@ -328,8 +334,9 @@ export const useChat = (): UseChatReturn => {
         reasoning: '' // Initialize reasoning for reasoning models
       };
 
-      // Clear images immediately after creating user message to prevent duplication
+      // Clear images and documents immediately after creating user message to prevent duplication
       setImages([]);
+      setDocuments([]);
 
       await chatApiService.sendMessageStream(
         {
@@ -337,6 +344,7 @@ export const useChat = (): UseChatReturn => {
           content,
           imageUrl: images && images.length > 1 ? undefined : images?.[0]?.url, // Only for single image
           images: images,
+          documents: documents,
           modelId,
           useReasoning,
           reasoningEffort,
@@ -451,8 +459,9 @@ export const useChat = (): UseChatReturn => {
           
           debug(`Moved thread to top of list: ${finalThread.title} (${isNewThread ? 'new' : 'existing'} thread)`)
 
-          // Clear images after successful message send
+          // Clear images and documents after successful message send
           setImages([]);
+          setDocuments([]);
           
           log('Streaming message completed successfully');
         },
@@ -694,6 +703,15 @@ export const useChat = (): UseChatReturn => {
     setImages(images);
   }, []);
 
+  /**
+   * Handle documents change
+   * 
+   * @param documents - New documents
+   */
+  const handleDocumentsChange = useCallback((documents: DocumentAttachment[]) => {
+    setDocuments(documents);
+  }, []);
+
   return {
     // State
     threads,
@@ -702,6 +720,7 @@ export const useChat = (): UseChatReturn => {
     threadsLoading,
     error,
     images,
+    documents,
     currentTokenMetrics,
     
     // Actions
@@ -712,6 +731,7 @@ export const useChat = (): UseChatReturn => {
     handleDeleteThread,
     handleTogglePinThread,
     clearError,
-    handleImagesChange
+    handleImagesChange,
+    handleDocumentsChange
   };
 };

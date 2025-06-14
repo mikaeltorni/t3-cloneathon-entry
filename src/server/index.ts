@@ -27,6 +27,7 @@ import dotenv from 'dotenv';
 import { createChatController } from './controllers/ChatController';
 import { createModelsController } from './controllers/ModelsController';
 import { createUserPreferencesController } from './controllers/UserPreferencesController';
+import { createDocumentController } from './controllers/DocumentController';
 import { rateLimit } from './middleware/rateLimit';
 
 // Load environment variables from .env file
@@ -47,6 +48,7 @@ if (!OPENROUTER_API_KEY) {
 const chatController = createChatController(OPENROUTER_API_KEY);
 const modelsController = createModelsController(OPENROUTER_API_KEY);
 const userPreferencesController = createUserPreferencesController();
+const documentController = createDocumentController();
 
 // Middleware
 app.use(cors());
@@ -115,6 +117,7 @@ app.use('/api', rateLimit);
 app.use('/api/chats', chatController.getRoutes());
 app.use('/api/models', modelsController.getRoutes());
 app.use('/api/preferences', userPreferencesController.getRoutes());
+app.use('/api/documents', documentController.getRoutes());
 
 /**
  * Root health check endpoint

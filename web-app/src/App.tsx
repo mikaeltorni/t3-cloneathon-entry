@@ -220,7 +220,9 @@ function AppContent() {
               loading={chat.loading}
               availableModels={models.availableModels}
               images={chat.images}
+              documents={chat.documents}
               onImagesChange={chat.handleImagesChange}
+              onDocumentsChange={chat.handleDocumentsChange}
               sidebarOpen={sidebar.isOpen}
               currentTokenMetrics={chat.currentTokenMetrics}
               selectedModel={currentModel}

@@ -18,16 +18,17 @@
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLogger } from './useLogger';
-import type { ModelConfig, ImageAttachment } from '../../../src/shared/types';
+import type { ModelConfig, ImageAttachment, DocumentAttachment } from '../../../src/shared/types';
 
 /**
  * Message form hook configuration
  */
 interface UseMessageFormConfig {
-  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
+  onSendMessage: (content: string, images?: ImageAttachment[], documents?: DocumentAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
   availableModels: Record<string, ModelConfig>;
   loading: boolean;
   images: ImageAttachment[];
+  documents: DocumentAttachment[];
   selectedModel?: string; // External model selection
   onModelChange?: (modelId: string) => void; // External model change handler
   defaultModel?: string;
@@ -79,7 +80,7 @@ export interface UseMessageFormReturn {
  * @returns Form state and operations
  */
 export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormReturn => {
-  const { onSendMessage, availableModels, loading, images, selectedModel: externalSelectedModel, onModelChange, defaultModel = 'google/gemini-2.5-flash-preview' } = config;
+  const { onSendMessage, availableModels, loading, images, documents, selectedModel: externalSelectedModel, onModelChange, defaultModel = 'google/gemini-2.5-flash-preview' } = config;
   
   const [message, setMessage] = useState('');
   // Use external model selection if provided, otherwise use internal state
@@ -170,8 +171,8 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
    * Check if form submission should be disabled
    */
   const canSubmit = useCallback((): boolean => {
-    return !((!message.trim() && images.length === 0) || loading);
-  }, [message, images.length, loading]);
+    return !((!message.trim() && images.length === 0 && documents.length === 0) || loading);
+  }, [message, images.length, documents.length, loading]);
 
   /**
    * Focus the textarea
@@ -225,6 +226,7 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
       onSendMessage(
         trimmedMessage,
         images,
+        documents,
         selectedModel,
         useReasoning && isReasoningModel(),
         reasoningEffort,
@@ -239,7 +241,7 @@ export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormRetu
       debug('Message submission failed', error);
       // Don't reset form on error so user can retry
     }
-  }, [message, images, selectedModel, useReasoning, isReasoningModel, useWebSearch, canSubmit, onSendMessage, debug, log, reasoningEffort, webSearchEffort]);
+  }, [message, images, documents, selectedModel, useReasoning, isReasoningModel, useWebSearch, canSubmit, onSendMessage, debug, log, reasoningEffort, webSearchEffort]);
 
   /**
    * Handle keyboard shortcuts

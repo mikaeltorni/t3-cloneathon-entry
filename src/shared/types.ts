@@ -24,6 +24,7 @@
  * @property timestamp - Message creation timestamp
  * @property imageUrl - Optional image URL for analysis (deprecated, use images)
  * @property images - Optional array of image attachments
+ * @property documents - Optional array of document attachments
  * @property modelId - AI model used for processing (for assistant messages)
  * @property reasoning - Optional reasoning content for reasoning models (raw text)
  * @property annotations - Optional web search annotations with URL citations
@@ -37,6 +38,7 @@ export interface ChatMessage {
   timestamp: Date;
   imageUrl?: string; // For image analysis messages (deprecated, use images)
   images?: ImageAttachment[]; // Multiple image support
+  documents?: DocumentAttachment[]; // Multiple document support
   modelId?: string; // AI model used (for assistant messages)
   reasoning?: string; // Raw reasoning content for reasoning models
   annotations?: WebSearchAnnotation[]; // Web search citations
@@ -64,6 +66,28 @@ export interface ImageAttachment {
   name: string;
   size: number;
   type: string; // MIME type like 'image/jpeg'
+}
+
+/**
+ * Document attachment structure
+ * 
+ * @interface DocumentAttachment
+ * @property id - Unique attachment identifier
+ * @property url - Document URL (data URL for uploaded files or external URL)
+ * @property name - Original filename
+ * @property size - File size in bytes
+ * @property type - MIME type
+ * @property content - Extracted text content from the document
+ * @property category - Document category for UI display
+ */
+export interface DocumentAttachment {
+  id: string;
+  url: string; // Data URL or external URL
+  name: string;
+  size: number;
+  type: string; // MIME type like 'application/pdf', 'text/plain', etc.
+  content: string; // Extracted text content
+  category: 'pdf' | 'text' | 'markdown' | 'other';
 }
 
 /**
@@ -123,6 +147,7 @@ export interface UserChats {
  * @property content - Message text content
  * @property imageUrl - Optional single image URL (deprecated, use images)
  * @property images - Optional array of image attachments
+ * @property documents - Optional array of document attachments
  * @property modelId - AI model to use for processing the message
  * @property useReasoning - Whether to enable reasoning for supported models
  * @property reasoningEffort - Reasoning effort level for supported models
@@ -134,6 +159,7 @@ export interface CreateMessageRequest {
   content: string;
   imageUrl?: string; // Deprecated, use images
   images?: ImageAttachment[]; // Multiple image support
+  documents?: DocumentAttachment[]; // Multiple document support
   modelId?: string; // AI model identifier
   useReasoning?: boolean; // Enable reasoning for supported models
   reasoningEffort?: 'low' | 'medium' | 'high'; // Reasoning effort level

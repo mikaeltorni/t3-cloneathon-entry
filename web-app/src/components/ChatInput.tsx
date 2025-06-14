@@ -23,24 +23,27 @@ import { Button } from './ui/Button';
 import { ReasoningToggle } from './ui/ReasoningToggle';
 import { SearchToggle } from './ui/SearchToggle';
 import { ImageAttachments } from './ImageAttachments';
+import { DocumentAttachments } from './DocumentAttachments';
 import { TokenMetricsDisplay } from './TokenMetricsDisplay';
 import { ContextWindowDisplay } from './ContextWindowDisplay';
 import { useLogger } from '../hooks/useLogger';
 import { useMessageForm } from '../hooks/useMessageForm';
 import { tokenizerService } from '../services/tokenizerService';
 import { cn } from '../utils/cn';
-import type { ModelConfig, ImageAttachment, TokenMetrics, ChatMessage } from '../../../src/shared/types';
+import type { ModelConfig, ImageAttachment, DocumentAttachment, TokenMetrics, ChatMessage } from '../../../src/shared/types';
 
 /**
  * Props for the ChatInput component
  */
 interface ChatInputProps {
-  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
+  onSendMessage: (content: string, images?: ImageAttachment[], documents?: DocumentAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
   loading: boolean;
   availableModels: Record<string, ModelConfig>;
   onHeightChange?: (height: number) => void;
   images: ImageAttachment[];
+  documents: DocumentAttachment[];
   onImagesChange: (images: ImageAttachment[]) => void;
+  onDocumentsChange: (documents: DocumentAttachment[]) => void;
   sidebarOpen?: boolean;
   currentTokenMetrics?: TokenMetrics | null;
   isGenerating?: boolean;
@@ -54,7 +57,7 @@ interface ChatInputProps {
  * 
  * Handles message composition and form submission with:
  * - Auto-resizing textarea
- * - Image attachment management
+ * - Image and document attachment management
  * - Model selection and reasoning options
  * - Keyboard shortcuts and accessibility
  * - Form state management via useMessageForm hook
@@ -64,7 +67,9 @@ interface ChatInputProps {
  * @param availableModels - Available AI models
  * @param onHeightChange - Callback when input height changes
  * @param images - Current image attachments
+ * @param documents - Current document attachments
  * @param onImagesChange - Callback for image changes
+ * @param onDocumentsChange - Callback for document changes
  * @param sidebarOpen - Whether the sidebar is open
  * @param currentTokenMetrics - Current token usage metrics
  * @param isGenerating - Whether a message is currently being generated
@@ -79,7 +84,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   availableModels,
   onHeightChange,
   images,
+  documents,
   onImagesChange,
+  onDocumentsChange,
   sidebarOpen = false,
   currentTokenMetrics = null,
   isGenerating = false,
@@ -125,6 +132,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     availableModels,
     loading,
     images,
+    documents,
     selectedModel: externalSelectedModel,
     onModelChange
   });
@@ -211,7 +219,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   // Update input bar height when content changes
   useEffect(() => {
     updateInputBarHeight();
-  }, [images.length, message, updateInputBarHeight]);
+  }, [images.length, documents.length, message, updateInputBarHeight]);
 
   // Update input bar height on window resize
   useEffect(() => {
@@ -236,6 +244,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <ImageAttachments 
             images={images}
             onImagesChange={onImagesChange}
+          />
+          
+          {/* Document Attachments */}
+          <DocumentAttachments
+            documents={documents}
+            onDocumentsChange={onDocumentsChange}
           />
 
           {/* Token Metrics and Context Window Display */}

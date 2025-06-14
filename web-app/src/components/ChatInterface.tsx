@@ -21,21 +21,23 @@ import React, { useMemo } from 'react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { useLogger } from '../hooks/useLogger';
-import { useGlobalDropZone } from '../hooks/useGlobalDropZone';
+import { useGlobalFileDropZone } from '../hooks/useGlobalFileDropZone';
 import { useReasoningState } from '../hooks/useReasoningState';
 import { useInputBarHeight } from '../hooks/useInputBarHeight';
-import type { ChatThread, ModelConfig, ImageAttachment, TokenMetrics } from '../../../src/shared/types';
+import type { ChatThread, ModelConfig, ImageAttachment, DocumentAttachment, TokenMetrics } from '../../../src/shared/types';
 
 /**
  * Props for the ChatInterface component
  */
 interface ChatInterfaceProps {
   currentThread: ChatThread | null;
-  onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
+  onSendMessage: (content: string, images?: ImageAttachment[], documents?: DocumentAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
   loading: boolean;
   availableModels: Record<string, ModelConfig>;
   images: ImageAttachment[];
+  documents: DocumentAttachment[];
   onImagesChange: (images: ImageAttachment[]) => void;
+  onDocumentsChange: (documents: DocumentAttachment[]) => void;
   sidebarOpen?: boolean;
   currentTokenMetrics?: TokenMetrics | null;
   selectedModel?: string; // External model selection from ModelSidebar
@@ -66,7 +68,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   loading,
   availableModels,
   images,
+  documents,
   onImagesChange,
+  onDocumentsChange,
   sidebarOpen = false,
   currentTokenMetrics = null,
   selectedModel,
@@ -100,12 +104,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   }, [images, onImagesChange, debug]);
 
   /**
-   * Global drop zone for the entire chat interface (excluding sidebar)
+   * Add new documents from global drop zone
    */
-  const { isDragOver, dropHandlers } = useGlobalDropZone({
+  const handleDocumentsAdd = React.useCallback((newDocuments: DocumentAttachment[]) => {
+    onDocumentsChange([...documents, ...newDocuments]);
+    debug(`Added ${newDocuments.length} documents via global drop zone`);
+  }, [documents, onDocumentsChange, debug]);
+
+  /**
+   * Global file drop zone for the entire chat interface (excluding sidebar)
+   */
+  const { isDragOver, dropHandlers } = useGlobalFileDropZone({
     onImagesAdd: handleImagesAdd,
+    onDocumentsAdd: handleDocumentsAdd,
     currentImageCount: images.length,
+    currentDocumentCount: documents.length,
     maxImages: 5,
+    maxDocuments: 5,
     excludeSelector: '[data-no-drop="true"]' // Sidebar will have this attribute
   });
 
@@ -120,16 +135,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
       {isDragOver && (
         <div className="fixed inset-0 z-40 pointer-events-none">
           <div className="absolute inset-0 bg-blue-500 bg-opacity-10">
-            <div className="flex items-center justify-center h-full">
-              <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm mx-4 text-center">
-                <div className="text-4xl mb-3">📸</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Drop Images Here</h3>
-                <p className="text-sm text-gray-600">
-                  Drop your images anywhere to attach them to your message
+            <div className="flex items-center justify-center h-full w-full">
+              <div className="bg-white rounded-lg shadow-lg p-8 max-w-md mx-4 text-center">
+                <div className="flex items-center justify-center gap-4 text-5xl mb-4">
+                  <span>📸</span>
+                  <span>📄</span>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  Drop Images & Documents Here
+                </h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Drop your files anywhere to attach them to your message
                 </p>
-                <p className="text-xs text-gray-500 mt-2">
-                  Supports JPG, PNG, GIF, WebP • Max 5 images • 10MB each
-                </p>
+                <div className="space-y-2 text-xs text-gray-500">
+                  <p className="font-medium">Images:</p>
+                  <p>JPG, PNG, GIF, WebP • Max 5 images • 10MB each</p>
+                  <p className="font-medium mt-3">Documents:</p>
+                  <p>PDF, TXT, MD, JSON, CSV, XML, HTML, JS, TS, CSS, YAML</p>
+                  <p>Max 5 documents • 50MB each</p>
+                </div>
               </div>
             </div>
           </div>
@@ -150,7 +174,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         loading={loading}
         availableModels={availableModels}
         images={images}
+        documents={documents}
         onImagesChange={onImagesChange}
+        onDocumentsChange={onDocumentsChange}
         onHeightChange={updateHeight}
         sidebarOpen={sidebarOpen}
         currentTokenMetrics={currentTokenMetrics}
