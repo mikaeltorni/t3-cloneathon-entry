@@ -180,14 +180,15 @@ export const useChat = (): UseChatReturn => {
         hasCache: hasCachedThreads() 
       });
       
-      const allThreads = await chatApiService.getAllChats();
+      // Use efficient method with reasonable pagination
+      const result = await chatApiService.getAllChatsEfficient(100); // Load up to 100 threads efficiently
       
       // Update cache with fresh data
-      setCachedThreads(allThreads);
+      setCachedThreads(result.threads);
       
-      setThreads(allThreads);
+      setThreads(result.threads);
       setError(null);
-      log(`Successfully loaded ${allThreads.length} threads from server`);
+      log(`Successfully loaded ${result.threads.length} threads from server efficiently (hasMore: ${result.hasMore})`);
     } catch (err) {
       const errorMessage = 'Failed to load chat history. Make sure the server is running.';
       handleError(err as Error, 'LoadThreads');
