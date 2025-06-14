@@ -18,8 +18,6 @@ import type { ModelConfig } from '../../../../src/shared/types';
 interface ModelBadgesProps {
   /** Model configuration */
   model: ModelConfig;
-  /** Display variant */
-  variant?: 'compact' | 'full';
   /** Additional CSS classes */
   className?: string;
 }
@@ -39,13 +37,11 @@ const formatReleaseDate = (dateString: string): string => {
  * Model capability badges component
  * 
  * @param model - Model configuration object
- * @param variant - Display variant (compact or full)
  * @param className - Additional CSS classes
  * @returns JSX element containing the capability badges
  */
 export const ModelBadges: React.FC<ModelBadgesProps> = ({
   model,
-  variant = 'compact',
   className = ''
 }) => {
   const badges: React.ReactNode[] = [];
