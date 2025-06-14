@@ -20,6 +20,8 @@
  */
 import React, { useState, useMemo } from 'react';
 import { cn } from '../utils/cn';
+import { useUserPreferences } from '../hooks/useUserPreferences';
+import { useLogger } from '../hooks/useLogger';
 import type { ModelConfig } from '../../../src/shared/types';
 
 interface ModelSidebarProps {
@@ -50,17 +52,45 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
   inputBarHeight = 300 // Default fallback height
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [pinningModel, setPinningModel] = useState<string | null>(null);
+  
   const currentModel = models[value];
+  const { pinnedModels, toggleModelPin } = useUserPreferences();
+  const { debug, warn } = useLogger('ModelSidebar');
 
   /**
-   * Sort models by release date (newest first)
+   * Handle model pin toggle
+   */
+  const handleTogglePin = async (modelId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent model selection
+    
+    try {
+      setPinningModel(modelId);
+      debug(`Toggling pin for model: ${modelId}`);
+      await toggleModelPin(modelId);
+    } catch (error) {
+      warn(`Failed to toggle pin for model ${modelId}`, error as Error);
+    } finally {
+      setPinningModel(null);
+    }
+  };
+
+  /**
+   * Sort models with pinned models first, then by release date
    */
   const sortedModels = useMemo(() => {
-    return Object.entries(models).sort(([, a], [, b]) => {
-      // Sort by release date descending (newest first)
+    return Object.entries(models).sort(([aId, a], [bId, b]) => {
+      const aIsPinned = pinnedModels.includes(aId);
+      const bIsPinned = pinnedModels.includes(bId);
+      
+      // First, sort by pinned status (pinned models first)
+      if (aIsPinned && !bIsPinned) return -1;
+      if (!aIsPinned && bIsPinned) return 1;
+      
+      // Then sort by release date descending (newest first)
       return new Date(b.released).getTime() - new Date(a.released).getTime();
     });
-  }, [models]);
+  }, [models, pinnedModels]);
 
   /**
    * Get brain emoji with proper opacity based on reasoning capability
@@ -218,76 +248,129 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {sortedModels.map(([modelId, model]) => {
                 const isSelected = value === modelId;
+                const isPinned = pinnedModels.includes(modelId);
+                const isPinning = pinningModel === modelId;
                 
                 return (
-                  <button
-                    key={modelId}
-                    type="button"
-                    onClick={() => onChange(modelId)}
-                    disabled={loading}
-                    className={cn(
-                      'w-full flex flex-col p-3 rounded-lg font-medium transition-all duration-200',
-                      'border-2 hover:scale-[1.02] hover:shadow-md text-left',
-                      isSelected
-                        ? 'shadow-lg transform scale-[1.02]'
-                        : 'hover:shadow-sm bg-white',
-                      loading && 'opacity-50 cursor-not-allowed'
-                    )}
-                    style={{
-                      backgroundColor: isSelected ? model.bgColor : '#ffffff',
-                      borderColor: isSelected ? model.color : '#e5e7eb',
-                      color: isSelected ? model.textColor : '#374151',
-                    }}
-                  >
-                    {/* Model Header */}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold">
-                          {model.name}
-                        </span>
-                        {getBrainIcon(model)}
-                      </div>
-                      
-                      {/* Active Indicator */}
-                      {isSelected && (
-                        <div 
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: model.color }}
-                        />
+                  <div key={modelId} className="relative group">
+                    <button
+                      type="button"
+                      onClick={() => onChange(modelId)}
+                      disabled={loading}
+                      className={cn(
+                        'w-full flex flex-col p-3 rounded-lg font-medium transition-all duration-200',
+                        'border-2 hover:scale-[1.02] hover:shadow-md text-left',
+                        isSelected
+                          ? 'shadow-lg transform scale-[1.02]'
+                          : 'hover:shadow-sm bg-white',
+                        isPinned && 'ring-2 ring-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50',
+                        loading && 'opacity-50 cursor-not-allowed'
                       )}
-                    </div>
+                      style={{
+                        backgroundColor: isSelected ? model.bgColor : (isPinned ? undefined : '#ffffff'),
+                        borderColor: isSelected ? model.color : (isPinned ? '#f59e0b' : '#e5e7eb'),
+                        color: isSelected ? model.textColor : '#374151',
+                      }}
+                    >
+                      {/* Model Header */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold">
+                            {model.name}
+                          </span>
+                          {getBrainIcon(model)}
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                          {/* Pin Indicator */}
+                          {isPinned && (
+                            <div className="text-amber-600">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M14,4V2H10V4H4V6H5.5L6.5,17H17.5L18.5,6H20V4H14M12,7.1L16.05,11.5L15.6,12.5L12,10.4L8.4,12.5L7.95,11.5L12,7.1Z" />
+                              </svg>
+                            </div>
+                          )}
+                          
+                          {/* Active Indicator */}
+                          {isSelected && (
+                            <div 
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: model.color }}
+                            />
+                          )}
+                        </div>
+                      </div>
 
-                    {/* Capability Badges */}
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {getCapabilityBadges(model)}
-                    </div>
+                      {/* Capability Badges */}
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {getCapabilityBadges(model)}
+                      </div>
 
-                    {/* Model Description (truncated) */}
-                    <p className="text-xs text-gray-600 line-clamp-2">
-                      {model.description}
-                    </p>
-                  </button>
+                      {/* Model Description (truncated) */}
+                      <p className="text-xs text-gray-600 line-clamp-2">
+                        {model.description}
+                      </p>
+                    </button>
+
+                    {/* Pin Button - Appears on hover */}
+                    <button
+                      onClick={(e) => handleTogglePin(modelId, e)}
+                      disabled={isPinning}
+                      className={cn(
+                        'absolute top-2 right-2 p-1.5 rounded-lg transition-all duration-200',
+                        isPinned
+                          ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-100 opacity-100'
+                          : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-amber-600 hover:bg-amber-50',
+                        'z-10'
+                      )}
+                      title={isPinned ? 'Unpin model' : 'Pin to top'}
+                    >
+                      {isPinning ? (
+                        <div className="animate-spin h-3 w-3 border border-amber-600 border-t-transparent rounded-full" />
+                      ) : isPinned ? (
+                        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M14,4V2H10V4H4V6H5.5L6.5,17H17.5L18.5,6H20V4H14M12,7.1L16.05,11.5L15.6,12.5L12,10.4L8.4,12.5L7.95,11.5L12,7.1Z" />
+                        </svg>
+                      ) : (
+                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 );
               })}
             </div>
 
-            {/* Footer - Current Model Details */}
-            {currentModel && (
-              <div className="p-4 border-t border-gray-100 bg-gray-50">
-                <div className="flex items-center gap-2 mb-2">
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: currentModel.color }}
-                  />
-                  <span className="font-semibold text-gray-900 text-sm">
-                    Currently Selected
-                  </span>
+            {/* Footer - Current Model Details and Stats */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50">
+              {currentModel && (
+                <div className="mb-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: currentModel.color }}
+                    />
+                    <span className="font-semibold text-gray-900 text-sm">
+                      Currently Selected
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600">
+                    {currentModel.name} - {currentModel.description}
+                  </p>
                 </div>
-                <p className="text-xs text-gray-600">
-                  {currentModel.name} - {currentModel.description}
-                </p>
+              )}
+              
+              {/* Model Stats */}
+              <div className="text-xs text-gray-500 text-center">
+                {Object.keys(models).length} models available
+                {pinnedModels.length > 0 && (
+                  <span className="text-amber-600 ml-1">
+                    • {pinnedModels.length} pinned
+                  </span>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
