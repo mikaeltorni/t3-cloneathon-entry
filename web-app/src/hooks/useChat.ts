@@ -277,11 +277,11 @@ export const useChat = (): UseChatReturn => {
 
     try {
       // Check server connectivity first
-      const isHealthy = await chatApiService.checkHealth();
-      if (!isHealthy) {
-        setError('Server is not running. Start it with: npm run dev');
-        return;
-      }
+      // const isHealthy = await chatApiService.checkHealth();
+      // if (!isHealthy) {
+      //   setError('Server is not running. Start it with: npm run dev');
+      //   return;
+      // }
 
       let tempThread = currentThread;
       let isNewThread = false;

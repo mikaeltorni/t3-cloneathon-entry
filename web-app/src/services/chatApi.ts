@@ -411,25 +411,25 @@ class ChatApiService {
     }
   }
 
-  /**
-   * Check API health/connectivity
-   * 
-   * @returns Promise that resolves if API is healthy
-   */
-  async checkHealth(): Promise<boolean> {
-    try {
-      logger.debug('Checking API health');
+  // /**
+  //  * Check API health/connectivity
+  //  * 
+  //  * @returns Promise that resolves if API is healthy
+  //  */
+  // async checkHealth(): Promise<boolean> {
+  //   try {
+  //     logger.debug('Checking API health');
       
-      // Try to fetch threads as a health check
-      await this.getAllChatsEfficient();
+  //     // Try to fetch threads as a health check
+  //     await this.getAllChatsEfficient();
       
-      logger.info('API health check passed');
-      return true;
-    } catch (error) {
-      logger.warn('API health check failed', error as Error);
-      return false;
-    }
-  }
+  //     logger.info('API health check passed');
+  //     return true;
+  //   } catch (error) {
+  //     logger.warn('API health check failed', error as Error);
+  //     return false;
+  //   }
+  // }
 
   /**
    * Send a new message to a chat thread with streaming response
