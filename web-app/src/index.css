@@ -49,4 +49,18 @@ body {
   .gradient-border {
     @apply relative before:absolute before:-inset-0.5 before:bg-gradient-to-r before:from-blue-500 before:to-purple-600 before:rounded-xl before:blur-sm;
   }
+
+  /* Vertical text for ModelSidebar */
+  .writing-mode-vertical {
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+  }
+
+  /* Line clamp utilities */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }

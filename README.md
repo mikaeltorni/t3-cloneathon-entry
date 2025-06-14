@@ -6,6 +6,7 @@ A modern full-stack chat application built with React, TypeScript, Express.js, a
 
 - **Modern Tech Stack**: React 18+ with TypeScript, Express.js backend, Firebase integration
 - **AI Chat Integration**: OpenRouter API integration for AI conversations
+- **Model Selection Sidebar**: Right-side hover-to-reveal sidebar for easy AI model switching
 - **Firebase Rate Limiting**: Simple and effective rate limiting using firebase-functions-rate-limiter
 - **Real-time User Experience**: Client-side throttling with visual feedback
 - **Responsive Design**: Tailwind CSS with mobile-first approach
@@ -31,6 +32,42 @@ We've implemented several efficiency improvements to handle large numbers of cha
 - `GET /api/chats?limit=50&summaryOnly=true` - Efficient thread list loading
 - `POST /api/chats/messages/batch` - Batch message retrieval for up to 20 threads
 - Enhanced pagination with cursor-based navigation
+
+## 🎨 Model Selection Sidebar
+
+### **Right-Side Hover Interface**
+The application features an innovative model selection sidebar that provides seamless AI model switching without interrupting the conversation flow:
+
+#### **Key Features**
+- **Hover-to-Reveal**: Compact 64px tab on the right edge that expands to 320px on hover
+- **Visual Model Indicators**: Each model displays with custom brand colors and capability badges
+- **Real-time Model Info**: Shows reasoning capabilities, release dates, and pricing tiers
+- **Smooth Animations**: 300ms transition animations for professional feel
+- **Mobile Responsive**: Adapts gracefully to different screen sizes
+
+#### **Model Capabilities Display**
+- **Reasoning Indicators**: 🧠 icons with opacity levels (forced, optional, none)
+- **Web Search Pricing**: Color-coded badges for different pricing tiers (cheap, premium, standard)
+- **Release Dates**: Automatic sorting by newest models first
+- **Active Selection**: Clear visual feedback for currently selected model
+
+#### **Technical Implementation**
+```tsx
+// Hover state management with smooth transitions
+const [isExpanded, setIsExpanded] = useState(false);
+
+// Fixed positioning with z-index layering
+className="fixed right-0 top-0 h-full z-50 transition-all duration-300 ease-in-out"
+onMouseEnter={() => setIsExpanded(true)}
+onMouseLeave={() => setIsExpanded(false)}
+```
+
+#### **Layout Integration**
+- **Right Margin Compensation**: Chat area automatically adjusts with `mr-16` to accommodate the sidebar tab
+- **Z-Index Management**: Positioned above chat content but below modals (z-50)
+- **Non-intrusive**: Doesn't interfere with existing left sidebar or chat functionality
+- **Connected State**: ModelSidebar selection directly controls ChatInput's model for message sending
+- **Visual Feedback**: ChatInput shows current selected model with color indicator and instructions
 
 ## 🛠️ Technology Stack
 
@@ -186,6 +223,7 @@ t3-cloneathon-entry/
 │   │   ├── components/    # React components
 │   │   │   ├── ui/        # Reusable UI components
 │   │   │   ├── auth/      # Authentication components
+│   │   │   ├── ModelSidebar.tsx  # Right-side model selection sidebar
 │   │   │   └── examples/  # Example components
 │   │   ├── hooks/         # Custom React hooks
 │   │   ├── services/      # API services and utilities

@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
+import { ModelSidebar } from './components/ModelSidebar';
 import { SidebarToggle } from './components/ui/SidebarToggle';
 import { SignInForm } from './components/auth/SignInForm';
 import { ConnectionError } from './components/error/ConnectionError';
@@ -178,14 +179,16 @@ function AppContent() {
           currentModel={currentModel}
         />
 
-        {/* Main Chat Area - Offset by sidebar width when open */}
+        {/* Main Chat Area - Offset by sidebar width when open, with right margin for ModelSidebar */}
         <div 
           className={cn(
             'h-full flex flex-col transition-all duration-300',
             {
               'ml-80': sidebar.isOpen,
               'ml-0': !sidebar.isOpen
-            }
+            },
+            // Always leave space for ModelSidebar tab on the right
+            'mr-16'
           )}
         >
           {/* Error Banner */}
@@ -203,15 +206,23 @@ function AppContent() {
               onSendMessage={chat.handleSendMessage}
               loading={chat.loading}
               availableModels={models.availableModels}
-              modelsLoading={models.modelsLoading}
               images={chat.images}
               onImagesChange={chat.handleImagesChange}
               sidebarOpen={sidebar.isOpen}
-              onModelChange={handleCurrentModelChange}
               currentTokenMetrics={chat.currentTokenMetrics}
+              selectedModel={currentModel}
+              onModelChange={handleCurrentModelChange}
             />
           </div>
         </div>
+
+        {/* Model Selection Sidebar - Right Side */}
+        <ModelSidebar
+          value={currentModel}
+          onChange={handleCurrentModelChange}
+          models={models.availableModels}
+          loading={models.modelsLoading}
+        />
       </div>
     </ErrorBoundary>
   );

@@ -34,12 +34,12 @@ interface ChatInterfaceProps {
   onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
   loading: boolean;
   availableModels: Record<string, ModelConfig>;
-  modelsLoading: boolean;
   images: ImageAttachment[];
   onImagesChange: (images: ImageAttachment[]) => void;
   sidebarOpen?: boolean;
-  onModelChange?: (modelId: string) => void;
   currentTokenMetrics?: TokenMetrics | null;
+  selectedModel?: string; // External model selection from ModelSidebar
+  onModelChange?: (modelId: string) => void; // Model change handler
 }
 
 /**
@@ -52,10 +52,12 @@ interface ChatInterfaceProps {
  * @param onSendMessage - Callback for sending messages
  * @param loading - Loading state for message sending
  * @param availableModels - Available AI models
- * @param modelsLoading - Models loading state
  * @param images - Current image attachments
  * @param onImagesChange - Callback for image changes
  * @param sidebarOpen - Whether the sidebar is open
+ * @param currentTokenMetrics - Current token usage metrics
+ * @param selectedModel - Currently selected AI model (from ModelSidebar)
+ * @param onModelChange - Callback when model is changed (via ModelSidebar)
  * @returns React component
  */
 const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
@@ -63,12 +65,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   onSendMessage,
   loading,
   availableModels,
-  modelsLoading,
   images,
   onImagesChange,
   sidebarOpen = false,
-  onModelChange,
-  currentTokenMetrics = null
+  currentTokenMetrics = null,
+  selectedModel,
+  onModelChange
 }) => {
   const { debug } = useLogger('ChatInterface');
 
@@ -147,15 +149,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         onSendMessage={onSendMessage}
         loading={loading}
         availableModels={availableModels}
-        modelsLoading={modelsLoading}
         images={images}
         onImagesChange={onImagesChange}
         onHeightChange={updateHeight}
         sidebarOpen={sidebarOpen}
-        onModelChange={onModelChange}
         currentTokenMetrics={currentTokenMetrics}
         isGenerating={loading}
         currentMessages={messages}
+        selectedModel={selectedModel}
+        onModelChange={onModelChange}
       />
     </div>
   );

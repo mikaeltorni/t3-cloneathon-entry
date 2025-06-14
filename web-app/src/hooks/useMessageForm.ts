@@ -28,6 +28,8 @@ interface UseMessageFormConfig {
   availableModels: Record<string, ModelConfig>;
   loading: boolean;
   images: ImageAttachment[];
+  selectedModel?: string; // External model selection
+  onModelChange?: (modelId: string) => void; // External model change handler
   defaultModel?: string;
 }
 
@@ -77,10 +79,16 @@ export interface UseMessageFormReturn {
  * @returns Form state and operations
  */
 export const useMessageForm = (config: UseMessageFormConfig): UseMessageFormReturn => {
-  const { onSendMessage, availableModels, loading, images, defaultModel = 'google/gemini-2.5-flash-preview' } = config;
+  const { onSendMessage, availableModels, loading, images, selectedModel: externalSelectedModel, onModelChange, defaultModel = 'google/gemini-2.5-flash-preview' } = config;
   
   const [message, setMessage] = useState('');
-  const [selectedModel, setSelectedModel] = useState(defaultModel);
+  // Use external model selection if provided, otherwise use internal state
+  const selectedModel = externalSelectedModel || defaultModel;
+  const setSelectedModel = useCallback((model: string) => {
+    if (onModelChange) {
+      onModelChange(model);
+    }
+  }, [onModelChange]);
   const [useReasoning, setUseReasoning] = useState(false);
   const [reasoningEffort, setReasoningEffort] = useState<'low' | 'medium' | 'high'>('high');
   const [useWebSearch, setUseWebSearch] = useState(() => {

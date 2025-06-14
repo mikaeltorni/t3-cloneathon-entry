@@ -19,7 +19,7 @@
  */
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Button } from './ui/Button';
-import { ModelSelector } from './ModelSelector';
+// ModelSelector removed - now using ModelSidebar
 import { ReasoningToggle } from './ui/ReasoningToggle';
 import { SearchToggle } from './ui/SearchToggle';
 import { ImageAttachments } from './ImageAttachments';
@@ -38,15 +38,15 @@ interface ChatInputProps {
   onSendMessage: (content: string, images?: ImageAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
   loading: boolean;
   availableModels: Record<string, ModelConfig>;
-  modelsLoading: boolean;
   onHeightChange?: (height: number) => void;
   images: ImageAttachment[];
   onImagesChange: (images: ImageAttachment[]) => void;
   sidebarOpen?: boolean;
-  onModelChange?: (modelId: string) => void;
   currentTokenMetrics?: TokenMetrics | null;
   isGenerating?: boolean;
   currentMessages?: ChatMessage[];
+  selectedModel?: string; // External model selection from ModelSidebar
+  onModelChange?: (modelId: string) => void; // Model change handler
 }
 
 /**
@@ -62,26 +62,30 @@ interface ChatInputProps {
  * @param onSendMessage - Callback for sending messages
  * @param loading - Loading state indicator
  * @param availableModels - Available AI models
- * @param modelsLoading - Models loading state
  * @param onHeightChange - Callback when input height changes
  * @param images - Current image attachments
  * @param onImagesChange - Callback for image changes
  * @param sidebarOpen - Whether the sidebar is open
+ * @param currentTokenMetrics - Current token usage metrics
+ * @param isGenerating - Whether a message is currently being generated
+ * @param currentMessages - Current conversation messages
+ * @param selectedModel - Currently selected AI model (from ModelSidebar)
+ * @param onModelChange - Callback when model is changed (via ModelSidebar)
  * @returns React component
  */
 export const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
   loading,
   availableModels,
-  modelsLoading,
   onHeightChange,
   images,
   onImagesChange,
   sidebarOpen = false,
-  onModelChange,
   currentTokenMetrics = null,
   isGenerating = false,
-  currentMessages = []
+  currentMessages = [],
+  selectedModel: externalSelectedModel,
+  onModelChange
 }) => {
   const inputBarRef = useRef<HTMLDivElement>(null);
   const { debug } = useLogger('ChatInput');
@@ -105,7 +109,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     reasoningEffort,
     useWebSearch,
     webSearchEffort,
-    setSelectedModel,
     setUseReasoning,
     setReasoningEffort,
     setUseWebSearch,
@@ -121,17 +124,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     onSendMessage,
     availableModels,
     loading,
-    images
+    images,
+    selectedModel: externalSelectedModel,
+    onModelChange
   });
 
-  /**
-   * Enhanced model change handler that notifies parent
-   */
-  const handleModelChange = useCallback((modelId: string) => {
-    setSelectedModel(modelId);
-    onModelChange?.(modelId);
-    debug(`Model changed to: ${modelId}`);
-  }, [setSelectedModel, onModelChange, debug]);
+  // Model change now handled by ModelSidebar - no longer needed inline
 
   /**
    * Calculate context window usage based on current messages and model
@@ -226,8 +224,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     <div 
       ref={inputBarRef}
       className={cn(
-        'fixed bottom-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50 transition-all duration-300',
-        sidebarOpen ? 'left-80' : 'left-0'
+        'fixed bottom-0 bg-white border-t border-gray-200 p-4 shadow-lg z-40 transition-all duration-300',
+        sidebarOpen ? 'left-80' : 'left-0',
+        // Leave space for ModelSidebar on the right
+        'right-16'
       )}
     >
       <div className="max-w-4xl mx-auto">
@@ -267,13 +267,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             </div>
           )}
 
-          {/* Model Selection with Beautiful Buttons */}
-          <ModelSelector
-            value={selectedModel}
-            onChange={handleModelChange}
-            models={availableModels}
-            loading={modelsLoading}
-          />
+          {/* Current Model Indicator - Shows selected model from ModelSidebar */}
+          {selectedModel && availableModels[selectedModel] && (
+            <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg mb-3">
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: availableModels[selectedModel].color }}
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Current Model: {availableModels[selectedModel].name}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500">
+                (Use sidebar on the right to change model)
+              </div>
+            </div>
+          )}
 
           {/* Web Search Toggle - Available for ALL Models */}
           {availableModels[selectedModel] && (
