@@ -58,7 +58,6 @@ function AppContent() {
       
       // CRITICAL: Only sync model when thread ID actually changes (switching threads)
       // Do NOT sync during message generation (when only messages change)
-      const isThreadSwitch = chat.currentThread.id !== chat.currentThread?.id;
       
       // Only update if this is a genuine thread switch AND the model is different
       if (threadModel !== currentModel) {

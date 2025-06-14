@@ -54,7 +54,6 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [pinningModel, setPinningModel] = useState<string | null>(null);
   
-  const currentModel = models[value];
   const { pinnedModels, toggleModelPin } = useUserPreferences();
   const { debug, warn } = useLogger('ModelSidebar');
 
