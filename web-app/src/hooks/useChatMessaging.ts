@@ -107,6 +107,32 @@ export const useChatMessaging = (
       const isNewThread = !request.threadId;
       let tempThread = currentThread;
 
+      // Create user message to add to UI immediately
+      const userMessage: ChatMessage = {
+        id: `temp-user-${Date.now()}`,
+        role: 'user' as const,
+        content: request.content || '',
+        timestamp: new Date(),
+        imageUrl: request.imageUrl,
+        images: request.images,
+        documents: request.documents
+      };
+
+      // Add user message to thread immediately for UI feedback
+      if (tempThread) {
+        tempThread = {
+          ...tempThread,
+          messages: [...tempThread.messages, userMessage],
+          updatedAt: new Date()
+        };
+        setCurrentThread(tempThread);
+        debug('✅ Added user message to UI immediately', { 
+          messageId: userMessage.id,
+          threadId: tempThread.id,
+          messageCount: tempThread.messages.length 
+        });
+      }
+
       // Create temporary AI message for streaming
       const tempAiMessage: ChatMessage = {
         id: `temp-${Date.now()}`,
@@ -352,13 +378,36 @@ export const useChatMessaging = (
             });
           }
         },
-        // onUserMessageConfirmed callback - clear attachments when user message is confirmed by server
-        (userMessage: ChatMessage) => {
+        // onUserMessageConfirmed callback - replace temp user message with confirmed one
+        (confirmedUserMessage: ChatMessage) => {
           debug('✅ User message confirmed by server', {
-            messageId: userMessage.id,
-            hasImages: !!(userMessage.images && userMessage.images.length > 0),
-            hasDocuments: !!(userMessage.documents && userMessage.documents.length > 0)
+            messageId: confirmedUserMessage.id,
+            hasImages: !!(confirmedUserMessage.images && confirmedUserMessage.images.length > 0),
+            hasDocuments: !!(confirmedUserMessage.documents && confirmedUserMessage.documents.length > 0)
           });
+          
+          // Replace the temporary user message with the confirmed one from server
+          if (tempThread) {
+            const tempUserIndex = tempThread.messages.findIndex((msg: ChatMessage) => 
+              msg.role === 'user' && msg.id === userMessage.id
+            );
+            
+            if (tempUserIndex >= 0) {
+              const updatedMessages = [...tempThread.messages];
+              updatedMessages[tempUserIndex] = confirmedUserMessage;
+              const updatedThread = {
+                ...tempThread,
+                messages: updatedMessages,
+                updatedAt: new Date()
+              };
+              setCurrentThread(updatedThread);
+              tempThread = updatedThread;
+              debug('🔄 Replaced temp user message with confirmed version', {
+                tempId: userMessage.id,
+                confirmedId: confirmedUserMessage.id
+              });
+            }
+          }
           
           // 🎯 Clear attachments after user message is successfully confirmed by server
           clearAttachments();
