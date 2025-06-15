@@ -171,7 +171,6 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
       <ModelSidebar
         isOpen={isModelSidebarOpen}
         onClose={() => setIsModelSidebarOpen(false)}
-        onToggle={() => setIsModelSidebarOpen(!isModelSidebarOpen)}
         value={currentModel}
         onChange={handleCurrentModelChange}
         models={models.availableModels}
