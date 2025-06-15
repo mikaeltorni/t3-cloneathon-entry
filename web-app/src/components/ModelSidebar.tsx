@@ -19,7 +19,7 @@
  *   - Mobile-friendly design with overlay
  *   - Toggle button when closed
  * 
- * Usage: <ModelSidebar isOpen={open} onClose={setClose} onToggle={setToggle} value={selectedModel} onChange={setSelectedModel} models={availableModels} />
+ * Usage: <ModelSidebar isOpen={open} onClose={setClose} value={selectedModel} onChange={setSelectedModel} models={availableModels} />
  */
 import React, { useState } from 'react';
 import { cn } from '../utils/cn';
@@ -32,7 +32,6 @@ import type { ModelConfig } from '../../../src/shared/types';
 interface ModelSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  onToggle?: () => void;
   value: string;
   onChange: (modelId: string) => void;
   models: Record<string, ModelConfig>;
@@ -45,7 +44,7 @@ interface ModelSidebarProps {
  * 
  * @param isOpen - Whether the sidebar is visible
  * @param onClose - Callback to close the sidebar
- * @param onToggle - Callback to toggle the sidebar
+
  * @param value - Currently selected model ID
  * @param onChange - Callback when model is selected
  * @param models - Available models configuration
@@ -56,7 +55,6 @@ interface ModelSidebarProps {
 export const ModelSidebar: React.FC<ModelSidebarProps> = ({
   isOpen,
   onClose,
-  onToggle,
   value,
   onChange,
   models,
