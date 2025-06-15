@@ -18,6 +18,7 @@ interface TagFilterBarProps {
   selectedTags: string[];
   onTagToggle: (tagId: string) => void;
   onClearAll: () => void;
+  onTagRightClick?: (e: React.MouseEvent, tag: ChatTag) => void;
   className?: string;
 }
 
@@ -28,6 +29,7 @@ interface TagFilterBarProps {
  * @param selectedTags - Currently selected tag IDs
  * @param onTagToggle - Callback when a tag is toggled
  * @param onClearAll - Callback to clear all selected tags
+ * @param onTagRightClick - Callback when a tag is right-clicked
  * @param className - Additional CSS classes
  * @returns React component
  */
@@ -36,6 +38,7 @@ export const TagFilterBar: React.FC<TagFilterBarProps> = ({
   selectedTags,
   onTagToggle,
   onClearAll,
+  onTagRightClick,
   className
 }) => {
   const hasSelectedTags = selectedTags.length > 0;
@@ -79,6 +82,7 @@ export const TagFilterBar: React.FC<TagFilterBarProps> = ({
               tag={tag}
               selected={isSelected}
               onClick={() => onTagToggle(tag.id)}
+              onRightClick={onTagRightClick ? (e: React.MouseEvent) => onTagRightClick(e, tag) : undefined}
               size="sm"
               className={cn(
                 'flex-shrink-0 transition-all duration-200',

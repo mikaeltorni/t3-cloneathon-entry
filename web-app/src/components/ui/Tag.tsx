@@ -16,6 +16,7 @@ interface TagProps {
   tag: ChatTag;
   onClick?: (tag: ChatTag) => void;
   onRemove?: (tagId: string) => void;
+  onRightClick?: (e: React.MouseEvent, tag: ChatTag) => void;
   selected?: boolean;
   removable?: boolean;
   className?: string;
@@ -28,6 +29,7 @@ interface TagProps {
  * @param tag - Tag object with name and color
  * @param onClick - Callback when tag is clicked
  * @param onRemove - Callback when remove button is clicked
+ * @param onRightClick - Callback when tag is right-clicked
  * @param selected - Whether the tag is selected for filtering
  * @param removable - Whether to show remove button
  * @param className - Additional CSS classes
@@ -38,6 +40,7 @@ export const Tag: React.FC<TagProps> = ({
   tag,
   onClick,
   onRemove,
+  onRightClick,
   selected = false,
   removable = false,
   className,
@@ -62,6 +65,12 @@ export const Tag: React.FC<TagProps> = ({
     onClick?.(tag);
   };
 
+  const handleRightClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onRightClick?.(e, tag);
+  };
+
   const handleRemove = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -83,6 +92,7 @@ export const Tag: React.FC<TagProps> = ({
         color: textColor
       }}
       onClick={handleClick}
+      onContextMenu={handleRightClick}
       title={tag.name}
     >
       <span className="truncate max-w-[120px]">{tag.name}</span>
