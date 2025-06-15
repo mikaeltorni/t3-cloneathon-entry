@@ -44,14 +44,18 @@ export const TagModal: React.FC<TagModalProps> = ({
 }) => {
   const [name, setName] = useState(initialName);
   const [color, setColor] = useState(initialColor);
+  const [hasOpened, setHasOpened] = useState(false);
 
-  // Reset form when modal opens with new initial values
+  // Reset form only when modal first opens, not when initial values change
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !hasOpened) {
       setName(initialName);
       setColor(initialColor);
+      setHasOpened(true);
+    } else if (!isOpen) {
+      setHasOpened(false);
     }
-  }, [isOpen, initialName, initialColor]);
+  }, [isOpen, hasOpened, initialName, initialColor]);
 
   /**
    * Handle form submission
