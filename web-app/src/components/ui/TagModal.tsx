@@ -63,13 +63,15 @@ export const TagModal: React.FC<TagModalProps> = ({
       if (event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation();
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
+      // Add event listener with capture to intercept before it bubbles
+      document.addEventListener('keydown', handleKeyDown, { capture: true });
+      return () => document.removeEventListener('keydown', handleKeyDown, { capture: true });
     }
   }, [isOpen, onClose]);
 
