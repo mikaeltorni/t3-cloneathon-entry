@@ -12,11 +12,12 @@
  *   - Uses extracted document utilities
  *   - Clean separation of concerns
  *   - Performance optimized with React.memo
+ *   - Document removal functionality
  *   - Responsive design
  * 
  * Usage: <DocumentAttachments documents={documents} onDocumentsChange={setDocuments} />
  */
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { cn } from '../utils/cn';
 import { DocumentItem } from './document/DocumentItem';
 import type { DocumentAttachment } from '../../../src/shared/types';
@@ -33,7 +34,7 @@ interface DocumentAttachmentsProps {
 /**
  * DocumentAttachments component
  * 
- * Displays a list of document attachments with preview and removal functionality
+ * Displays a list of document attachments with removal functionality
  * 
  * @param documents - Array of document attachments
  * @param onDocumentsChange - Callback when documents are modified
@@ -45,8 +46,6 @@ export const DocumentAttachments: React.FC<DocumentAttachmentsProps> = React.mem
   onDocumentsChange,
   className
 }) => {
-  const [expandedDocument, setExpandedDocument] = useState<string | null>(null);
-
   /**
    * Remove a document from the list
    */
@@ -54,13 +53,6 @@ export const DocumentAttachments: React.FC<DocumentAttachmentsProps> = React.mem
     const updatedDocuments = documents.filter(doc => doc.id !== documentId);
     onDocumentsChange(updatedDocuments);
   }, [documents, onDocumentsChange]);
-
-  /**
-   * Toggle document content preview
-   */
-  const handleTogglePreview = useCallback((documentId: string) => {
-    setExpandedDocument(expandedDocument === documentId ? null : documentId);
-  }, [expandedDocument]);
 
   if (documents.length === 0) {
     return null;
@@ -77,9 +69,7 @@ export const DocumentAttachments: React.FC<DocumentAttachmentsProps> = React.mem
           <DocumentItem
             key={document.id}
             document={document}
-            isExpanded={expandedDocument === document.id}
             onRemove={handleRemoveDocument}
-            onTogglePreview={handleTogglePreview}
           />
         ))}
       </div>

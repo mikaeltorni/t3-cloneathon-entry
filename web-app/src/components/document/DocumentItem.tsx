@@ -8,44 +8,34 @@
  * 
  * Features:
  *   - Document icon and metadata display
- *   - Preview toggle functionality
  *   - Remove document functionality
  *   - Hover effects and transitions
  *   - Responsive layout
  * 
- * Usage: <DocumentItem document={doc} onRemove={remove} onTogglePreview={toggle} isExpanded={expanded} />
+ * Usage: <DocumentItem document={doc} onRemove={remove} />
  */
 import React from 'react';
-import { X, Eye, EyeOff } from 'lucide-react';
+import { X } from 'lucide-react';
 import { getDocumentIcon, getFileTypeDisplay, formatFileSize } from '../../utils/documentUtils';
-import { DocumentPreview } from './DocumentPreview';
 import type { DocumentAttachment } from '../../../../src/shared/types';
 
 interface DocumentItemProps {
   /** Document attachment data */
   document: DocumentAttachment;
-  /** Whether the preview is currently expanded */
-  isExpanded: boolean;
   /** Callback to remove the document */
   onRemove: (documentId: string) => void;
-  /** Callback to toggle preview visibility */
-  onTogglePreview: (documentId: string) => void;
 }
 
 /**
  * Individual document item component
  * 
  * @param document - Document attachment data
- * @param isExpanded - Whether preview is expanded
  * @param onRemove - Remove document callback
- * @param onTogglePreview - Toggle preview callback
  * @returns React component displaying document item
  */
 export const DocumentItem: React.FC<DocumentItemProps> = React.memo(({
   document,
-  isExpanded,
-  onRemove,
-  onTogglePreview
+  onRemove
 }) => {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
@@ -70,19 +60,6 @@ export const DocumentItem: React.FC<DocumentItemProps> = React.memo(({
         
         {/* Actions */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          {/* Preview Toggle */}
-          <button
-            onClick={() => onTogglePreview(document.id)}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-            title={isExpanded ? "Hide preview" : "Show preview"}
-          >
-            {isExpanded ? (
-              <EyeOff className="w-4 h-4" />
-            ) : (
-              <Eye className="w-4 h-4" />
-            )}
-          </button>
-          
           {/* Remove Button */}
           <button
             onClick={() => onRemove(document.id)}
@@ -93,12 +70,6 @@ export const DocumentItem: React.FC<DocumentItemProps> = React.memo(({
           </button>
         </div>
       </div>
-      
-      {/* Content Preview */}
-      <DocumentPreview 
-        content={document.content}
-        isExpanded={isExpanded}
-      />
     </div>
   );
 });
