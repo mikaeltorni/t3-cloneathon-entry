@@ -39,6 +39,7 @@ interface ChatState {
   setIsLoadingThreads: (loading: boolean) => void;
   threadsError: string | null;
   setThreadsError: (error: string | null) => void;
+  clearAttachments: () => void;
 }
 
 /**
@@ -59,7 +60,8 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
     isLoadingThreads,
     setIsLoadingThreads,
     threadsError,
-    setThreadsError
+    setThreadsError,
+    clearAttachments
   } = chatState;
 
   /**
@@ -96,11 +98,16 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
   const selectThread = useCallback(async (threadId: string | null) => {
     if (!threadId) {
       setCurrentThread(null);
+      // Clear attachments when deselecting thread
+      clearAttachments();
       return;
     }
 
     try {
       logger.info(`Selecting thread: ${threadId}`);
+      
+      // Clear attachments when switching to a different thread
+      clearAttachments();
       
       // Try to find thread in current threads first
       const existingThread = threads.find(t => t.id === threadId);
@@ -118,7 +125,7 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
       handleError(error as Error, 'Thread Selection');
       setCurrentThread(null);
     }
-  }, [threads, apiService, setCurrentThread, handleError]);
+  }, [threads, apiService, setCurrentThread, handleError, clearAttachments]);
 
   /**
    * Create a new chat thread
@@ -126,7 +133,9 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
   const createNewChat = useCallback(() => {
     logger.info('Creating new chat');
     setCurrentThread(null);
-  }, [setCurrentThread]);
+    // Clear attachments when creating new chat
+    clearAttachments();
+  }, [setCurrentThread, clearAttachments]);
 
   /**
    * Delete a thread
@@ -143,6 +152,8 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
       // Clear current thread if it was deleted
       if (currentThread?.id === threadId) {
         setCurrentThread(null);
+        // Clear attachments when deleting current thread
+        clearAttachments();
       }
       
       logger.info(`Deleted thread: ${threadId}`);
@@ -151,7 +162,7 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
       handleError(error as Error, 'Thread Deletion');
       throw error;
     }
-  }, [apiService, setThreads, currentThread, setCurrentThread, handleError]);
+  }, [apiService, setThreads, currentThread, setCurrentThread, handleError, clearAttachments]);
 
   /**
    * Update thread in threads list
