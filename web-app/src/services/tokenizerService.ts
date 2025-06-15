@@ -19,7 +19,7 @@
  */
 
 import { logger } from '../utils/logger';
-import type { TokenMetrics } from '../../../src/shared/types';
+import type { TokenMetrics, ChatMessage } from '../../../src/shared/types';
 import type { 
   TokenizerProvider as TokenizerProviderType, 
   TokenizationResult 
@@ -32,16 +32,12 @@ import { contextWindowService } from './contextWindowService';
 
 // Import extracted tokenizer components
 import { 
-  TokenTracker,
   type TokenizerProvider,
   OpenAITokenizerProvider,
   AnthropicTokenizerProvider,
   DeepSeekTokenizerProvider,
   GoogleTokenizerProvider
 } from './tokenizer';
-
-// Re-export TokenTracker for backwards compatibility
-export { TokenTracker } from './tokenizer';
 
 /**
  * Refactored tokenizer service using focused service composition
@@ -104,7 +100,7 @@ export class TokenizerService {
    * @param model - Model identifier
    * @returns Tokenization result
    */
-  async tokenizeChat(messages: any[], model: string): Promise<TokenizationResult> {
+  async tokenizeChat(messages: ChatMessage[], model: string): Promise<TokenizationResult> {
     const modelInfo = modelInfoService.getModelInfo(model);
     const provider = this.getProvider(model);
 
@@ -169,7 +165,7 @@ export class TokenizerService {
     const duration = endTime ? endTime - startTime : Date.now() - startTime;
     const tokensPerSecond = duration > 0 ? (totalTokens / duration) * 1000 : 0;
 
-    const cost = modelId ? this.calculateCost(inputTokens, outputTokens, modelId) : undefined;
+    const costBreakdown = modelId ? this.calculateCost(inputTokens, outputTokens, modelId) : undefined;
     const contextWindow = modelId ? this.calculateContextWindowUsage(totalTokens, modelId) : undefined;
 
     return {
@@ -177,7 +173,12 @@ export class TokenizerService {
       outputTokens,
       totalTokens,
       tokensPerSecond,
-      cost,
+      estimatedCost: costBreakdown ? {
+        input: costBreakdown.input,
+        output: costBreakdown.output,
+        total: costBreakdown.total,
+        currency: costBreakdown.currency
+      } : undefined,
       contextWindow,
       startTime,
       endTime: endTime || Date.now(),
@@ -204,7 +205,7 @@ export class TokenizerService {
    * @param modelId - Model identifier
    * @returns Context window usage for conversation
    */
-  async calculateConversationContextUsage(messages: any[], modelId: string) {
+  async calculateConversationContextUsage(messages: ChatMessage[], modelId: string) {
     const result = await this.tokenizeChat(messages, modelId);
     return this.calculateContextWindowUsage(result.tokenCount, modelId);
   }

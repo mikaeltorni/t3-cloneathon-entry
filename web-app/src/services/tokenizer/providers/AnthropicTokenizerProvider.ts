@@ -63,11 +63,9 @@ export class AnthropicTokenizerProvider implements TokenizerProvider {
    * Count tokens using character-based estimation
    * 
    * @param text - Text to count tokens for
-   * @param _model - Model identifier (unused)
-   * @param _modelInfo - Model configuration (unused)
    * @returns Estimated token count
    */
-  async countTokens(text: string, _model: string, _modelInfo: ModelInfo): Promise<number> {
+  async countTokens(text: string): Promise<number> {
     return Math.ceil(text.length / this.charactersPerToken);
   }
 
@@ -75,11 +73,9 @@ export class AnthropicTokenizerProvider implements TokenizerProvider {
    * Estimate tokens in a chunk (async)
    * 
    * @param chunk - Text chunk to estimate
-   * @param _model - Model identifier (unused)
-   * @param _modelInfo - Model configuration (unused)
    * @returns Estimated token count
    */
-  async estimateTokensInChunk(chunk: string, _model: string, _modelInfo: ModelInfo): Promise<number> {
+  async estimateTokensInChunk(chunk: string): Promise<number> {
     return Math.ceil(chunk.length / this.charactersPerToken);
   }
 
@@ -87,11 +83,9 @@ export class AnthropicTokenizerProvider implements TokenizerProvider {
    * Estimate tokens in a chunk (synchronous)
    * 
    * @param chunk - Text chunk to estimate
-   * @param _model - Model identifier (unused)
-   * @param _modelInfo - Model configuration (unused)
    * @returns Estimated token count
    */
-  estimateTokensInChunkSync(chunk: string, _model: string, _modelInfo: ModelInfo): number {
+  estimateTokensInChunkSync(chunk: string): number {
     return Math.ceil(chunk.length / this.charactersPerToken);
   }
 } 

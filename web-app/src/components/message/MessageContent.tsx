@@ -15,7 +15,7 @@ import type { WebSearchAnnotation } from '../../../../src/shared/types';
 
 interface MessageContentProps {
   content: string;
-  annotations?: any[];
+  annotations?: WebSearchAnnotation[];
   isUserMessage?: boolean;
   hasReasoning?: boolean;
 }
@@ -80,6 +80,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({
           h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
           strong: ({ children }) => <strong className="font-bold">{children}</strong>,
           em: ({ children }) => <em className="italic">{children}</em>,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           code: ({ children, inline }: any) => {
             const codeString = Array.isArray(children) ? children.join('') : String(children);
             if (inline) {

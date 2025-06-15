@@ -16,8 +16,7 @@
  */
 import { useCallback } from 'react';
 import { useLogger } from './useLogger';
-import type { UseChatStateReturn } from './useChatState';
-import type { CreateMessageRequest, CreateMessageResponse, TokenMetrics } from '../../../src/shared/types';
+import type { CreateMessageRequest, CreateMessageResponse, TokenMetrics, ChatThread, ChatMessage, WebSearchAnnotation } from '../../../src/shared/types';
 
 // Interface for the API service
 interface ChatApiService {
@@ -28,9 +27,9 @@ interface ChatApiService {
     onError: (error: Error) => void,
     onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void,
     onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void,
-    onAnnotationsChunk?: (annotations: any[]) => void,
+    onAnnotationsChunk?: (annotations: WebSearchAnnotation[]) => void,
     onThreadCreated?: (threadId: string) => void,
-    onUserMessageConfirmed?: (userMessage: any) => void
+    onUserMessageConfirmed?: (userMessage: ChatMessage) => void
   ) => Promise<void>;
 }
 
@@ -109,7 +108,7 @@ export const useChatMessaging = (
       let tempThread = currentThread;
 
       // Create temporary AI message for streaming
-      const tempAiMessage: any = {
+      const tempAiMessage: ChatMessage = {
         id: `temp-${Date.now()}`,
         role: 'assistant',
         content: '',
@@ -137,7 +136,7 @@ export const useChatMessaging = (
           
           if (tempThread) {
             // Find if temp message already exists in thread
-            const existingTempIndex = tempThread.messages.findIndex(msg => msg.id === tempAiMessage.id);
+            const existingTempIndex = tempThread.messages.findIndex((msg: ChatMessage) => msg.id === tempAiMessage.id);
             
             if (existingTempIndex >= 0) {
               // Update existing temp message
@@ -176,7 +175,7 @@ export const useChatMessaging = (
           
           if (tempThread && finalResponse.assistantResponse) {
             // Find the temp message and replace it with the final one
-            const tempIndex = tempThread.messages.findIndex(msg => msg.id === tempAiMessage.id);
+            const tempIndex = tempThread.messages.findIndex((msg: ChatMessage) => msg.id === tempAiMessage.id);
             
             if (tempIndex >= 0) {
               const updatedMessages = [...tempThread.messages];
@@ -222,7 +221,7 @@ export const useChatMessaging = (
           
           if (tempThread) {
             // Find if temp message already exists in thread
-            const existingTempIndex = tempThread.messages.findIndex(msg => msg.id === tempAiMessage.id);
+            const existingTempIndex = tempThread.messages.findIndex((msg: ChatMessage) => msg.id === tempAiMessage.id);
             
             if (existingTempIndex >= 0) {
               // Update existing temp message
@@ -277,7 +276,7 @@ export const useChatMessaging = (
           
           if (tempThread) {
             // Find if temp message already exists in thread
-            const existingTempIndex = tempThread.messages.findIndex(msg => msg.id === tempAiMessage.id);
+            const existingTempIndex = tempThread.messages.findIndex((msg: ChatMessage) => msg.id === tempAiMessage.id);
             
             if (existingTempIndex >= 0) {
               // Update existing temp message with token metrics
@@ -294,7 +293,7 @@ export const useChatMessaging = (
           }
         },
         // onAnnotationsChunk callback - handle real-time web search annotations
-        (annotations: any[]) => {
+        (annotations: WebSearchAnnotation[]) => {
           debug('🔍 Received annotations chunk', { annotationsCount: annotations.length });
           
           // Update the temporary message with the streaming annotations
@@ -302,7 +301,7 @@ export const useChatMessaging = (
           
           if (tempThread) {
             // Find if temp message already exists in thread
-            const existingTempIndex = tempThread.messages.findIndex(msg => msg.id === tempAiMessage.id);
+            const existingTempIndex = tempThread.messages.findIndex((msg: ChatMessage) => msg.id === tempAiMessage.id);
             
             if (existingTempIndex >= 0) {
               // Update existing temp message with annotations
@@ -325,7 +324,7 @@ export const useChatMessaging = (
           // Create a temporary thread structure for new chats
           if (isNewThread && !tempThread) {
             // Create user message for the temporary thread
-            const userMessage = {
+            const userMessage: ChatMessage = {
               id: `temp-user-${Date.now()}`,
               role: 'user' as const,
               content: request.content || '',
@@ -354,7 +353,7 @@ export const useChatMessaging = (
           }
         },
         // onUserMessageConfirmed callback - clear attachments when user message is confirmed by server
-        (userMessage: any) => {
+        (userMessage: ChatMessage) => {
           debug('✅ User message confirmed by server', {
             messageId: userMessage.id,
             hasImages: !!(userMessage.images && userMessage.images.length > 0),

@@ -55,9 +55,9 @@ export function useOptimizedApiCall<TData>(
  * @param config - Additional configuration options
  * @returns Robust mutation state and operations
  */
-export function useRobustMutation<TData, TVariables = any>(
+export function useRobustMutation<TData, TVariables = unknown>(
   endpoint: string | ((variables: TVariables) => string),
-  config: UseApiMutationConfig = {}
+  config: UseApiMutationConfig<TData> = {}
 ) {
   return useApiMutation<TData, TVariables>(endpoint, {
     method: 'POST',

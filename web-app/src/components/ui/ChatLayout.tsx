@@ -23,7 +23,7 @@ interface ChatLayoutProps {
   /** Whether files are being dragged over */
   isDragOver: boolean;
   /** Drop event handlers for drag-and-drop */
-  dropHandlers: Record<string, (event: any) => void>;
+  dropHandlers: Record<string, (event: React.DragEvent<HTMLDivElement>) => void>;
 }
 
 /**

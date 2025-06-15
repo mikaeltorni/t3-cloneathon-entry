@@ -25,7 +25,8 @@ import type {
   CreateMessageResponse, 
   GetChatsResponse,
   AvailableModelsResponse,
-  TokenMetrics
+  TokenMetrics,
+  WebSearchAnnotation
 } from '../../../src/shared/types';
 import type { StreamingCallbacks, PaginatedResponse } from './types/apiTypes';
 
@@ -242,9 +243,9 @@ export class ChatApiComposed {
     onError: (error: Error) => void,
     onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void,
     onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void,
-    onAnnotationsChunk?: (annotations: any[]) => void,
+    onAnnotationsChunk?: (annotations: WebSearchAnnotation[]) => void,
     onThreadCreated?: (threadId: string) => void,
-    onUserMessageConfirmed?: (userMessage: any) => void
+    onUserMessageConfirmed?: (userMessage: ChatMessage) => void
   ): Promise<void> {
     const callbacks: StreamingCallbacks = {
       onChunk,

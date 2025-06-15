@@ -20,7 +20,7 @@
 /**
  * Standard API response wrapper
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data: T;
   success: boolean;
   message?: string;
@@ -40,7 +40,7 @@ export interface ApiResponse<T = any> {
 export interface ApiErrorDetails {
   code: string;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   field?: string;
   timestamp: string;
   requestId?: string;
@@ -54,7 +54,7 @@ export class EnhancedApiError extends Error {
   public readonly status: number;
   public readonly statusText: string;
   public readonly code: string;
-  public readonly details?: Record<string, any>;
+  public readonly details?: Record<string, unknown>;
   public readonly field?: string;
   public readonly requestId?: string;
   public readonly timestamp: string;

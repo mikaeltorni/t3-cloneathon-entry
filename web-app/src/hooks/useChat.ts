@@ -101,7 +101,7 @@ export function useChat(): UseChatReturn {
   });
 
   // Wrapper functions to match expected interface
-  const loadThreads = useCallback(async (_forceRefresh?: boolean) => {
+  const loadThreads = useCallback(async () => {
     await threadOps.loadThreads();
   }, [threadOps.loadThreads]);
 
@@ -121,7 +121,7 @@ export function useChat(): UseChatReturn {
     await threadOps.togglePin(threadId);
   }, [threadOps.togglePin]);
 
-  const handleTogglePinThread = useCallback(async (threadId: string, _isPinned: boolean) => {
+  const handleTogglePinThread = useCallback(async (threadId: string) => {
     await threadOps.togglePin(threadId);
   }, [threadOps.togglePin]);
 

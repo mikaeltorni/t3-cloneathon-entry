@@ -20,6 +20,7 @@ import { costCalculationService } from '../../costCalculationService';
 import type { GPTTokenizerModule } from '../../types/tokenizer';
 import type { TokenizationResult, ModelInfo } from '../../types/api';
 import type { TokenizerProvider } from '../TokenizerProvider';
+import type { ChatMessage } from '../../../../../src/shared/types';
 
 /**
  * OpenAI tokenizer provider using gpt-tokenizer library
@@ -121,7 +122,7 @@ export class OpenAITokenizerProvider implements TokenizerProvider {
    * @param modelInfo - Model configuration
    * @returns Tokenization result
    */
-  async tokenizeChat(messages: any[], model: string, modelInfo: ModelInfo): Promise<TokenizationResult> {
+  async tokenizeChat(messages: ChatMessage[], model: string, modelInfo: ModelInfo): Promise<TokenizationResult> {
     try {
       const tokenizer = await this.loadGPTTokenizer(model);
       const tokenizerModel = this.mapModelNameForTokenizer(model);
@@ -175,10 +176,9 @@ export class OpenAITokenizerProvider implements TokenizerProvider {
    * 
    * @param chunk - Text chunk to estimate
    * @param model - Model identifier
-   * @param _modelInfo - Model configuration (unused)
    * @returns Estimated token count
    */
-  async estimateTokensInChunk(chunk: string, model: string, _modelInfo: ModelInfo): Promise<number> {
+  async estimateTokensInChunk(chunk: string, model: string): Promise<number> {
     try {
       const tokenizer = await this.loadGPTTokenizer(model);
       const tokens = tokenizer.encode(chunk);
@@ -194,10 +194,9 @@ export class OpenAITokenizerProvider implements TokenizerProvider {
    * 
    * @param chunk - Text chunk to estimate
    * @param model - Model identifier
-   * @param _modelInfo - Model configuration (unused)
    * @returns Estimated token count
    */
-  estimateTokensInChunkSync(chunk: string, model: string, _modelInfo: ModelInfo): number {
+  estimateTokensInChunkSync(chunk: string, model: string): number {
     if (this.gptTokenizerCache.has(model)) {
       try {
         const tokenizer = this.gptTokenizerCache.get(model)!;

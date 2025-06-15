@@ -28,7 +28,7 @@ interface ApiState<T> {
  */
 export function useApiCall<T>(
   apiFunction: () => Promise<T>,
-  dependencies: any[] = []
+  dependencies: unknown[] = []
 ) {
   const [state, setState] = useState<ApiState<T>>({
     data: null,

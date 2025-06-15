@@ -43,7 +43,7 @@ interface UseFileManagementReturn {
   /** Global drop zone properties */
   dropZone: {
     isDragOver: boolean;
-    dropHandlers: Record<string, (event: any) => void>;
+    dropHandlers: Record<string, (event: React.DragEvent<HTMLElement>) => void>;
   };
 }
 

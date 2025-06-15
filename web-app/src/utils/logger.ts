@@ -14,7 +14,7 @@ type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 class Logger {
   private isDevelopment = import.meta.env.DEV;
   
-  private formatMessage(level: LogLevel, message: string, ...args: any[]): void {
+  private formatMessage(level: LogLevel, message: string, ...args: unknown[]): void {
     if (!this.isDevelopment && level === 'debug') return;
     
     const timestamp = new Date().toISOString();
@@ -36,19 +36,19 @@ class Logger {
     }
   }
   
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     this.formatMessage('debug', message, ...args);
   }
   
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     this.formatMessage('info', message, ...args);
   }
   
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     this.formatMessage('warn', message, ...args);
   }
   
-  error(message: string, error?: Error, ...args: any[]): void {
+  error(message: string, error?: Error, ...args: unknown[]): void {
     const errorMessage = error ? `${message} - ${error.message}` : message;
     this.formatMessage('error', errorMessage, error, ...args);
   }

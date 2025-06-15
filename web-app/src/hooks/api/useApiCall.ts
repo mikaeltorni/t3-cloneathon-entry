@@ -44,7 +44,7 @@ export interface UseApiCallConfig {
   refetchOnMount?: boolean;
   refetchInterval?: number;
   staleTime?: number;
-  dependencies?: any[];
+  dependencies?: unknown[];
 }
 
 /**

@@ -13,11 +13,11 @@
  * GPT Tokenizer module interface
  */
 export type GPTTokenizerModule = {
-  encode: (text: string, options?: any) => number[];
+  encode: (text: string, options?: unknown) => number[];
   decode: (tokens: number[]) => string;
-  encodeChat: (messages: any[], model?: any) => number[];
-  isWithinTokenLimit: (text: string | any[], limit: number) => boolean | number;
-  estimateCost: (tokenCount: number, modelSpec?: any) => any;
+  encodeChat: (messages: unknown[], model?: string) => number[];
+  isWithinTokenLimit: (text: string | unknown[], limit: number) => boolean | number;
+  estimateCost: (tokenCount: number, modelSpec?: unknown) => unknown;
 };
 
 /**

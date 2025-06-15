@@ -15,7 +15,6 @@
  * Usage: import { useFileValidation } from '../hooks/fileDropZone/useFileValidation'
  */
 import { useCallback } from 'react';
-import { useLogger } from '../useLogger';
 
 /**
  * Supported file types configuration
@@ -99,20 +98,18 @@ export interface UseFileValidationReturn {
  * @returns File validation operations
  */
 export function useFileValidation(): UseFileValidationReturn {
-  const { debug, error } = useLogger('useFileValidation');
-
   /**
    * Check if file type is a supported image
    */
   const isImageType = useCallback((type: string): boolean => {
-    return SUPPORTED_IMAGE_TYPES.includes(type as any);
+    return SUPPORTED_IMAGE_TYPES.includes(type as typeof SUPPORTED_IMAGE_TYPES[number]);
   }, []);
 
   /**
    * Check if file type is a supported document
    */
   const isDocumentType = useCallback((type: string): boolean => {
-    return SUPPORTED_DOCUMENT_TYPES.includes(type as any);
+    return SUPPORTED_DOCUMENT_TYPES.includes(type as typeof SUPPORTED_DOCUMENT_TYPES[number]);
   }, []);
 
   /**

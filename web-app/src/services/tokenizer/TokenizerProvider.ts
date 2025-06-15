@@ -16,6 +16,7 @@
  */
 
 import type { TokenizationResult, ModelInfo } from '../types/api';
+import type { ChatMessage } from '../../../../src/shared/types';
 
 /**
  * Base tokenizer provider interface
@@ -42,7 +43,7 @@ export interface TokenizerProvider {
    * @param modelInfo - Model configuration and pricing info
    * @returns Promise with tokenization result
    */
-  tokenizeChat?(messages: any[], model: string, modelInfo: ModelInfo): Promise<TokenizationResult>;
+  tokenizeChat?(messages: ChatMessage[], model: string, modelInfo: ModelInfo): Promise<TokenizationResult>;
 
   /**
    * Count tokens in text (optimized for speed)

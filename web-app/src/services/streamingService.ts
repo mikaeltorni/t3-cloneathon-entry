@@ -17,8 +17,8 @@
  */
 import { logger } from '../utils/logger';
 import { HttpClient } from './httpClient';
-import { ApiError, type StreamingCallbacks } from './types/apiTypes';
-import type { CreateMessageRequest, CreateMessageResponse, TokenMetrics } from '../../../src/shared/types';
+import type { StreamingCallbacks } from './types/apiTypes';
+import type { CreateMessageRequest, CreateMessageResponse, ChatMessage, TokenMetrics } from '../../../src/shared/types';
 
 /**
  * Streaming service for real-time message processing
@@ -82,7 +82,7 @@ export class StreamingService {
   ): Promise<void> {
     const decoder = new TextDecoder();
     let threadId: string | null = null;
-    let userMessage: any = null;
+    let userMessage: ChatMessage | null = null;
     
     logger.info('Starting to read streaming response from server');
     let totalChunks = 0;
@@ -154,29 +154,30 @@ export class StreamingService {
    * @returns Updated context
    */
   private processStreamingChunk(
-    parsed: any,
-    context: { threadId: string | null; userMessage: any },
+    parsed: unknown,
+    context: { threadId: string | null; userMessage: ChatMessage | null },
     callbacks: StreamingCallbacks
-  ): { threadId?: string; userMessage?: any } {
-    const result: { threadId?: string; userMessage?: any } = {};
+  ): { threadId?: string; userMessage?: ChatMessage } {
+    const result: { threadId?: string; userMessage?: ChatMessage } = {};
+    const chunk = parsed as Record<string, unknown>;
 
-    switch (parsed.type) {
+    switch (chunk.type) {
       case 'thread_info':
-        result.threadId = parsed.threadId;
-        logger.debug(`Stream using thread: ${parsed.threadId}`);
+        result.threadId = chunk.threadId as string;
+        logger.debug(`Stream using thread: ${chunk.threadId}`);
         if (callbacks.onThreadCreated) {
-          callbacks.onThreadCreated(parsed.threadId);
+          callbacks.onThreadCreated(chunk.threadId as string);
         }
         break;
         
       case 'user_message':
-        result.userMessage = parsed.message;
+        result.userMessage = chunk.message as ChatMessage;
         logger.debug('User message confirmed', { 
-          messageId: parsed.message.id, 
-          imageCount: parsed.message.imageCount 
+          messageId: (chunk.message as ChatMessage)?.id, 
+          imageCount: (chunk.message as ChatMessage & { imageCount?: number })?.imageCount 
         });
         if (callbacks.onUserMessageConfirmed) {
-          callbacks.onUserMessageConfirmed(parsed.message);
+          callbacks.onUserMessageConfirmed(chunk.message as ChatMessage);
         }
         break;
         
@@ -185,55 +186,56 @@ export class StreamingService {
         break;
         
       case 'reasoning_chunk':
-        logger.debug(`Reasoning chunk: length=${parsed.content?.length || 0}, fullLength=${parsed.fullReasoning?.length || 0}`);
+        logger.debug(`Reasoning chunk: length=${(chunk.content as string)?.length || 0}, fullLength=${(chunk.fullReasoning as string)?.length || 0}`);
         if (callbacks.onReasoningChunk) {
-          callbacks.onReasoningChunk(parsed.content, parsed.fullReasoning);
+          callbacks.onReasoningChunk(chunk.content as string, chunk.fullReasoning as string);
         }
         // Handle token metrics if available
-        if (callbacks.onTokenMetrics && parsed.tokenMetrics) {
-          callbacks.onTokenMetrics(parsed.tokenMetrics);
+        if (callbacks.onTokenMetrics && chunk.tokenMetrics) {
+          callbacks.onTokenMetrics(chunk.tokenMetrics as TokenMetrics);
         }
         break;
         
       case 'annotations_chunk':
-        logger.debug(`Annotations chunk: count=${parsed.annotations?.length || 0}`);
-        if (callbacks.onAnnotationsChunk && parsed.annotations) {
-          callbacks.onAnnotationsChunk(parsed.annotations);
+        logger.debug(`Annotations chunk: count=${(chunk.annotations as unknown[])?.length || 0}`);
+        if (callbacks.onAnnotationsChunk && chunk.annotations) {
+          callbacks.onAnnotationsChunk(chunk.annotations as unknown[]);
         }
         break;
         
       case 'ai_chunk':
-        logger.debug(`Content chunk: chunkLength=${parsed.content?.length || 0}, fullLength=${parsed.fullContent?.length || 0}, preview="${parsed.content?.substring(0, 50)}..."`);
-        logger.debug(`Full content so far: "${parsed.fullContent?.substring(0, 100)}..."`);
-        callbacks.onChunk(parsed.content, parsed.fullContent);
+        logger.debug(`Content chunk: chunkLength=${(chunk.content as string)?.length || 0}, fullLength=${(chunk.fullContent as string)?.length || 0}, preview="${(chunk.content as string)?.substring(0, 50)}..."`);
+        logger.debug(`Full content so far: "${(chunk.fullContent as string)?.substring(0, 100)}..."`);
+        callbacks.onChunk(chunk.content as string, chunk.fullContent as string);
         // Handle token metrics if available
-        if (callbacks.onTokenMetrics && parsed.tokenMetrics) {
-          callbacks.onTokenMetrics(parsed.tokenMetrics);
+        if (callbacks.onTokenMetrics && chunk.tokenMetrics) {
+          callbacks.onTokenMetrics(chunk.tokenMetrics as TokenMetrics);
         }
         break;
         
-      case 'ai_complete':
-        logger.info(`AI response completed. Final content length: ${parsed.assistantMessage?.content?.length || 0}`);
-        logger.debug(`Final message content: "${parsed.assistantMessage?.content?.substring(0, 100)}..."`);
+      case 'ai_complete': {
+        logger.info(`AI response completed. Final content length: ${(chunk.assistantMessage as ChatMessage)?.content?.length || 0}`);
+        logger.debug(`Final message content: "${(chunk.assistantMessage as ChatMessage)?.content?.substring(0, 100)}..."`);
         const completeResponse: CreateMessageResponse = {
           threadId: context.threadId!,
-          message: context.userMessage,
-          assistantResponse: parsed.assistantMessage,
-          tokenMetrics: parsed.tokenMetrics // Include final token metrics
+          message: context.userMessage!,
+          assistantResponse: chunk.assistantMessage as ChatMessage,
+          tokenMetrics: chunk.tokenMetrics as TokenMetrics // Include final token metrics
         };
         callbacks.onComplete(completeResponse);
         logger.info(`Streaming message completed for thread: ${context.threadId}`, {
-          tokenMetrics: parsed.tokenMetrics
+          tokenMetrics: chunk.tokenMetrics
         });
         break;
+      }
         
       case 'error':
-        logger.error(`Received error from server: ${parsed.error}`);
-        callbacks.onError(new Error(parsed.error));
+        logger.error(`Received error from server: ${chunk.error}`);
+        callbacks.onError(new Error(chunk.error as string));
         break;
         
       default:
-        logger.warn(`Unknown chunk type: ${parsed.type}`);
+        logger.warn(`Unknown chunk type: ${chunk.type}`);
     }
 
     return result;

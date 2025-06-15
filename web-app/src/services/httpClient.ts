@@ -147,7 +147,7 @@ export class HttpClient {
    * @param data - Request body data
    * @returns Promise with response data
    */
-  async post<T>(endpoint: string, data?: any): Promise<T> {
+  async post<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.makeRequest<T>(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
@@ -161,7 +161,7 @@ export class HttpClient {
    * @param data - Request body data
    * @returns Promise with response data
    */
-  async put<T>(endpoint: string, data?: any): Promise<T> {
+  async put<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.makeRequest<T>(endpoint, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
@@ -175,7 +175,7 @@ export class HttpClient {
    * @param data - Request body data
    * @returns Promise with response data
    */
-  async patch<T>(endpoint: string, data?: any): Promise<T> {
+  async patch<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.makeRequest<T>(endpoint, {
       method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined,
@@ -201,7 +201,7 @@ export class HttpClient {
    * @param data - Request body data
    * @returns Promise with ReadableStreamDefaultReader
    */
-  async stream(endpoint: string, data?: any): Promise<ReadableStreamDefaultReader<Uint8Array>> {
+  async stream(endpoint: string, data?: unknown): Promise<ReadableStreamDefaultReader<Uint8Array>> {
     const url = `${this.baseUrl}${endpoint}`;
     
     try {

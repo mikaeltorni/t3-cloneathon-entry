@@ -24,12 +24,12 @@ const CACHE_VERSION_KEY = 'chat_threads_cache_version';
 const CURRENT_CACHE_VERSION = '1.0';
 
 // Keep reference to HTTP client for cache clearing
-let httpClientInstance: any = null;
+let httpClientInstance: { clearCache?: () => void } | null = null;
 
 /**
  * Set HTTP client instance for comprehensive cache clearing
  */
-export function setHttpClientInstance(client: any): void {
+export function setHttpClientInstance(client: { clearCache?: () => void }): void {
   httpClientInstance = client;
   logger.debug('HTTP client instance set for comprehensive cache clearing');
 }
@@ -191,7 +191,7 @@ export function hasCachedThreads(): boolean {
     const cached = sessionStorage.getItem(THREADS_CACHE_KEY);
     
     return cacheVersion === CURRENT_CACHE_VERSION && !!cached;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -220,7 +220,7 @@ export function getCacheStats(): {
       cacheVersion,
       cacheSize
     };
-  } catch (error) {
+  } catch {
     return {
       hasCache: false,
       threadCount: 0,

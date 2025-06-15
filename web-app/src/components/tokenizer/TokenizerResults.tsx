@@ -21,7 +21,7 @@ interface TokenizationResult {
   tokenCount: number;
   estimatedCost?: number;
   tokens: (string | number)[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

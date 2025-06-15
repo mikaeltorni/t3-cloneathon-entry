@@ -37,11 +37,11 @@ interface ApiMutationState<TData> {
 /**
  * Configuration for useApiMutation hook
  */
-export interface UseApiMutationConfig {
+export interface UseApiMutationConfig<TData = unknown> {
   method?: string;
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: TData) => void;
   onError?: (error: ApiError) => void;
-  onSettled?: (data: any | null, error: ApiError | null) => void;
+  onSettled?: (data: TData | null, error: ApiError | null) => void;
 }
 
 /**
@@ -67,9 +67,9 @@ export interface UseApiMutationReturn<TData, TVariables> extends ApiMutationStat
  * @param config - Configuration options
  * @returns Mutation state and operations
  */
-export function useApiMutation<TData, TVariables = any>(
+export function useApiMutation<TData, TVariables = unknown>(
   endpoint: string | ((variables: TVariables) => string),
-  config: UseApiMutationConfig = {}
+  config: UseApiMutationConfig<TData> = {}
 ): UseApiMutationReturn<TData, TVariables> {
   const {
     method = 'POST',

@@ -20,19 +20,19 @@ import { logger } from '../utils/logger';
 export function useLogger(componentName: string) {
   const logPrefix = `[${componentName}]`;
   
-  const log = useCallback((message: string, ...args: any[]) => {
+  const log = useCallback((message: string, ...args: unknown[]) => {
     logger.info(`${logPrefix} ${message}`, ...args);
   }, [logPrefix]);
   
-  const debug = useCallback((message: string, ...args: any[]) => {
+  const debug = useCallback((message: string, ...args: unknown[]) => {
     logger.debug(`${logPrefix} ${message}`, ...args);
   }, [logPrefix]);
   
-  const warn = useCallback((message: string, ...args: any[]) => {
+  const warn = useCallback((message: string, ...args: unknown[]) => {
     logger.warn(`${logPrefix} ${message}`, ...args);
   }, [logPrefix]);
   
-  const error = useCallback((message: string, err?: Error, ...args: any[]) => {
+  const error = useCallback((message: string, err?: Error, ...args: unknown[]) => {
     logger.error(`${logPrefix} ${message}`, err, ...args);
   }, [logPrefix]);
   

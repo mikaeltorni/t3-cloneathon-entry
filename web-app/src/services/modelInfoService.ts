@@ -128,8 +128,8 @@ export class ModelInfoService {
    */
   getModelsByProvider(provider: TokenizerProvider): string[] {
     return Object.entries(this.modelDatabase)
-      .filter(([_, info]) => info.provider === provider)
-      .map(([model, _]) => model);
+      .filter(([, info]) => info.provider === provider)
+      .map(([model]) => model);
   }
 
   /**

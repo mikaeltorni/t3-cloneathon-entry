@@ -44,7 +44,7 @@ export function categorizeError(error: Error): AppError {
     code: error.name,
     details: {
       stack: error.stack,
-      cause: (error as any).cause // Type assertion for newer Error properties
+      cause: (error as Error & { cause?: unknown }).cause // Type assertion for newer Error properties
     },
     timestamp: new Date(),
     retryable: category === 'NETWORK_ERROR' || category === 'SERVER_ERROR'

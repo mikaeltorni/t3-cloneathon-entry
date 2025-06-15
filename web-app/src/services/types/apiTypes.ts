@@ -13,7 +13,9 @@
 import type { 
   CreateMessageRequest, 
   CreateMessageResponse, 
-  TokenMetrics 
+  TokenMetrics,
+  ChatMessage,
+  WebSearchAnnotation
 } from '../../../../src/shared/types';
 
 /**
@@ -52,9 +54,9 @@ export interface StreamingCallbacks {
   onError: (error: Error) => void;
   onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void;
   onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void;
-  onAnnotationsChunk?: (annotations: any[]) => void;
+  onAnnotationsChunk?: (annotations: WebSearchAnnotation[]) => void;
   onThreadCreated?: (threadId: string) => void;
-  onUserMessageConfirmed?: (userMessage: any) => void;
+  onUserMessageConfirmed?: (userMessage: ChatMessage) => void;
 }
 
 /**
