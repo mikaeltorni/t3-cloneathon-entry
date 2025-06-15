@@ -275,25 +275,6 @@ export const TagSystem: React.FC<TagSystemProps> = ({
       }
     });
 
-    // Add tag management options if there are existing tags
-    if (tags.length > 0) {
-      items.push({ 
-        id: 'separator-3',
-        label: '',
-        action: () => {},
-        type: 'separator' 
-      });
-      items.push({
-        id: 'manage-tags',
-        label: 'Manage Tags',
-        icon: '⚙️',
-        action: () => {
-          setContextMenu(prev => ({ ...prev, isOpen: false }));
-          // Could open a tag management modal here
-        }
-      });
-    }
-    
     return items;
   };
 
