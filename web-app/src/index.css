@@ -98,4 +98,14 @@ body {
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  /* Tag hover animation */
+  .tag-hover-scale {
+    transform-origin: center;
+    transition: transform 0.15s ease-in-out;
+  }
+
+  .tag-hover-scale:hover {
+    transform: scale(1.05);
+  }
 }

@@ -43,36 +43,51 @@ export const TagFilterBar: React.FC<TagFilterBarProps> = ({
 }) => {
   const hasSelectedTags = selectedTags.length > 0;
 
+  // Show helpful text when no tags exist
   if (tags.length === 0) {
-    return null;
+    return (
+      <div className={cn(
+        'flex items-center justify-center p-3 bg-gray-50 border-b border-gray-200',
+        className
+      )}>
+        <span className="text-sm text-gray-500">
+          💡 Right-click on any chat to add tags for better organization
+        </span>
+      </div>
+    );
   }
 
   return (
     <div className={cn(
-      'flex items-center space-x-2 p-3 bg-gray-50 border-b border-gray-200',
-      'overflow-x-auto scrollbar-hide',
+      'p-3 bg-gray-50 border-b border-gray-200',
       className
     )}>
-      {/* ALL button */}
-      <button
-        onClick={onClearAll}
-        className={cn(
-          'flex-shrink-0 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200',
-          'border border-gray-300',
-          hasSelectedTags
-            ? 'bg-white text-gray-700 hover:bg-gray-50'
-            : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+      {/* First row: ALL button and selected count */}
+      <div className="flex items-center justify-between mb-3">
+        <button
+          onClick={onClearAll}
+          className={cn(
+            'px-4 py-2 text-sm font-medium rounded-md transition-all duration-200',
+            'border border-gray-300 shadow-sm',
+            hasSelectedTags
+              ? 'bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400'
+              : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 shadow-blue-200'
+          )}
+          title="Show all chats"
+        >
+          ALL
+        </button>
+
+        {/* Selected count indicator */}
+        {hasSelectedTags && (
+          <div className="text-xs text-gray-600 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
+            <span className="font-medium">{selectedTags.length}</span> selected
+          </div>
         )}
-        title="Show all chats"
-      >
-        ALL
-      </button>
+      </div>
 
-      {/* Separator */}
-      <div className="h-6 w-px bg-gray-300 flex-shrink-0" />
-
-      {/* Tag filters */}
-      <div className="flex items-center space-x-2 min-w-0">
+      {/* Tag grid - wraps to multiple rows */}
+      <div className="flex flex-wrap gap-2">
         {tags.map((tag) => {
           const isSelected = selectedTags.includes(tag.id);
           
@@ -85,20 +100,13 @@ export const TagFilterBar: React.FC<TagFilterBarProps> = ({
               onRightClick={onTagRightClick ? (e: React.MouseEvent) => onTagRightClick(e, tag) : undefined}
               size="sm"
               className={cn(
-                'flex-shrink-0 transition-all duration-200',
-                !isSelected && 'opacity-70 hover:opacity-100'
+                'transition-all duration-200 hover:scale-105',
+                !isSelected && 'opacity-75 hover:opacity-100'
               )}
             />
           );
         })}
       </div>
-
-      {/* Selected count indicator */}
-      {hasSelectedTags && (
-        <div className="flex-shrink-0 text-xs text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">
-          {selectedTags.length} selected
-        </div>
-      )}
     </div>
   );
 }; 
