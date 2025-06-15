@@ -171,12 +171,24 @@ export const TagSystem: React.FC<TagSystemProps> = ({
   };
 
   /**
-   * Handle tag creation
+   * Handle tag creation and auto-assign to current thread
    */
   const handleCreateTag = async (name: string, color: { r: number; g: number; b: number }) => {
     try {
-      await createTag(name, color);
+      const newTag = await createTag(name, color);
       setIsCreateTagModalOpen(false);
+      
+      // Auto-assign the newly created tag to the thread that triggered the context menu
+      if (contextMenu.threadId) {
+        try {
+          await addTagToThread(contextMenu.threadId, newTag.id);
+          console.log(`Auto-assigned new tag "${newTag.name}" to thread ${contextMenu.threadId}`);
+        } catch (assignError) {
+          console.error('Failed to auto-assign new tag to thread:', assignError);
+          // Tag was created successfully, but assignment failed
+          // User can manually assign it later
+        }
+      }
     } catch (error) {
       console.error('Failed to create tag:', error);
     }
