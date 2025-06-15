@@ -81,6 +81,7 @@ export interface UseChatReturn {
   // Utility
   resetChat: () => void;
   clearError: () => void;
+  cancelActiveStream: () => void;
 }
 
 /**
@@ -243,6 +244,7 @@ export function useChat(): UseChatReturn {
     
     // Utility
     resetChat,
-    clearError
+    clearError,
+    cancelActiveStream: messagingOps.cancelActiveStream
   };
 }

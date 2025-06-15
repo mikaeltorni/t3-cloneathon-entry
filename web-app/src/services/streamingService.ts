@@ -1,7 +1,7 @@
 /**
  * streamingService.ts
  * 
- * Server-Sent Events streaming service
+ * Server-Sent Events streaming service with AbortController support
  * 
  * Services:
  *   StreamingService
@@ -12,6 +12,7 @@
  *   - Token metrics streaming
  *   - Annotation chunk handling
  *   - Comprehensive error handling
+ *   - Request cancellation support
  * 
  * Usage: import { StreamingService } from './streamingService'
  */
@@ -28,9 +29,21 @@ import type { CreateMessageRequest, CreateMessageResponse, ChatMessage, TokenMet
  */
 export class StreamingService {
   private httpClient: HttpClient;
+  private activeController: AbortController | null = null;
 
   constructor(httpClient: HttpClient) {
     this.httpClient = httpClient;
+  }
+
+  /**
+   * Cancel any ongoing streaming request
+   */
+  cancelActiveStream(): void {
+    if (this.activeController) {
+      logger.info('Canceling active streaming request');
+      this.activeController.abort();
+      this.activeController = null;
+    }
   }
 
   /**
@@ -48,6 +61,12 @@ export class StreamingService {
       throw new Error('Message content or image URL is required');
     }
 
+    // Cancel any existing stream
+    this.cancelActiveStream();
+
+    // Create new AbortController for this request
+    this.activeController = new AbortController();
+
     try {
       logger.info('Starting streaming message to chat', {
         threadId: request.threadId || 'new',
@@ -57,16 +76,27 @@ export class StreamingService {
         imageCount: request.images?.length || 0
       });
 
-      const reader = await this.httpClient.stream('/chats/message/stream', request);
-      await this.processStreamingResponse(reader, callbacks);
+      const reader = await this.httpClient.stream('/chats/message/stream', request, this.activeController.signal);
+      await this.processStreamingResponse(reader, callbacks, this.activeController.signal);
 
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        logger.info('Streaming request was aborted');
+        callbacks.onError(new Error('Request was canceled'));
+        return;
+      }
+      
       logger.error('Failed to stream message', error as Error);
       callbacks.onError(
         error instanceof Error 
           ? error 
           : new Error('Failed to stream message. Please try again.')
       );
+    } finally {
+      // Clear the active controller when done
+      if (this.activeController) {
+        this.activeController = null;
+      }
     }
   }
 
@@ -75,10 +105,12 @@ export class StreamingService {
    * 
    * @param reader - ReadableStream reader
    * @param callbacks - Streaming event callbacks
+   * @param signal - AbortSignal for cancellation
    */
   private async processStreamingResponse(
     reader: ReadableStreamDefaultReader<Uint8Array>,
-    callbacks: StreamingCallbacks
+    callbacks: StreamingCallbacks,
+    signal: AbortSignal
   ): Promise<void> {
     const decoder = new TextDecoder();
     let threadId: string | null = null;
@@ -92,6 +124,12 @@ export class StreamingService {
 
     try {
       while (true) {
+        // Check if the request was aborted
+        if (signal.aborted) {
+          logger.info('Streaming aborted by signal');
+          break;
+        }
+
         const { done, value } = await reader.read();
         
         if (done) {
@@ -106,6 +144,12 @@ export class StreamingService {
         logger.debug(`Found ${lines.length} lines in chunk`);
 
         for (const line of lines) {
+          // Check for abort signal in the processing loop
+          if (signal.aborted) {
+            logger.info('Streaming aborted during chunk processing');
+            return;
+          }
+
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
             logger.debug(`Processing data line: "${data.substring(0, 200)}..."`);

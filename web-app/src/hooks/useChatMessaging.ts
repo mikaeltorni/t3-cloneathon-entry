@@ -11,10 +11,11 @@
  *   - Token metrics tracking
  *   - Reasoning support
  *   - Web search integration
+ *   - Stream cancellation on navigation
  * 
  * Usage: const messagingOps = useChatMessaging(chatState, apiService, loadThreads);
  */
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useLogger } from './useLogger';
 import type { CreateMessageRequest, CreateMessageResponse, TokenMetrics, ChatThread, ChatMessage, WebSearchAnnotation } from '../../../src/shared/types';
 
@@ -31,6 +32,8 @@ interface ChatApiService {
     onThreadCreated?: (threadId: string) => void,
     onUserMessageConfirmed?: (userMessage: ChatMessage) => void
   ) => Promise<void>;
+  // Add method to cancel active streams
+  cancelActiveStream?: () => void;
 }
 
 // Interface for chat state
@@ -51,6 +54,7 @@ interface ThreadOperations {
 // Interface for the hook return
 interface UseChatMessagingReturn {
   sendMessage: (request: CreateMessageRequest) => Promise<void>;
+  cancelActiveStream: () => void;
 }
 
 /**
@@ -79,6 +83,37 @@ export const useChatMessaging = (
     setCurrentTokenMetrics,
     clearAttachments
   } = chatState;
+
+  // Track the current thread ID to detect changes
+  const currentThreadIdRef = useRef(currentThread?.id);
+
+  // Effect to cancel streams when thread changes or component unmounts
+  useEffect(() => {
+    const previousThreadId = currentThreadIdRef.current;
+    const newThreadId = currentThread?.id;
+
+    // If thread ID changed (and we had a previous thread), cancel any active streams
+    if (previousThreadId && previousThreadId !== newThreadId) {
+      debug(`🔄 Thread changed from ${previousThreadId} to ${newThreadId || 'null'}, canceling active streams`);
+      if (chatApiService.cancelActiveStream) {
+        chatApiService.cancelActiveStream();
+      }
+      // Clear sending state when switching threads
+      setIsSending(false);
+      setError(null);
+    }
+
+    // Update the ref
+    currentThreadIdRef.current = newThreadId;
+
+    // Cleanup function for component unmount
+    return () => {
+      debug('🧹 Component unmounting, canceling any active streams');
+      if (chatApiService.cancelActiveStream) {
+        chatApiService.cancelActiveStream();
+      }
+    };
+  }, [currentThread?.id, chatApiService, setIsSending, setError, debug]);
 
   /**
    * Send message with streaming support
@@ -424,7 +459,21 @@ export const useChatMessaging = (
     }
   }, [currentThread, chatApiService, debug, log, logError, threadOps, setCurrentThread, setIsSending, setError, setCurrentTokenMetrics, clearAttachments]);
 
+  /**
+   * Cancel any active streaming request
+   */
+  const cancelActiveStream = useCallback(() => {
+    debug('🛑 Canceling active stream');
+    if (chatApiService.cancelActiveStream) {
+      chatApiService.cancelActiveStream();
+    }
+    // Also clear the sending state
+    setIsSending(false);
+    setError(null);
+  }, [chatApiService, setIsSending, setError, debug]);
+
   return {
-    sendMessage
+    sendMessage,
+    cancelActiveStream
   };
 }; 

@@ -260,6 +260,13 @@ export class ChatApiComposed {
 
     return this.streamingService.streamMessage(request, callbacks);
   }
+
+  /**
+   * Cancel any active streaming request
+   */
+  cancelActiveStream(): void {
+    this.streamingService.cancelActiveStream();
+  }
 }
 
 /**

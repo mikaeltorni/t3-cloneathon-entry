@@ -27,6 +27,7 @@ interface ChatApiService {
   getChat: (threadId: string) => Promise<ChatThread>;
   deleteChat: (threadId: string) => Promise<void>;
   toggleThreadPin: (threadId: string, isPinned: boolean) => Promise<ChatThread>;
+  cancelActiveStream?: () => void;
 }
 
 // Interface for chat state
@@ -96,6 +97,12 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
    * Select a thread and load its full data
    */
   const selectThread = useCallback(async (threadId: string | null) => {
+    // Cancel any active streaming before switching threads
+    if (apiService.cancelActiveStream) {
+      logger.info('Canceling active stream before thread switch');
+      apiService.cancelActiveStream();
+    }
+
     if (!threadId) {
       setCurrentThread(null);
       // Clear attachments when deselecting thread
@@ -131,11 +138,17 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
    * Create a new chat thread
    */
   const createNewChat = useCallback(() => {
+    // Cancel any active streaming before creating new chat
+    if (apiService.cancelActiveStream) {
+      logger.info('Canceling active stream before creating new chat');
+      apiService.cancelActiveStream();
+    }
+
     logger.info('Creating new chat');
     setCurrentThread(null);
     // Clear attachments when creating new chat
     clearAttachments();
-  }, [setCurrentThread, clearAttachments]);
+  }, [apiService, setCurrentThread, clearAttachments]);
 
   /**
    * Delete a thread

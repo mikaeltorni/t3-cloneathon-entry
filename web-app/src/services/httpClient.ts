@@ -199,9 +199,10 @@ export class HttpClient {
    * 
    * @param endpoint - API endpoint
    * @param data - Request body data
+   * @param signal - Optional AbortSignal for cancellation
    * @returns Promise with ReadableStreamDefaultReader
    */
-  async stream(endpoint: string, data?: unknown): Promise<ReadableStreamDefaultReader<Uint8Array>> {
+  async stream(endpoint: string, data?: unknown, signal?: AbortSignal): Promise<ReadableStreamDefaultReader<Uint8Array>> {
     const url = `${this.baseUrl}${endpoint}`;
     
     try {
@@ -223,6 +224,7 @@ export class HttpClient {
         method: 'POST',
         headers,
         body: data ? JSON.stringify(data) : undefined,
+        signal, // Add abort signal support
       });
 
       if (!response.ok) {
@@ -242,6 +244,10 @@ export class HttpClient {
 
       return response.body.getReader();
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        logger.info(`Streaming request aborted: POST ${endpoint}`);
+        throw error; // Re-throw abort errors to handle them upstream
+      }
       logger.error(`Streaming request failed: POST ${endpoint}`, error as Error);
       throw error;
     }

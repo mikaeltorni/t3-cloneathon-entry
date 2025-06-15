@@ -223,6 +223,13 @@ export class ChatApiService {
 
     return this.streamingService.streamMessage(request, callbacks);
   }
+
+  /**
+   * Cancel any active streaming request
+   */
+  cancelActiveStream(): void {
+    this.streamingService.cancelActiveStream();
+  }
 }
 
 // Export factory function and singleton
