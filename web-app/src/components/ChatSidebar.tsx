@@ -42,6 +42,8 @@ import { SidebarHeader } from './sidebar/SidebarHeader';
 import { SidebarStates } from './sidebar/SidebarStates';
 import { ThreadList } from './sidebar/ThreadList';
 import { UserProfile } from './UserProfile';
+import { TagFilterBar } from './ui/TagFilterBar';
+import { useTagSystemContext } from './TagSystem';
 import { useLogger } from '../hooks/useLogger';
 import { cn } from '../utils/cn';
 import type { ChatThread, ModelConfig, ChatTag } from '../../../src/shared/types';
@@ -102,6 +104,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   const [pinningThreadId, setPinningThreadId] = useState<string | null>(null);
 
   const { debug, log } = useLogger('ChatSidebar');
+
+  // Get tag system context
+  const tagSystem = useTagSystemContext();
 
   /**
    * Handle thread selection
@@ -201,6 +206,15 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
           loading={loading}
           threadCount={threads.length}
           pinnedCount={pinnedCount}
+        />
+
+        {/* Tag Filter Bar */}
+        <TagFilterBar
+          tags={tagSystem.tags}
+          selectedTags={tagSystem.selectedTags}
+          onTagToggle={tagSystem.onTagToggle}
+          onClearAll={tagSystem.onClearAll}
+          onTagRightClick={tagSystem.onTagRightClick}
         />
 
         {/* Thread list with enhanced scrolling */}

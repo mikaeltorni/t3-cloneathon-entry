@@ -139,20 +139,6 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
             />
           )}
         </div>
-
-        {/* Thread Tags */}
-        {threadTags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-2">
-            {threadTags.map(tag => (
-              <Tag
-                key={tag.id}
-                tag={tag}
-                size="sm"
-                className="pointer-events-none"
-              />
-            ))}
-          </div>
-        )}
         
         {/* Action buttons */}
         <ThreadActions
@@ -180,6 +166,20 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
           </span>
           {truncateText(lastMessage.content, 55)}
         </p>
+      )}
+
+      {/* Thread Tags - Positioned below AI message and above timestamp */}
+      {threadTags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {threadTags.map(tag => (
+            <Tag
+              key={tag.id}
+              tag={tag}
+              size="sm"
+              className="pointer-events-none"
+            />
+          ))}
+        </div>
       )}
 
       {/* Thread metadata */}

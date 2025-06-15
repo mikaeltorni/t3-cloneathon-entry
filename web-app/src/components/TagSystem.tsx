@@ -14,7 +14,6 @@ import type { ChatThread, ChatTag } from '../../../src/shared/types';
 import type { ContextMenuItem } from './ui/ContextMenu';
 import { ContextMenu } from './ui/ContextMenu';
 import { TagModal } from './ui/TagModal';
-import { TagFilterBar } from './ui/TagFilterBar';
 import { useTags } from '../hooks/useTags';
 import { useThreadTags } from '../hooks/useThreadTags';
 
@@ -378,15 +377,6 @@ export const TagSystem: React.FC<TagSystemProps> = ({
 
   return (
     <TagSystemContext.Provider value={contextValue}>
-      {/* Tag Filter Bar */}
-      <TagFilterBar
-        tags={tags}
-        selectedTags={selectedTagIds}
-        onTagToggle={toggleTagFilter}
-        onClearAll={clearTagFilters}
-        onTagRightClick={handleTagRightClick}
-      />
-
       {/* Render children with context */}
       {children}
 
