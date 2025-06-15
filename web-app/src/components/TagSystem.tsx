@@ -285,7 +285,7 @@ export const TagSystem: React.FC<TagSystemProps> = ({
         id: `edit-${tag.id}`,
         label: `Edit "${tag.name}"`,
         icon: '✏️',
-        action: () => handleEditTag(tag),
+        action: () => handleEditTag(),
         tag
       },
       { 
@@ -339,7 +339,7 @@ export const TagSystem: React.FC<TagSystemProps> = ({
   };
 
   // Handle tag editing
-  const handleEditTag = (_tag: ChatTag) => {
+  const handleEditTag = () => {
     setTagContextMenu(prev => ({ ...prev, isOpen: false }));
     setIsEditTagModalOpen(true);
   };

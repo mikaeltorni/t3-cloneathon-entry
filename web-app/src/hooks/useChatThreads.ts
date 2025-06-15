@@ -97,9 +97,10 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
    * Select a thread and load its full data
    */
   const selectThread = useCallback(async (threadId: string | null) => {
-    // Cancel any active streaming before switching threads
-    if (apiService.cancelActiveStream) {
-      logger.info('Canceling active stream before thread switch');
+    // Only cancel active streaming when switching between actual threads
+    // Don't cancel when going to null (new chat) or from null to thread
+    if (apiService.cancelActiveStream && threadId && currentThread?.id && threadId !== currentThread.id) {
+      logger.info(`Canceling active stream before switching from thread ${currentThread.id} to ${threadId}`);
       apiService.cancelActiveStream();
     }
 
@@ -132,23 +133,19 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
       handleError(error as Error, 'Thread Selection');
       setCurrentThread(null);
     }
-  }, [threads, apiService, setCurrentThread, handleError, clearAttachments]);
+  }, [threads, currentThread, apiService, setCurrentThread, handleError, clearAttachments]);
 
   /**
    * Create a new chat thread
    */
   const createNewChat = useCallback(() => {
-    // Cancel any active streaming before creating new chat
-    if (apiService.cancelActiveStream) {
-      logger.info('Canceling active stream before creating new chat');
-      apiService.cancelActiveStream();
-    }
-
+    // Don't cancel active streams when creating new chat - let the user start a new conversation
+    // Cancellation should only happen when switching between existing threads
     logger.info('Creating new chat');
     setCurrentThread(null);
     // Clear attachments when creating new chat
     clearAttachments();
-  }, [apiService, setCurrentThread, clearAttachments]);
+  }, [setCurrentThread, clearAttachments]);
 
   /**
    * Delete a thread

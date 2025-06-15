@@ -48,13 +48,13 @@ export class OpenAITokenizerProvider implements TokenizerProvider {
       // Import the appropriate tokenizer based on model
       if (model.includes('gpt-4o') || model.includes('o1')) {
         // Modern models use o200k_base encoding
-        tokenizer = await import('gpt-tokenizer') as any;
+        tokenizer = await import('gpt-tokenizer') as GPTTokenizerModule;
       } else if (model.includes('gpt-4') || model.includes('gpt-3.5')) {
         // Legacy models use cl100k_base encoding
-        tokenizer = await import('gpt-tokenizer/model/gpt-3.5-turbo') as any;
+        tokenizer = await import('gpt-tokenizer/model/gpt-3.5-turbo') as GPTTokenizerModule;
       } else {
         // Default to latest encoding
-        tokenizer = await import('gpt-tokenizer') as any;
+        tokenizer = await import('gpt-tokenizer') as GPTTokenizerModule;
       }
 
       this.gptTokenizerCache.set(model, tokenizer);
@@ -64,7 +64,7 @@ export class OpenAITokenizerProvider implements TokenizerProvider {
     } catch (error) {
       logger.error(`Failed to load gpt-tokenizer for model: ${model}`, error as Error);
       // Fallback to default tokenizer
-      const defaultTokenizer = await import('gpt-tokenizer') as any;
+      const defaultTokenizer = await import('gpt-tokenizer') as GPTTokenizerModule;
       this.gptTokenizerCache.set(model, defaultTokenizer);
       return defaultTokenizer;
     }
@@ -179,7 +179,7 @@ export class OpenAITokenizerProvider implements TokenizerProvider {
    * @param modelInfo - Model configuration (unused but required by interface)
    * @returns Estimated token count
    */
-  async estimateTokensInChunk(chunk: string, model: string, _modelInfo: ModelInfo): Promise<number> {
+  async estimateTokensInChunk(chunk: string, model: string, _modelInfo: ModelInfo): Promise<number> { // eslint-disable-line @typescript-eslint/no-unused-vars
     try {
       const tokenizer = await this.loadGPTTokenizer(model);
       const tokens = tokenizer.encode(chunk);
@@ -198,7 +198,7 @@ export class OpenAITokenizerProvider implements TokenizerProvider {
    * @param modelInfo - Model configuration (unused but required by interface)
    * @returns Estimated token count
    */
-  estimateTokensInChunkSync(chunk: string, model: string, _modelInfo: ModelInfo): number {
+  estimateTokensInChunkSync(chunk: string, model: string, _modelInfo: ModelInfo): number { // eslint-disable-line @typescript-eslint/no-unused-vars
     if (this.gptTokenizerCache.has(model)) {
       try {
         const tokenizer = this.gptTokenizerCache.get(model)!;

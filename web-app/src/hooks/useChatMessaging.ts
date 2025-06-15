@@ -87,7 +87,7 @@ export const useChatMessaging = (
   // Track the current thread ID to detect changes
   const currentThreadIdRef = useRef(currentThread?.id);
 
-  // Effect to cancel streams when thread changes or component unmounts
+  // Effect to cancel streams when thread changes (but NOT on dependency changes)
   useEffect(() => {
     const previousThreadId = currentThreadIdRef.current;
     const newThreadId = currentThread?.id;
@@ -105,15 +105,18 @@ export const useChatMessaging = (
 
     // Update the ref
     currentThreadIdRef.current = newThreadId;
+  }, [currentThread?.id, chatApiService, setIsSending, setError]);
 
-    // Cleanup function for component unmount
+  // Separate effect for cleanup on unmount only
+  useEffect(() => {
+    // Only cleanup on component unmount, not on dependency changes
     return () => {
       debug('🧹 Component unmounting, canceling any active streams');
       if (chatApiService.cancelActiveStream) {
         chatApiService.cancelActiveStream();
       }
     };
-  }, [currentThread?.id, chatApiService, setIsSending, setError, debug]);
+  }, []); // Empty dependency array - only runs on mount/unmount
 
   /**
    * Send message with streaming support
@@ -457,7 +460,7 @@ export const useChatMessaging = (
     } finally {
       setIsSending(false);
     }
-  }, [currentThread, chatApiService, debug, log, logError, threadOps, setCurrentThread, setIsSending, setError, setCurrentTokenMetrics, clearAttachments]);
+  }, [currentThread, chatApiService, log, logError, threadOps, setCurrentThread, setIsSending, setError, setCurrentTokenMetrics, clearAttachments]); // Removed debug to prevent unnecessary recreation
 
   /**
    * Cancel any active streaming request
@@ -470,7 +473,7 @@ export const useChatMessaging = (
     // Also clear the sending state
     setIsSending(false);
     setError(null);
-  }, [chatApiService, setIsSending, setError, debug]);
+  }, [chatApiService, setIsSending, setError]); // Removed debug to prevent unnecessary recreation
 
   return {
     sendMessage,
