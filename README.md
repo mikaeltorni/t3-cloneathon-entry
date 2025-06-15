@@ -33,41 +33,53 @@ We've implemented several efficiency improvements to handle large numbers of cha
 - `POST /api/chats/messages/batch` - Batch message retrieval for up to 20 threads
 - Enhanced pagination with cursor-based navigation
 
-## 🎨 Model Selection Sidebar
+## 🎨 Model Selection
 
-### **Right-Side Hover Interface**
-The application features an innovative model selection sidebar that provides seamless AI model switching without interrupting the conversation flow:
+### **Modal-Style Model Selector**
+The application features a user-friendly modal-style model selector that provides seamless AI model switching without cluttering the interface:
 
 #### **Key Features**
-- **Hover-to-Reveal**: Compact 64px tab on the right edge that expands to 320px on hover
+- **Modal Interface**: Clean modal overlay that opens when needed, closes with button or click outside
+- **Close Button**: Dedicated close button in top-right corner for clear user control
 - **Visual Model Indicators**: Each model displays with custom brand colors and capability badges
 - **Real-time Model Info**: Shows reasoning capabilities, release dates, and pricing tiers
-- **Smooth Animations**: 300ms transition animations for professional feel
-- **Mobile Responsive**: Adapts gracefully to different screen sizes
+- **Smooth Animations**: Modal animations with backdrop blur for professional feel
+- **Mobile Responsive**: Optimized for both desktop and mobile interfaces
+- **Model Pinning**: Pin favorite models for quick access
 
 #### **Model Capabilities Display**
 - **Reasoning Indicators**: 🧠 icons with opacity levels (forced, optional, none)
 - **Web Search Pricing**: Color-coded badges for different pricing tiers (cheap, premium, standard)
 - **Release Dates**: Automatic sorting by newest models first
 - **Active Selection**: Clear visual feedback for currently selected model
+- **Model Descriptions**: Detailed capability information for each model
 
 #### **Technical Implementation**
 ```tsx
-// Hover state management with smooth transitions
-const [isExpanded, setIsExpanded] = useState(false);
+// Modal state management
+const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
 
-// Fixed positioning with z-index layering
-className="fixed right-0 top-0 h-full z-50 transition-all duration-300 ease-in-out"
-onMouseEnter={() => setIsExpanded(true)}
-onMouseLeave={() => setIsExpanded(false)}
+// ModelSelector modal component
+<ModelSelector
+  isOpen={isModelSelectorOpen}
+  onClose={() => setIsModelSelectorOpen(false)}
+  value={selectedModel}
+  onChange={setSelectedModel}
+  models={availableModels}
+/>
+
+// ModelSelectorButton trigger component
+<ModelSelectorButton
+  currentModel={selectedModel}
+  models={availableModels}
+  onClick={() => setIsModelSelectorOpen(true)}
+/>
 ```
 
-#### **Layout Integration**
-- **Right Margin Compensation**: Chat area automatically adjusts with `mr-16` to accommodate the sidebar tab
-- **Z-Index Management**: Positioned above chat content but below modals (z-50)
-- **Non-intrusive**: Doesn't interfere with existing left sidebar or chat functionality
-- **Connected State**: ModelSidebar selection directly controls ChatInput's model for message sending
-- **Visual Feedback**: ChatInput shows current selected model with color indicator and instructions
+#### **Components**
+- **ModelSelector**: Modal component with model list, search, and close functionality
+- **ModelSelectorButton**: Trigger button showing current model with brain emoji and dropdown arrow
+- **Improved UX**: Click outside modal or ESC key to close, body scroll prevention when open
 
 ## 🛠️ Technology Stack
 

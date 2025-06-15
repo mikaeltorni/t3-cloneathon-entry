@@ -21,6 +21,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { ModelSidebar } from './components/ModelSidebar';
+import { ModelSidebarToggle } from './components/ui/ModelSidebarToggle';
 import { TagSystem, useTagSystemContext } from './components/TagSystem';
 import { SidebarToggle } from './components/ui/SidebarToggle';
 import { SignInForm } from './components/auth/SignInForm';
@@ -43,6 +44,9 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   const models = useModels();
   const sidebar = useSidebarToggle();
   const { debug } = useLogger('App');
+  
+  // Model sidebar state
+  const [isModelSidebarOpen, setIsModelSidebarOpen] = useState(false);
 
   // Get tagging context
   const { filteredThreads, handleContextMenu, getThreadTags } = useTagSystemContext();
@@ -154,7 +158,27 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         getThreadTags={getThreadTags}
       />
 
-      {/* Main Chat Area - Offset by sidebar width when open, with right margin for ModelSidebar */}
+      {/* Model Sidebar Toggle Button - Top Right */}
+      <ModelSidebarToggle
+        isOpen={isModelSidebarOpen}
+        onToggle={() => setIsModelSidebarOpen(!isModelSidebarOpen)}
+        currentModel={currentModel}
+        models={models.availableModels}
+        loading={models.modelsLoading}
+      />
+
+      {/* Model Selection Sidebar - Right Side */}
+      <ModelSidebar
+        isOpen={isModelSidebarOpen}
+        onClose={() => setIsModelSidebarOpen(false)}
+        onToggle={() => setIsModelSidebarOpen(!isModelSidebarOpen)}
+        value={currentModel}
+        onChange={handleCurrentModelChange}
+        models={models.availableModels}
+        loading={models.modelsLoading}
+      />
+
+      {/* Main Chat Area - Offset by sidebar widths when open */}
       <div 
         className={cn(
           'h-full flex flex-col transition-all duration-300',
@@ -162,8 +186,10 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
             'ml-80': sidebar.isOpen,
             'ml-0': !sidebar.isOpen
           },
-          // Always leave space for ModelSidebar tab on the right
-          'mr-16'
+          {
+            'mr-80': isModelSidebarOpen,
+            'mr-0': !isModelSidebarOpen
+          }
         )}
       >
         {/* Error Banner */}
@@ -192,14 +218,6 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
           />
         </div>
       </div>
-
-      {/* Model Selection Sidebar - Right Side */}
-      <ModelSidebar
-        value={currentModel}
-        onChange={handleCurrentModelChange}
-        models={models.availableModels}
-        loading={models.modelsLoading}
-      />
     </div>
   );
 }

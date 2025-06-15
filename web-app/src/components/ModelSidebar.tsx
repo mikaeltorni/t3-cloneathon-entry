@@ -1,44 +1,51 @@
 /**
  * ModelSidebar.tsx
  * 
- * Right-side model selection sidebar with hover-to-reveal functionality
- * Now refactored with smaller, focused sub-components
+ * Right-side model selection sidebar with toggle functionality
+ * Similar to ChatSidebar but for model selection
  * 
  * Components:
- *   ModelSidebar - Main sidebar container using sub-components
+ *   ModelSidebar - Right-side sidebar for model selection
  * 
  * Features:
- *   - Right-side positioned sidebar that slides out on hover
+ *   - Right-side positioned sidebar that slides in/out
+ *   - Close button in top right corner
  *   - Vertical model selection with brand colors and icons
  *   - Brain emoji icons with smart opacity (full, half, very low)
  *   - One-click model switching with visual feedback
- *   - Selected model description in collapsed state
+ *   - Model pinning functionality
  *   - Automatic sorting by release date (newest first)
  *   - Smooth animations and transitions
- *   - Compact tab when collapsed, full sidebar when expanded
+ *   - Mobile-friendly design with overlay
+ *   - Toggle button when closed
  * 
- * Usage: <ModelSidebar value={selectedModel} onChange={setSelectedModel} models={availableModels} />
+ * Usage: <ModelSidebar isOpen={open} onClose={setClose} onToggle={setToggle} value={selectedModel} onChange={setSelectedModel} models={availableModels} />
  */
 import React, { useState } from 'react';
 import { cn } from '../utils/cn';
 import { useUserPreferences } from '../hooks/useUserPreferences';
 import { useLogger } from '../hooks/useLogger';
-import { ModelSidebarStates } from './model/ModelSidebarStates';
 import { ModelList } from './model/ModelList';
+import { Button } from './ui/Button';
 import type { ModelConfig } from '../../../src/shared/types';
 
 interface ModelSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onToggle?: () => void;
   value: string;
   onChange: (modelId: string) => void;
   models: Record<string, ModelConfig>;
   loading?: boolean;
   className?: string;
-  inputBarHeight?: number; // Height of the input bar to avoid overlap
 }
 
 /**
- * Right-side model selection sidebar with hover-to-reveal functionality
+ * Right-side model selection sidebar with toggle functionality
  * 
+ * @param isOpen - Whether the sidebar is visible
+ * @param onClose - Callback to close the sidebar
+ * @param onToggle - Callback to toggle the sidebar
  * @param value - Currently selected model ID
  * @param onChange - Callback when model is selected
  * @param models - Available models configuration
@@ -47,18 +54,28 @@ interface ModelSidebarProps {
  * @returns React component
  */
 export const ModelSidebar: React.FC<ModelSidebarProps> = ({
+  isOpen,
+  onClose,
+  onToggle,
   value,
   onChange,
   models,
   loading = false,
-  className,
-  inputBarHeight = 300 // Default fallback height
+  className
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [pinningModel, setPinningModel] = useState<string | null>(null);
   
   const { pinnedModels, toggleModelPin } = useUserPreferences();
   const { debug, warn } = useLogger('ModelSidebar');
+
+  /**
+   * Handle model selection
+   */
+  const handleModelSelect = (modelId: string) => {
+    debug(`Model selected: ${modelId}`);
+    onChange(modelId);
+    // Don't close automatically - let user keep selecting if they want
+  };
 
   /**
    * Handle model pin toggle
@@ -77,82 +94,137 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
     }
   };
 
-  if (loading) {
-    return (
-      <div 
-        className={cn(
-          'fixed right-0 top-0 z-50 transition-all duration-300',
-          isExpanded ? 'w-80' : 'w-16',
-          className
-        )}
-        style={{
-          top: '0',
-          height: `calc(100vh - ${inputBarHeight + 20}px)`,
-          bottom: 'auto'
-        }}
-      >
-        <ModelSidebarStates.Loading />
-      </div>
-    );
-  }
+  const modelCount = Object.keys(models).length;
+  const pinnedCount = pinnedModels.length;
 
   return (
-    <div 
-      className={cn(
-        'fixed right-0 z-50 transition-all duration-300 ease-in-out',
-        isExpanded ? 'w-80' : 'w-16',
-        className
-      )}
-      style={{
-        top: '0',
-        height: `calc(100vh - ${inputBarHeight + 20}px)`,
-        bottom: 'auto'
-      }}
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
-    >
-      <div className="bg-white border-l border-gray-200 shadow-lg h-full overflow-hidden">
-        {/* Collapsed Tab - Clean blank bar */}
+    <>
+      {/* Mobile overlay - only show on small screens */}
+      {isOpen && (
         <div 
-          className={cn(
-            'transition-all duration-300',
-            isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
-          )}
-        >
-          {/* Empty div for clean blank appearance */}
-          <div className="h-full"></div>
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div 
+        className={cn(
+          'fixed right-0 top-0 w-80 bg-gradient-to-b from-gray-50 to-gray-100 border-l border-gray-200 flex-col h-full z-40 transition-transform duration-300',
+          // Always show as flex, but use transform to hide/show
+          'flex',
+          // Transform based on isOpen state for all screen sizes
+          isOpen ? 'translate-x-0' : 'translate-x-full',
+          className
+        )}
+        data-no-drop="true"
+      >
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200 bg-white shadow-sm">
+          {/* Top row: Toggle button + Title + Close button */}
+          <div className="flex items-center gap-3 mb-4">
+            {/* Sidebar toggle button */}
+            {onToggle && (
+              <button
+                onClick={onToggle}
+                className="p-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:shadow-sm"
+                aria-label="Toggle model sidebar"
+                title="Toggle model sidebar"
+              >
+                <svg
+                  className="w-4 h-4 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+            )}
+            
+            <h1 className="text-xl font-bold text-gray-900 flex-1">AI Models</h1>
+            
+            {/* Close button */}
+            <Button
+              onClick={onClose}
+              variant="ghost"
+              size="sm"
+              className="p-2 rounded-xl border border-gray-300 hover:bg-gray-50"
+              aria-label="Close model sidebar"
+            >
+              <svg
+                className="w-4 h-4 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </Button>
+          </div>
+          
+          <p className="text-xs text-gray-500 text-center">
+            Choose your AI assistant • {modelCount} models available
+            {pinnedCount > 0 && (
+              <span className="text-amber-600 ml-1">
+                • {pinnedCount} pinned
+              </span>
+            )}
+          </p>
         </div>
 
-        {/* Expanded Sidebar Content */}
-        <div 
-          className={cn(
-            'transition-all duration-300 h-full',
-            isExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          )}
-        >
-          <div className="flex flex-col h-full">
-            {/* Header */}
-            <ModelSidebarStates.Header />
-
-            {/* Model List */}
+        {/* Model list with enhanced scrolling */}
+        <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+          {loading ? (
+            <LoadingState />
+          ) : (
             <ModelList
               models={models}
               value={value}
               pinnedModels={pinnedModels}
               pinningModel={pinningModel}
               loading={loading}
-              onChange={onChange}
+              onChange={handleModelSelect}
               onTogglePin={handleTogglePin}
             />
+          )}
+        </div>
 
-            {/* Footer */}
-            <ModelSidebarStates.Footer
-              modelCount={Object.keys(models).length}
-              pinnedCount={pinnedModels.length}
-            />
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50">
+          <div className="text-xs text-gray-500 text-center">
+            Click a model to select it, or pin your favorites for easy access
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
-}; 
+};
+
+/**
+ * Loading skeleton component
+ */
+const LoadingState: React.FC = () => (
+  <div className="space-y-3">
+    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+      <div
+        key={i}
+        className="h-16 bg-gray-200 rounded-lg animate-pulse"
+      />
+    ))}
+  </div>
+);
+
+// Export ModelSidebar as both names for compatibility
+export { ModelSidebar as ModelSelector }; 
