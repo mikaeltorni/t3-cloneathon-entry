@@ -53,6 +53,7 @@ interface ChatStorageService {
   deleteThread(userId: string, threadId: string): Promise<boolean>;
   updateThreadTitle(userId: string, threadId: string, title: string): Promise<ChatThread | null>;
   updateThreadPin(userId: string, threadId: string, isPinned: boolean): Promise<ChatThread | null>;
+  updateThreadTags(userId: string, threadId: string, tags: string[]): Promise<ChatThread | null>;
   createMessage(content: string, role: 'user' | 'assistant', imageUrl?: string, modelId?: string): ChatMessage;
   addMessageToThread(userId: string, threadId: string, message: ChatMessage): Promise<void>;
 }
@@ -733,6 +734,62 @@ class FirestoreChatStorageService implements ChatStorageService {
       throw new FirestoreChatStorageError(
         `Failed to add message to thread: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'addMessageToThread',
+        error
+      );
+    }
+  }
+
+  /**
+   * Update thread tags
+   * 
+   * @param userId - User ID
+   * @param threadId - ID of the thread to update
+   * @param tags - New tags array (can be empty to remove all tags)
+   * @returns Updated thread data or null if not found
+   */
+  async updateThreadTags(userId: string, threadId: string, tags: string[]): Promise<ChatThread | null> {
+    try {
+      if (!userId?.trim()) {
+        throw new Error('User ID is required');
+      }
+
+      if (!threadId?.trim()) {
+        throw new Error('Thread ID is required');
+      }
+
+      if (!Array.isArray(tags)) {
+        throw new Error('Tags must be an array');
+      }
+
+      console.log(`[Firestore] Updating tags for thread ${threadId} for user: ${userId} -> [${tags.join(', ')}]`);
+
+      const threadRef = this.getUserChatsCollection(userId).doc(threadId);
+      const threadDoc = await threadRef.get();
+
+      if (!threadDoc.exists) {
+        console.log(`[Firestore] Thread not found for tag update: ${threadId}`);
+        return null;
+      }
+
+      const now = new Date();
+      await threadRef.update({
+        tags,
+        updatedAt: now,
+      });
+
+      // Get the updated thread with messages
+      const updatedThread = await this.getThread(userId, threadId);
+
+      if (updatedThread) {
+        console.log(`[Firestore] Updated thread tags: [${tags.join(', ')}]`);
+      }
+
+      return updatedThread;
+    } catch (error) {
+      console.error(`[Firestore] Error updating thread tags for ${threadId}:`, error);
+      throw new FirestoreChatStorageError(
+        `Failed to update thread tags: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'updateThreadTags',
         error
       );
     }

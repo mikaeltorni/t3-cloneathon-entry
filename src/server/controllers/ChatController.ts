@@ -816,6 +816,63 @@ export class ChatController {
   };
 
   /**
+   * Update thread tags
+   * 
+   * @route PATCH /api/chats/:threadId/tags
+   */
+  updateThreadTags = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const { threadId } = req.params;
+      const { tags } = req.body;
+      
+      if (!threadId?.trim()) {
+        res.status(400).json({ 
+          error: 'Thread ID is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      if (!Array.isArray(tags)) {
+        res.status(400).json({ 
+          error: 'Tags must be an array',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      
+      console.log(`[ChatController] Updating tags for thread: ${threadId} for user: ${req.user.uid} -> [${tags.join(', ')}]`);
+      
+      // Check if thread exists first
+      const existingThread = await firestoreChatStorage.getThread(req.user.uid, threadId);
+      if (!existingThread) {
+        res.status(404).json({ 
+          error: 'Thread not found',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      
+      // Update the tags
+      const updatedThread = await firestoreChatStorage.updateThreadTags(req.user.uid, threadId, tags);
+      
+      console.log(`[ChatController] Successfully updated tags for thread: ${threadId}`);
+      res.json(updatedThread);
+    } catch (error) {
+      console.error('[ChatController] Error updating thread tags:', error);
+      next(error);
+    }
+  };
+
+  /**
    * Get messages for multiple threads in batch
    * 
    * @route POST /api/chats/messages/batch
@@ -911,6 +968,7 @@ export class ChatController {
     router.delete('/:threadId', this.deleteThread);
     router.put('/:threadId/title', this.updateThreadTitle);
     router.patch('/:threadId/pin', this.toggleThreadPin);
+    router.patch('/:threadId/tags', this.updateThreadTags);
 
     return router;
   }
