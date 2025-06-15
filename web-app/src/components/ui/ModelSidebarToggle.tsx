@@ -60,7 +60,7 @@ export const ModelSidebarToggle: React.FC<ModelSidebarToggleProps> = ({
       className={cn(
         'fixed top-4 right-4 z-30',
         'bg-white border border-gray-300 rounded-lg shadow-lg',
-        'p-3 flex items-center gap-2',
+        'p-3',
         'hover:bg-gray-50 hover:shadow-xl',
         'transition-all duration-200',
         'focus:outline-none focus:ring-2 focus:ring-blue-500',
@@ -74,26 +74,6 @@ export const ModelSidebarToggle: React.FC<ModelSidebarToggleProps> = ({
       <span className="text-lg" role="img" aria-label="AI Model">
         🤖
       </span>
-      
-      {/* Model name - hidden on small screens */}
-      <span className="hidden sm:block text-sm font-medium text-gray-700 max-w-24 truncate">
-        {modelName}
-      </span>
-      
-      {/* Expand arrow */}
-      <svg
-        className="w-4 h-4 text-gray-400 flex-shrink-0"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M15 19l-7-7 7-7"
-        />
-      </svg>
     </button>
   );
 }; 

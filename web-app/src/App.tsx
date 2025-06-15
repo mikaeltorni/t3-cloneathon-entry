@@ -212,6 +212,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
             onImagesChange={chat.handleImagesChange}
             onDocumentsChange={chat.handleDocumentsChange}
             sidebarOpen={sidebar.isOpen}
+            modelSidebarOpen={isModelSidebarOpen}
             currentTokenMetrics={chat.currentTokenMetrics}
             selectedModel={currentModel}
             onModelChange={handleCurrentModelChange}

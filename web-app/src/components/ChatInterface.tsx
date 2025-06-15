@@ -40,6 +40,7 @@ interface ChatInterfaceProps {
   onImagesChange: (images: ImageAttachment[]) => void;
   onDocumentsChange: (documents: DocumentAttachment[]) => void;
   sidebarOpen?: boolean;
+  modelSidebarOpen?: boolean;
   currentTokenMetrics?: TokenMetrics | null;
   selectedModel?: string; // External model selection from ModelSidebar
   onModelChange?: (modelId: string) => void; // Model change handler
@@ -75,6 +76,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   onImagesChange,
   onDocumentsChange,
   sidebarOpen = false,
+  modelSidebarOpen = false,
   currentTokenMetrics = null,
   selectedModel,
   onModelChange
@@ -137,6 +139,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         onDocumentsChange={onDocumentsChange}
         onHeightChange={updateHeight}
         sidebarOpen={sidebarOpen}
+        modelSidebarOpen={modelSidebarOpen}
         currentTokenMetrics={currentTokenMetrics}
         isGenerating={loading}
         currentMessages={messages}

@@ -45,6 +45,7 @@ interface ChatInputProps {
   onImagesChange: (images: ImageAttachment[]) => void;
   onDocumentsChange: (documents: DocumentAttachment[]) => void;
   sidebarOpen?: boolean;
+  modelSidebarOpen?: boolean;
   currentTokenMetrics?: TokenMetrics | null;
   isGenerating?: boolean;
   currentMessages?: ChatMessage[];
@@ -74,6 +75,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onImagesChange,
   onDocumentsChange,
   sidebarOpen = false,
+  modelSidebarOpen = false,
   currentTokenMetrics = null,
   isGenerating = false,
   currentMessages = [],
@@ -213,7 +215,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       className={cn(
         'fixed bottom-0 bg-white border-t border-gray-200 p-4 shadow-lg z-40 transition-all duration-300',
         sidebarOpen ? 'left-80' : 'left-0',
-        'right-0'
+        modelSidebarOpen ? 'right-80' : 'right-0'
       )}
     >
       <div className="max-w-4xl mx-auto space-y-4">
