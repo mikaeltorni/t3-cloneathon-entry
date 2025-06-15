@@ -256,17 +256,23 @@ class UserPreferencesApiService {
         color,
         createdAt: new Date()
       };
-
-      // Get current tags
+      
       const tagsRef = doc(db, 'users', user.uid, 'settings', 'tags');
-      const tagsDoc = await getDoc(tagsRef);
-      const currentTags = tagsDoc.exists() ? (tagsDoc.data().tags || []) : [];
-
+      
+      // Get existing tags
+      const existingDoc = await getDoc(tagsRef);
+      const existingTags: ChatTag[] = existingDoc.exists() ? (existingDoc.data().tags || []) : [];
+      
+      // Check for duplicate names
+      if (existingTags.some(tag => tag.name.toLowerCase() === name.toLowerCase())) {
+        throw new Error('A tag with this name already exists');
+      }
+      
       // Add new tag to the array
-      const updatedTags = [...currentTags, newTag];
-
+      const updatedTags = [...existingTags, newTag];
+      
       // Save to Firestore
-      await setDoc(tagsRef, { 
+      await setDoc(tagsRef, {
         tags: updatedTags,
         updatedAt: serverTimestamp()
       }, { merge: true });
@@ -275,7 +281,7 @@ class UserPreferencesApiService {
       return newTag;
     } catch (error) {
       logger.error(`Failed to create tag: ${name}`, error as Error);
-      throw new Error('Failed to create tag. Please try again.');
+      throw error;
     }
   }
 
@@ -399,7 +405,8 @@ class UserPreferencesApiService {
         return [];
       }
 
-      const tags: ChatTag[] = tagsDoc.data().tags || [];
+      const docData = tagsDoc.data();
+      const tags: ChatTag[] = docData.tags || [];
       
       // Convert Firestore timestamps to Date objects if needed
       const processedTags = tags.map(tag => ({
@@ -411,6 +418,7 @@ class UserPreferencesApiService {
       return processedTags;
     } catch (error) {
       logger.error('Failed to get tags', error as Error);
+      console.error('❌ [userPreferencesApi] Failed to get tags:', error);
       // Return empty array on error to not break the UI
       return [];
     }

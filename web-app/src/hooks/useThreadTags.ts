@@ -26,7 +26,7 @@ interface UseThreadTagsReturn {
 interface UseThreadTagsProps {
   threads: ChatThread[];
   tags: ChatTag[];
-  onThreadUpdate?: (threadId: string, updatedThread: Partial<ChatThread>) => void;
+  onThreadUpdate?: (threadId: string, updatedThread: Partial<ChatThread>) => Promise<void>;
 }
 
 /**

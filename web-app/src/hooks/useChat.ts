@@ -138,7 +138,20 @@ export function useChat(): UseChatReturn {
       throw new Error('Thread not found');
     }
 
-    // Create updated thread object
+    // If tags are being updated, call the server API
+    if (updates.tags !== undefined) {
+      try {
+        const updatedThread = await chatApiService.updateThreadTags(threadId, updates.tags);
+        // Update the thread in the list with server response
+        threadOps.updateThreadInList(updatedThread);
+        return;
+      } catch (error) {
+        console.error('Failed to update thread tags on server:', error);
+        throw error;
+      }
+    }
+
+    // For other updates, just update locally for now
     const updatedThread: ChatThread = {
       ...thread,
       ...updates,
@@ -147,10 +160,7 @@ export function useChat(): UseChatReturn {
 
     // Update the thread in the list
     threadOps.updateThreadInList(updatedThread);
-
-    // TODO: Add API call to persist the update to the server
-    // await apiService.updateThread(threadId, updates);
-  }, [threadOps]);
+  }, [threadOps, chatApiService]);
 
   const handleSendMessage = useCallback(async (
     content: string,

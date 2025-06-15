@@ -100,6 +100,7 @@ class FirestoreChatStorageService implements ChatStorageService {
       currentModel: data.currentModel || undefined,
       lastUsedModel: data.lastUsedModel || undefined,
       isPinned: data.isPinned || false,
+      tags: data.tags || undefined,
     };
   }
 

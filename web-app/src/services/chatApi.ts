@@ -170,6 +170,25 @@ export class ChatApiService {
     return updatedThread;
   }
 
+  async updateThreadTags(threadId: string, tags: string[]): Promise<ChatThread> {
+    if (!threadId?.trim()) {
+      throw new Error('Thread ID is required');
+    }
+
+    if (!Array.isArray(tags)) {
+      throw new Error('Tags must be an array');
+    }
+
+    logger.info(`Updating thread tags: ${threadId} -> [${tags.join(', ')}]`);
+    
+    const updatedThread = await this.httpClient.patch<ChatThread>(`/chats/${threadId}/tags`, {
+      tags
+    });
+    
+    logger.info(`Successfully updated thread tags: ${threadId}`);
+    return updatedThread;
+  }
+
   // Message Operations (delegating to MessageService)
   async sendMessage(request: CreateMessageRequest): Promise<CreateMessageResponse> {
     return this.messageService.sendMessage(request);

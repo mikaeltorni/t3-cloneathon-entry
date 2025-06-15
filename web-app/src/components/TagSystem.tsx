@@ -89,7 +89,8 @@ export const TagSystem: React.FC<TagSystemProps> = ({
     tags, 
     createTag,
     updateTag,
-    deleteTag
+    deleteTag,
+    refreshTags
   } = useTags();
   
   const {
@@ -199,7 +200,6 @@ export const TagSystem: React.FC<TagSystemProps> = ({
       if (contextMenu.threadId) {
         try {
           await addTagToThread(contextMenu.threadId, newTag.id);
-          console.log(`Auto-assigned new tag "${newTag.name}" to thread ${contextMenu.threadId}`);
         } catch (assignError) {
           console.error('Failed to auto-assign new tag to thread:', assignError);
           // Tag was created successfully, but assignment failed
@@ -385,10 +385,7 @@ export const TagSystem: React.FC<TagSystemProps> = ({
       <TagModal
         isOpen={isCreateTagModalOpen}
         onClose={() => setIsCreateTagModalOpen(false)}
-        onSubmit={async (name: string, color: { r: number; g: number; b: number }) => {
-          await createTag(name, color);
-          setIsCreateTagModalOpen(false);
-        }}
+        onSubmit={handleCreateTag}
         title="Create New Tag"
       />
 
