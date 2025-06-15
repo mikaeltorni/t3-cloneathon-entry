@@ -1,11 +1,10 @@
 /**
- * tokenizerServiceRefactored.ts
+ * tokenizerService.ts
  * 
  * Refactored tokenizer service using focused service composition
  * 
  * Classes:
  *   TokenizerService - Main orchestrator service
- *   TokenTracker - Real-time token tracking (preserved from original)
  * 
  * Features:
  *   - Service composition following single responsibility principle
@@ -30,87 +29,25 @@ import type {
 import { modelInfoService } from './modelInfoService';
 import { costCalculationService } from './costCalculationService';
 import { contextWindowService } from './contextWindowService';
+
+// Import extracted tokenizer components
 import { 
+  TokenTracker,
+  type TokenizerProvider,
   OpenAITokenizerProvider,
   AnthropicTokenizerProvider,
   DeepSeekTokenizerProvider,
-  GoogleTokenizerProvider,
-  type TokenizerProvider
-} from './tokenizerProviders';
+  GoogleTokenizerProvider
+} from './tokenizer';
 
-/**
- * Real-time token tracking for streaming responses
- * Preserved from original implementation
- */
-export class TokenTracker {
-  private startTime: number;
-  private tokenCount: number = 0;
-  private tokensPerSecondHistory: number[] = [];
-  private readonly maxHistorySize = 10;
-
-  constructor() {
-    this.startTime = Date.now();
-  }
-
-  /**
-   * Add tokens to the tracker and calculate current TPS
-   */
-  addTokens(count: number): number {
-    this.tokenCount += count;
-    const currentTime = Date.now();
-    const duration = (currentTime - this.startTime) / 1000; // Convert to seconds
-    
-    if (duration > 0) {
-      const currentTPS = this.tokenCount / duration;
-      this.tokensPerSecondHistory.push(currentTPS);
-      
-      // Keep only recent history for smoother TPS calculation
-      if (this.tokensPerSecondHistory.length > this.maxHistorySize) {
-        this.tokensPerSecondHistory.shift();
-      }
-      
-      return currentTPS;
-    }
-    
-    return 0;
-  }
-
-  /**
-   * Get current tokens per second (smoothed average)
-   */
-  getCurrentTPS(): number {
-    if (this.tokensPerSecondHistory.length === 0) return 0;
-    
-    const sum = this.tokensPerSecondHistory.reduce((a, b) => a + b, 0);
-    return sum / this.tokensPerSecondHistory.length;
-  }
-
-  /**
-   * Get total tokens counted
-   */
-  getTotalTokens(): number {
-    return this.tokenCount;
-  }
-
-  /**
-   * Get elapsed time in milliseconds
-   */
-  getElapsedTime(): number {
-    return Date.now() - this.startTime;
-  }
-
-  /**
-   * Reset the tracker
-   */
-  reset(): void {
-    this.startTime = Date.now();
-    this.tokenCount = 0;
-    this.tokensPerSecondHistory = [];
-  }
-}
+// Re-export TokenTracker for backwards compatibility
+export { TokenTracker } from './tokenizer';
 
 /**
  * Refactored tokenizer service using focused service composition
+ * 
+ * Orchestrates tokenization across multiple providers using extracted
+ * components for better maintainability and single responsibility.
  */
 export class TokenizerService {
   private providers: Map<TokenizerProviderType, TokenizerProvider>;
@@ -128,6 +65,9 @@ export class TokenizerService {
 
   /**
    * Get the appropriate tokenizer provider for a model
+   * 
+   * @param model - Model identifier
+   * @returns Tokenizer provider instance
    */
   private getProvider(model: string): TokenizerProvider {
     const modelInfo = modelInfoService.getModelInfo(model);
@@ -209,14 +149,14 @@ export class TokenizerService {
   }
 
   /**
-   * Create token metrics object for tracking
+   * Create comprehensive token metrics
    * 
-   * @param inputTokens - Number of input tokens
-   * @param outputTokens - Number of output tokens
+   * @param inputTokens - Input token count
+   * @param outputTokens - Output token count
    * @param startTime - Start timestamp
    * @param endTime - End timestamp (optional)
    * @param modelId - Model identifier (optional)
-   * @returns TokenMetrics object
+   * @returns Token metrics object
    */
   createTokenMetrics(
     inputTokens: number,
@@ -225,23 +165,32 @@ export class TokenizerService {
     endTime?: number,
     modelId?: string
   ): TokenMetrics {
-    const modelInfo = modelId ? modelInfoService.getModelInfo(modelId) : undefined;
-    
-    return costCalculationService.createTokenMetricsWithCost(
+    const totalTokens = inputTokens + outputTokens;
+    const duration = endTime ? endTime - startTime : Date.now() - startTime;
+    const tokensPerSecond = duration > 0 ? (totalTokens / duration) * 1000 : 0;
+
+    const cost = modelId ? this.calculateCost(inputTokens, outputTokens, modelId) : undefined;
+    const contextWindow = modelId ? this.calculateContextWindowUsage(totalTokens, modelId) : undefined;
+
+    return {
       inputTokens,
       outputTokens,
+      totalTokens,
+      tokensPerSecond,
+      cost,
+      contextWindow,
       startTime,
-      endTime,
-      modelInfo
-    );
+      endTime: endTime || Date.now(),
+      duration
+    };
   }
 
   /**
-   * Calculate context window usage for a specific model
+   * Calculate context window usage
    * 
-   * @param usedTokens - Number of tokens currently used
+   * @param usedTokens - Number of tokens used
    * @param modelId - Model identifier
-   * @returns Context window usage information
+   * @returns Context window usage info
    */
   calculateContextWindowUsage(usedTokens: number, modelId: string) {
     const modelInfo = modelInfoService.getModelInfo(modelId);
@@ -249,11 +198,11 @@ export class TokenizerService {
   }
 
   /**
-   * Calculate total context window usage including all messages in a conversation
+   * Calculate conversation context usage
    * 
-   * @param messages - Array of chat messages
+   * @param messages - Chat messages
    * @param modelId - Model identifier
-   * @returns Context window usage information
+   * @returns Context window usage for conversation
    */
   async calculateConversationContextUsage(messages: any[], modelId: string) {
     const result = await this.tokenizeChat(messages, modelId);
@@ -261,24 +210,25 @@ export class TokenizerService {
   }
 
   /**
-   * Check if text is within token limit for a model
+   * Check if text is within token limit
    * 
    * @param text - Text to check
    * @param model - Model identifier
-   * @param limit - Optional custom limit
+   * @param limit - Token limit (optional, uses model's context window if not provided)
    * @returns True if within limit
    */
   async isWithinTokenLimit(text: string, model: string, limit?: number): Promise<boolean> {
-    const modelInfo = modelInfoService.getModelInfo(model);
     const tokenCount = await this.countTokens(text, model);
+    const modelInfo = modelInfoService.getModelInfo(model);
+    const actualLimit = limit || modelInfo.maxTokens || 4096;
     
-    return contextWindowService.isWithinLimit(tokenCount, modelInfo, limit);
+    return tokenCount <= actualLimit;
   }
 
   /**
-   * Estimate tokens in streaming chunks (for real-time counting)
+   * Estimate tokens in a chunk (async)
    * 
-   * @param chunk - Text chunk to estimate
+   * @param chunk - Text chunk
    * @param model - Model identifier
    * @returns Estimated token count
    */
@@ -290,9 +240,9 @@ export class TokenizerService {
   }
 
   /**
-   * Synchronous version of estimateTokensInChunk for when async is not possible
+   * Estimate tokens in a chunk (synchronous)
    * 
-   * @param chunk - Text chunk to estimate
+   * @param chunk - Text chunk
    * @param model - Model identifier
    * @returns Estimated token count
    */
@@ -304,7 +254,7 @@ export class TokenizerService {
   }
 
   /**
-   * Get supported models list
+   * Get list of supported models
    * 
    * @returns Array of supported model identifiers
    */
@@ -315,7 +265,7 @@ export class TokenizerService {
   /**
    * Get models by provider
    * 
-   * @param provider - TokenizerProvider to filter by
+   * @param provider - Provider identifier
    * @returns Array of model identifiers for the provider
    */
   getModelsByProvider(provider: TokenizerProviderType): string[] {
@@ -326,12 +276,12 @@ export class TokenizerService {
    * Get model information
    * 
    * @param model - Model identifier
-   * @returns Model information object
+   * @returns Model information
    */
   getModelInfo(model: string) {
     return modelInfoService.getModelInfo(model);
   }
 }
 
-// Singleton instance for backwards compatibility
+// Create and export singleton instance
 export const tokenizerService = new TokenizerService(); 

@@ -99,7 +99,7 @@ export interface UseFileValidationReturn {
  * @returns File validation operations
  */
 export function useFileValidation(): UseFileValidationReturn {
-  const { warn } = useLogger('useFileValidation');
+  const { debug, error } = useLogger('useFileValidation');
 
   /**
    * Check if file type is a supported image

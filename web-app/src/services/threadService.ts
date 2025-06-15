@@ -1,41 +1,100 @@
 /**
  * threadService.ts
  * 
- * Thread management service
+ * Refactored thread management service using service composition
  * 
- * Services:
- *   ThreadService
+ * Classes:
+ *   ThreadService - Main orchestrator service
  * 
  * Features:
- *   - Thread CRUD operations
- *   - Efficient pagination
- *   - Pin/unpin functionality
- *   - Title updates
- *   - Batch operations
+ *   - Service composition following single responsibility principle
+ *   - CRUD operations via ThreadCrudService
+ *   - Batch operations via ThreadBatchService
+ *   - Search and analytics via ThreadSearchService
+ *   - Backwards compatibility with original API
  * 
  * Usage: import { ThreadService } from './threadService'
  */
+
 import { logger } from '../utils/logger';
 import { HttpClient } from './httpClient';
 import type { PaginatedResponse } from './types/apiTypes';
 import type { 
   ChatThread, 
-  ChatMessage,
-  GetChatsResponse 
+  ChatMessage
 } from '../../../src/shared/types';
 
+// Import extracted thread services
+import { 
+  ThreadCrudService,
+  ThreadBatchService,
+  ThreadSearchService
+} from './thread';
+
 /**
- * Thread service for chat thread management
+ * Refactored thread service using focused service composition
  * 
- * Handles all thread-related operations including CRUD,
- * pagination, pinning, and batch operations.
+ * Orchestrates thread operations across multiple specialized services
+ * for better maintainability and single responsibility.
  */
 export class ThreadService {
-  private httpClient: HttpClient;
+  private crudService: ThreadCrudService;
+  private batchService: ThreadBatchService;
+  private searchService: ThreadSearchService;
 
   constructor(httpClient: HttpClient) {
-    this.httpClient = httpClient;
+    this.crudService = new ThreadCrudService(httpClient);
+    this.batchService = new ThreadBatchService(httpClient);
+    this.searchService = new ThreadSearchService(httpClient);
+    
+    logger.info('ThreadService initialized with focused service composition');
   }
+
+  // CRUD Operations (delegated to ThreadCrudService)
+
+  /**
+   * Get single chat thread by ID
+   * 
+   * @param threadId - Thread ID to fetch
+   * @returns Promise with chat thread
+   */
+  async getThread(threadId: string): Promise<ChatThread> {
+    return this.crudService.getThread(threadId);
+  }
+
+  /**
+   * Delete chat thread
+   * 
+   * @param threadId - Thread ID to delete
+   * @returns Promise that resolves when deletion is complete
+   */
+  async deleteThread(threadId: string): Promise<void> {
+    return this.crudService.deleteThread(threadId);
+  }
+
+  /**
+   * Update thread title
+   * 
+   * @param threadId - Thread ID to update
+   * @param title - New thread title
+   * @returns Promise with updated chat thread
+   */
+  async updateThreadTitle(threadId: string, title: string): Promise<ChatThread> {
+    return this.crudService.updateThreadTitle(threadId, title);
+  }
+
+  /**
+   * Toggle thread pin status
+   * 
+   * @param threadId - Thread ID to pin/unpin
+   * @param isPinned - Pin status to set
+   * @returns Promise with updated chat thread
+   */
+  async toggleThreadPin(threadId: string, isPinned: boolean): Promise<ChatThread> {
+    return this.crudService.toggleThreadPin(threadId, isPinned);
+  }
+
+  // Batch Operations (delegated to ThreadBatchService)
 
   /**
    * Get all chat threads with efficient pagination
@@ -50,32 +109,7 @@ export class ThreadService {
     cursor?: string,
     summaryOnly: boolean = false
   ): Promise<PaginatedResponse<ChatThread>> {
-    try {
-      const params: Record<string, string> = {
-        limit: limit.toString(),
-      };
-      
-      if (cursor) params.startAfter = cursor;
-      if (summaryOnly) params.summaryOnly = 'true';
-
-      logger.info(`Fetching chat threads (efficient): limit=${limit}, summaryOnly=${summaryOnly}`);
-      
-      const response = await this.httpClient.get<GetChatsResponse & { hasMore?: boolean; cursor?: string }>(
-        '/chats',
-        params
-      );
-      
-      logger.info(`Successfully fetched ${response.threads.length} chat threads efficiently (hasMore: ${response.hasMore})`);
-      
-      return {
-        data: response.threads,
-        hasMore: response.hasMore || false,
-        cursor: response.cursor,
-      };
-    } catch (error) {
-      logger.error('Failed to fetch chat threads efficiently', error as Error);
-      throw new Error('Failed to load chat history. Please try again.');
-    }
+    return this.batchService.getAllThreadsEfficient(limit, cursor, summaryOnly);
   }
 
   /**
@@ -85,196 +119,39 @@ export class ThreadService {
    * @returns Promise with thread ID to messages mapping
    */
   async getBatchMessages(threadIds: string[]): Promise<Record<string, ChatMessage[]>> {
-    if (!threadIds.length) {
-      return {};
-    }
-
-    try {
-      logger.info(`Fetching batch messages for ${threadIds.length} threads`);
-      
-      const response = await this.httpClient.post<Record<string, ChatMessage[]>>('/chats/batch/messages', {
-        threadIds
-      });
-      
-      logger.info(`Successfully fetched batch messages for ${Object.keys(response).length} threads`);
-      return response;
-    } catch (error) {
-      logger.error('Failed to fetch batch messages', error as Error);
-      throw new Error('Failed to load thread messages. Please try again.');
-    }
+    return this.batchService.getBatchMessages(threadIds);
   }
 
   /**
-   * Get single chat thread by ID
-   * 
-   * @param threadId - Thread ID to fetch
-   * @returns Promise with chat thread
-   */
-  async getThread(threadId: string): Promise<ChatThread> {
-    if (!threadId?.trim()) {
-      throw new Error('Thread ID is required');
-    }
-
-    try {
-      logger.info(`Fetching chat thread: ${threadId}`);
-      
-      const thread = await this.httpClient.get<ChatThread>(`/chats/${threadId}`);
-      
-      logger.info(`Successfully fetched chat thread: ${threadId}`);
-      return thread;
-    } catch (error) {
-      logger.error(`Failed to fetch chat thread: ${threadId}`, error as Error);
-      throw new Error('Failed to load chat thread. Please try again.');
-    }
-  }
-
-  /**
-   * Delete chat thread
-   * 
-   * @param threadId - Thread ID to delete
-   * @returns Promise that resolves when deletion is complete
-   */
-  async deleteThread(threadId: string): Promise<void> {
-    if (!threadId?.trim()) {
-      throw new Error('Thread ID is required');
-    }
-
-    try {
-      logger.info(`Deleting chat thread: ${threadId}`);
-      
-      await this.httpClient.delete(`/chats/${threadId}`);
-      
-      logger.info(`Successfully deleted chat thread: ${threadId}`);
-    } catch (error) {
-      logger.error(`Failed to delete chat thread: ${threadId}`, error as Error);
-      throw new Error('Failed to delete chat thread. Please try again.');
-    }
-  }
-
-  /**
-   * Update thread title
-   * 
-   * @param threadId - Thread ID to update
-   * @param title - New thread title
-   * @returns Promise with updated chat thread
-   */
-  async updateThreadTitle(threadId: string, title: string): Promise<ChatThread> {
-    if (!threadId?.trim()) {
-      throw new Error('Thread ID is required');
-    }
-
-    if (!title?.trim()) {
-      throw new Error('Thread title is required');
-    }
-
-    try {
-      logger.info(`Updating thread title: ${threadId} -> "${title}"`);
-      
-      const updatedThread = await this.httpClient.patch<ChatThread>(`/chats/${threadId}`, {
-        title: title.trim()
-      });
-      
-      logger.info(`Successfully updated thread title: ${threadId}`);
-      return updatedThread;
-    } catch (error) {
-      logger.error(`Failed to update thread title: ${threadId}`, error as Error);
-      throw new Error('Failed to update chat title. Please try again.');
-    }
-  }
-
-  /**
-   * Toggle thread pin status
-   * 
-   * @param threadId - Thread ID to pin/unpin
-   * @param isPinned - Pin status to set
-   * @returns Promise with updated chat thread
-   */
-  async toggleThreadPin(threadId: string, isPinned: boolean): Promise<ChatThread> {
-    if (!threadId?.trim()) {
-      throw new Error('Thread ID is required');
-    }
-
-    try {
-      logger.info(`${isPinned ? 'Pinning' : 'Unpinning'} thread: ${threadId}`);
-      
-      const updatedThread = await this.httpClient.patch<ChatThread>(`/chats/${threadId}/pin`, {
-        isPinned
-      });
-      
-      logger.info(`Successfully ${isPinned ? 'pinned' : 'unpinned'} thread: ${threadId}`);
-      return updatedThread;
-    } catch (error) {
-      logger.error(`Failed to ${isPinned ? 'pin' : 'unpin'} thread: ${threadId}`, error as Error);
-      throw new Error(`Failed to ${isPinned ? 'pin' : 'unpin'} chat thread. Please try again.`);
-    }
-  }
-
-  /**
-   * Batch delete threads
+   * Delete multiple threads in batch
    * 
    * @param threadIds - Array of thread IDs to delete
-   * @returns Promise with deletion results
+   * @returns Promise with deletion results (success/failure per thread)
    */
   async batchDeleteThreads(threadIds: string[]): Promise<{
     deleted: string[];
     failed: { threadId: string; error: string }[];
   }> {
-    if (!threadIds.length) {
-      return { deleted: [], failed: [] };
-    }
-
-    try {
-      logger.info(`Batch deleting ${threadIds.length} threads`);
-      
-      const response = await this.httpClient.post<{
-        deleted: string[];
-        failed: { threadId: string; error: string }[];
-      }>('/chats/batch/delete', {
-        threadIds
-      });
-      
-      logger.info(`Batch delete completed: ${response.deleted.length} deleted, ${response.failed.length} failed`);
-      return response;
-    } catch (error) {
-      logger.error('Failed to batch delete threads', error as Error);
-      throw new Error('Failed to delete selected threads. Please try again.');
-    }
+    return this.batchService.batchDeleteThreads(threadIds);
   }
 
+  // Search and Analytics Operations (delegated to ThreadSearchService)
+
   /**
-   * Search threads by title or content
+   * Search threads by query
    * 
-   * @param query - Search query
-   * @param limit - Maximum number of results
-   * @returns Promise with matching threads
+   * @param query - Search query string
+   * @param limit - Maximum number of results (default: 20)
+   * @returns Promise with matching chat threads
    */
   async searchThreads(query: string, limit: number = 20): Promise<ChatThread[]> {
-    if (!query?.trim()) {
-      return [];
-    }
-
-    try {
-      logger.info(`Searching threads: "${query}"`);
-      
-      const params: Record<string, string> = {
-        q: query.trim(),
-        limit: limit.toString(),
-      };
-      
-      const response = await this.httpClient.get<{ threads: ChatThread[] }>('/chats/search', params);
-      
-      logger.info(`Search completed: found ${response.threads.length} matching threads`);
-      return response.threads;
-    } catch (error) {
-      logger.error('Failed to search threads', error as Error);
-      throw new Error('Failed to search chat threads. Please try again.');
-    }
+    return this.searchService.searchThreads(query, limit);
   }
 
   /**
-   * Get thread statistics
+   * Get thread statistics and analytics
    * 
-   * @returns Promise with thread statistics
+   * @returns Promise with thread usage statistics
    */
   async getThreadStats(): Promise<{
     total: number;
@@ -283,27 +160,42 @@ export class ThreadService {
     thisWeek: number;
     thisMonth: number;
   }> {
-    try {
-      logger.info('Fetching thread statistics');
-      
-      const stats = await this.httpClient.get<{
-        total: number;
-        pinned: number;
-        today: number;
-        thisWeek: number;
-        thisMonth: number;
-      }>('/chats/stats');
-      
-      logger.info('Successfully fetched thread statistics', stats);
-      return stats;
-    } catch (error) {
-      logger.error('Failed to fetch thread statistics', error as Error);
-      throw new Error('Failed to load thread statistics. Please try again.');
-    }
+    return this.searchService.getThreadStats();
   }
 
   /**
-   * Create thread service instance
+   * Get advanced thread analytics
+   * 
+   * @returns Promise with detailed analytics data
+   */
+  async getAdvancedAnalytics(): Promise<{
+    messageCount: number;
+    averageMessagesPerThread: number;
+    mostActiveDay: string;
+    topModelsUsed: Array<{ model: string; count: number }>;
+    threadsByMonth: Array<{ month: string; count: number }>;
+  }> {
+    return this.searchService.getAdvancedAnalytics();
+  }
+
+  /**
+   * Search threads by date range
+   * 
+   * @param startDate - Start date for search
+   * @param endDate - End date for search
+   * @param limit - Maximum number of results
+   * @returns Promise with threads in date range
+   */
+  async searchThreadsByDateRange(
+    startDate: Date,
+    endDate: Date,
+    limit: number = 50
+  ): Promise<ChatThread[]> {
+    return this.searchService.searchThreadsByDateRange(startDate, endDate, limit);
+  }
+
+  /**
+   * Create factory method for dependency injection
    * 
    * @param httpClient - HTTP client instance
    * @returns ThreadService instance
