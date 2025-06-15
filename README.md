@@ -377,6 +377,173 @@ firebase deploy
 3. Deploy frontend static files to CDN/hosting
 4. Configure environment variables in production
 
+### 🚂 Railway Deployment (Recommended for Monorepo)
+
+Railway is excellent for full-stack monorepo deployment with automatic builds and environment management.
+
+#### **Deployment Configuration**
+
+1. **Create Railway Account**: Sign up at [railway.app](https://railway.app)
+
+2. **Connect Your Repository**: Link your GitHub repository to Railway
+
+3. **Configure Build Settings**:
+   ```bash
+   # Build Command
+   cd web-app && npm install && cd .. && npm run build
+   
+   # Alternative Build Command (if you have install:all script)
+   npm run install:all && npm run build
+   
+   # Start Command  
+   npm start
+   
+   # Pre-deploy Command (optional)
+   npm install && cd web-app && npm install
+   ```
+
+4. **Required Environment Variables** in Railway Dashboard:
+   ```bash
+   # API Configuration
+   VITE_API_BASE_URL=https://your-app-name-production.up.railway.app/api
+   
+   # Firebase Configuration
+   FIREBASE_API_KEY=your_firebase_api_key
+   FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   FIREBASE_PROJECT_ID=your_project_id
+   FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   FIREBASE_APP_ID=your_app_id
+   
+   # OpenRouter API
+   OPENROUTER_API_KEY=your_openrouter_api_key
+   
+   # Server Configuration
+   NODE_ENV=production
+   PORT=3000
+   ```
+
+#### **Critical Configuration Steps**
+
+##### 1. **Fix API Connection Issues**
+The frontend was hardcoded to `localhost:3000/api`. Fix this by:
+
+- Setting `VITE_API_BASE_URL` in Railway environment variables
+- Ensuring your frontend uses this environment variable:
+  ```typescript
+  // In your API service files
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+  ```
+
+##### 2. **Firebase Authentication Domain**
+Add your Railway domain to Firebase Console:
+
+1. Go to **Firebase Console** → **Authentication** → **Settings** → **Authorized Domains**
+2. Add your Railway domain: `your-app-name-production.up.railway.app`
+3. This fixes the `auth/unauthorized-domain` error
+
+##### 3. **Monorepo Build Issues**
+Railway needs to install dependencies for both root and web-app:
+
+```json
+// Root package.json - ensure these scripts exist
+{
+  "scripts": {
+    "build": "npm run web:build",
+    "web:build": "cd web-app && npm run build",
+    "install:all": "npm install && cd web-app && npm install",
+    "start": "node dist/server.js"
+  }
+}
+```
+
+#### **Deployment Steps**
+
+1. **Initial Setup**:
+   ```bash
+   # Ensure your package.json has the correct scripts
+   npm run install:all  # Test locally
+   npm run build       # Test build process
+   ```
+
+2. **Deploy to Railway**:
+   - Push your code to GitHub
+   - Railway automatically detects changes and builds
+   - Monitor build logs for any issues
+
+3. **Verify Deployment**:
+   ```bash
+   # Check your deployed app
+   curl https://your-app-name-production.up.railway.app/api/health
+   
+   # Test frontend
+   curl https://your-app-name-production.up.railway.app
+   ```
+
+#### **Common Railway Issues & Solutions**
+
+##### **Build Failures**
+```bash
+# Error: "Cannot find module 'lucide-react'"
+# Solution: Ensure web-app dependencies are installed
+cd web-app && npm install
+
+# Error: "Property 'env' does not exist on type 'ImportMeta'"
+# Solution: Already fixed in web-app/src/vite-env.d.ts and tsconfig.app.json
+```
+
+##### **Runtime Errors**
+```bash
+# Error: "net::ERR_CONNECTION_REFUSED"
+# Solution: Set VITE_API_BASE_URL environment variable
+
+# Error: "auth/unauthorized-domain" 
+# Solution: Add Railway domain to Firebase authorized domains
+```
+
+##### **Dependency Installation**
+```bash
+# Railway Build Command Options:
+
+# Option 1: Sequential installation
+cd web-app && npm install && cd .. && npm run build
+
+# Option 2: Using npm scripts  
+npm run install:all && npm run build
+
+# Option 3: With pre-deploy command
+# Pre-deploy: npm install && cd web-app && npm install
+# Build: npm run build
+```
+
+#### **Production Checklist**
+
+- [ ] ✅ Build command installs both root and web-app dependencies
+- [ ] ✅ `VITE_API_BASE_URL` points to Railway app URL
+- [ ] ✅ Firebase authorized domains includes Railway domain
+- [ ] ✅ All required environment variables are set
+- [ ] ✅ TypeScript compilation passes without errors
+- [ ] ✅ Frontend can connect to backend API
+- [ ] ✅ Firebase authentication works
+- [ ] ✅ OpenRouter API integration functions
+- [ ] ✅ Rate limiting is active and working
+
+#### **Live Application**
+🎉 **Successfully Deployed**: [https://t3-cloneathon-entry-production.up.railway.app](https://t3-cloneathon-entry-production.up.railway.app)
+
+**Deployment Status**: ✅ All systems operational
+- ✅ Frontend builds and serves correctly
+- ✅ Backend API endpoints responding
+- ✅ Environment variables configured
+- ✅ Ready for production use
+
+#### **Post-Deployment Notes**
+- Railway automatically handles HTTPS certificates
+- Automatic deployments on GitHub pushes
+- Built-in monitoring and logging
+- Easy environment variable management
+- Vertical scaling available if needed
+
 # TROUBLESHOOTING
 - Getting errors on startup of the server/frontend:
 Kill the node process, sometimes this is left on the background for no apparent reason.
