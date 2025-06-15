@@ -187,7 +187,8 @@ export class ChatApiService {
     onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void,
     onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void,
     onAnnotationsChunk?: (annotations: any[]) => void,
-    onThreadCreated?: (threadId: string) => void
+    onThreadCreated?: (threadId: string) => void,
+    onUserMessageConfirmed?: (userMessage: any) => void
   ): Promise<void> {
     const callbacks: StreamingCallbacks = {
       onChunk,
@@ -196,7 +197,8 @@ export class ChatApiService {
       onReasoningChunk,
       onTokenMetrics,
       onAnnotationsChunk,
-      onThreadCreated
+      onThreadCreated,
+      onUserMessageConfirmed
     };
 
     return this.streamingService.streamMessage(request, callbacks);

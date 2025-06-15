@@ -54,6 +54,7 @@ export interface StreamingCallbacks {
   onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void;
   onAnnotationsChunk?: (annotations: any[]) => void;
   onThreadCreated?: (threadId: string) => void;
+  onUserMessageConfirmed?: (userMessage: any) => void;
 }
 
 /**

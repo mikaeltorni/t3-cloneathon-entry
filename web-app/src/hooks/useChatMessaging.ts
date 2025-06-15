@@ -29,7 +29,8 @@ interface ChatApiService {
     onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void,
     onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void,
     onAnnotationsChunk?: (annotations: any[]) => void,
-    onThreadCreated?: (threadId: string) => void
+    onThreadCreated?: (threadId: string) => void,
+    onUserMessageConfirmed?: (userMessage: any) => void
   ) => Promise<void>;
 }
 
@@ -351,6 +352,18 @@ export const useChatMessaging = (
               messageCount: tempThread.messages.length 
             });
           }
+        },
+        // onUserMessageConfirmed callback - clear attachments when user message is confirmed by server
+        (userMessage: any) => {
+          debug('✅ User message confirmed by server', {
+            messageId: userMessage.id,
+            hasImages: !!(userMessage.images && userMessage.images.length > 0),
+            hasDocuments: !!(userMessage.documents && userMessage.documents.length > 0)
+          });
+          
+          // 🎯 Clear attachments after user message is successfully confirmed by server
+          clearAttachments();
+          debug('🗑️ Cleared attachments after user message confirmed');
         }
       );
 

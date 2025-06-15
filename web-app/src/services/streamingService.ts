@@ -175,6 +175,9 @@ export class StreamingService {
           messageId: parsed.message.id, 
           imageCount: parsed.message.imageCount 
         });
+        if (callbacks.onUserMessageConfirmed) {
+          callbacks.onUserMessageConfirmed(parsed.message);
+        }
         break;
         
       case 'ai_start':

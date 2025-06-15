@@ -232,6 +232,7 @@ export class ChatApiComposed {
    * @param onTokenMetrics - Optional callback for real-time token metrics
    * @param onAnnotationsChunk - Optional callback for annotation chunks
    * @param onThreadCreated - Optional callback for thread creation
+   * @param onUserMessageConfirmed - Optional callback when user message is confirmed by server
    * @returns Promise that resolves when streaming starts
    */
   async sendMessageStream(
@@ -242,7 +243,8 @@ export class ChatApiComposed {
     onReasoningChunk?: (reasoningChunk: string, fullReasoning: string) => void,
     onTokenMetrics?: (metrics: Partial<TokenMetrics>) => void,
     onAnnotationsChunk?: (annotations: any[]) => void,
-    onThreadCreated?: (threadId: string) => void
+    onThreadCreated?: (threadId: string) => void,
+    onUserMessageConfirmed?: (userMessage: any) => void
   ): Promise<void> {
     const callbacks: StreamingCallbacks = {
       onChunk,
@@ -251,7 +253,8 @@ export class ChatApiComposed {
       onReasoningChunk,
       onTokenMetrics,
       onAnnotationsChunk,
-      onThreadCreated
+      onThreadCreated,
+      onUserMessageConfirmed
     };
 
     return this.streamingService.streamMessage(request, callbacks);
