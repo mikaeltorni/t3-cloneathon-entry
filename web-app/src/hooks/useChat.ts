@@ -58,6 +58,8 @@ export interface UseChatReturn {
   handleDeleteThread: (threadId: string) => Promise<void>; // Alias for deleteThread
   togglePin: (threadId: string) => Promise<void>;
   handleTogglePinThread: (threadId: string, isPinned: boolean) => Promise<void>; // Alias for togglePin
+  updateThread: (updatedThread: ChatThread) => void;
+  handleThreadUpdate: (threadId: string, updates: Partial<ChatThread>) => Promise<void>;
   
   // Message Operations
   sendMessage: (request: CreateMessageRequest) => Promise<void>;
@@ -124,6 +126,31 @@ export function useChat(): UseChatReturn {
   const handleTogglePinThread = useCallback(async (threadId: string) => {
     await threadOps.togglePin(threadId);
   }, [threadOps.togglePin]);
+
+  const updateThread = useCallback((updatedThread: ChatThread) => {
+    threadOps.updateThreadInList(updatedThread);
+  }, [threadOps.updateThreadInList]);
+
+  const handleThreadUpdate = useCallback(async (threadId: string, updates: Partial<ChatThread>) => {
+    // Find the current thread
+    const thread = threadOps.threads.find(t => t.id === threadId);
+    if (!thread) {
+      throw new Error('Thread not found');
+    }
+
+    // Create updated thread object
+    const updatedThread: ChatThread = {
+      ...thread,
+      ...updates,
+      updatedAt: new Date()
+    };
+
+    // Update the thread in the list
+    threadOps.updateThreadInList(updatedThread);
+
+    // TODO: Add API call to persist the update to the server
+    // await apiService.updateThread(threadId, updates);
+  }, [threadOps]);
 
   const handleSendMessage = useCallback(async (
     content: string,
@@ -193,6 +220,8 @@ export function useChat(): UseChatReturn {
     handleDeleteThread,
     togglePin,
     handleTogglePinThread,
+    updateThread,
+    handleThreadUpdate,
     
     // Message Operations
     sendMessage: messagingOps.sendMessage,

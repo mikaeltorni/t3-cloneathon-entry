@@ -4,15 +4,16 @@
  * Firebase configuration and initialization
  * 
  * Setup:
- *   Firebase Auth instance with server-side config
+ *   Firebase Auth and Firestore instances with server-side config
  * 
  * Usage: 
- *   import { auth, initializeFirebaseAuth } from '../config/firebase'
- *   await initializeFirebaseAuth(); // Call this before using auth
+ *   import { auth, firestore, initializeFirebaseAuth } from '../config/firebase'
+ *   await initializeFirebaseAuth(); // Call this before using auth or firestore
  */
 
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth as firebaseGetAuth, type Auth } from 'firebase/auth';
+import { getFirestore as firebaseGetFirestore, type Firestore } from 'firebase/firestore';
 
 /**
  * Firebase configuration interface
@@ -27,10 +28,11 @@ interface FirebaseConfig {
 }
 
 /**
- * Firebase app and auth instances
+ * Firebase app, auth, and firestore instances
  */
 let app: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
+let firestoreInstance: Firestore | null = null;
 let initPromise: Promise<Auth> | null = null;
 
 /**
@@ -68,6 +70,7 @@ async function initializeFirebaseAuth(): Promise<Auth> {
       
       app = initializeApp(firebaseConfig);
       authInstance = firebaseGetAuth(app);
+      firestoreInstance = firebaseGetFirestore(app);
       
       console.log('✅ Firebase initialized successfully');
       return authInstance;
@@ -89,6 +92,21 @@ async function getAuthInstance(): Promise<Auth> {
 }
 
 /**
+ * Get Firebase Firestore instance (initializes if needed)
+ */
+async function getFirestoreInstance(): Promise<Firestore> {
+  if (!firestoreInstance) {
+    await initializeFirebaseAuth(); // This will initialize both auth and firestore
+  }
+  
+  if (!firestoreInstance) {
+    throw new Error('Firestore instance not initialized');
+  }
+  
+  return firestoreInstance;
+}
+
+/**
  * Get Firebase app instance
  */
 function getAppInstance(): FirebaseApp | null {
@@ -99,12 +117,13 @@ function getAppInstance(): FirebaseApp | null {
  * Check if Firebase is initialized
  */
 function isInitialized(): boolean {
-  return authInstance !== null;
+  return authInstance !== null && firestoreInstance !== null;
 }
 
 export { 
   initializeFirebaseAuth, 
   getAuthInstance as getAuth, 
+  getFirestoreInstance as getFirestore,
   getAppInstance as getApp, 
   isInitialized 
 };

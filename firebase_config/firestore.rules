@@ -2,22 +2,30 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can only access their own data
+    // Users can access their own user document and all subcollections
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
       
-      // Users can only access their own chat collections
-      match /chats/{chatId} {
+      // Allow all subcollections and documents under user
+      match /{document=**} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
-        
-        // Users can only access messages within their own chats
-        match /messages/{messageId} {
-          allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
       }
+    }
+    
+    // Allow access to user preferences at root level (for backward compatibility)
+    match /preferences/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
       
-      // Users can only access their own preferences
-      match /settings/{document=**} {
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Allow access to user settings at root level (for tags)
+    match /settings/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      match /{document=**} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }

@@ -44,7 +44,7 @@ import { ThreadList } from './sidebar/ThreadList';
 import { UserProfile } from './UserProfile';
 import { useLogger } from '../hooks/useLogger';
 import { cn } from '../utils/cn';
-import type { ChatThread, ModelConfig } from '../../../src/shared/types';
+import type { ChatThread, ModelConfig, ChatTag } from '../../../src/shared/types';
 
 interface ChatSidebarProps {
   threads: ChatThread[];
@@ -61,6 +61,8 @@ interface ChatSidebarProps {
   availableModels?: Record<string, ModelConfig>;
   onModelChange?: (threadId: string, modelId: string) => void;
   currentModel?: string; // Currently selected model in the main interface
+  onThreadRightClick?: (event: React.MouseEvent, threadId: string) => void;
+  getThreadTags?: (threadId: string) => ChatTag[];
 }
 
 /**
@@ -91,7 +93,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onClose,
   onToggle,
   availableModels = {},
-  currentModel
+  currentModel,
+  onThreadRightClick,
+  getThreadTags
 }) => {
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -218,6 +222,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
               onDeleteThread={handleDeleteThread}
               onTogglePin={handleTogglePin}
               onCancelDelete={cancelDelete}
+              onThreadRightClick={onThreadRightClick}
+              getThreadTags={getThreadTags}
             />
           )}
         </div>

@@ -12,7 +12,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { ThreadItem } from './ThreadItem';
 import { cn } from '../../utils/cn';
-import type { ChatThread, ModelConfig } from '../../../../src/shared/types';
+import type { ChatThread, ModelConfig, ChatTag } from '../../../../src/shared/types';
 
 /**
  * Props for the ThreadList component
@@ -40,6 +40,10 @@ interface ThreadListProps {
   onTogglePin: (threadId: string, currentPinStatus: boolean) => void;
   /** Callback for canceling delete confirmation */
   onCancelDelete: () => void;
+  /** Callback for right-click context menu */
+  onThreadRightClick?: (event: React.MouseEvent, threadId: string) => void;
+  /** Function to get tags for a thread */
+  getThreadTags?: (threadId: string) => ChatTag[];
   /** Additional CSS classes */
   className?: string;
 }
@@ -73,6 +77,8 @@ export const ThreadList: React.FC<ThreadListProps> = ({
   onDeleteThread,
   onTogglePin,
   onCancelDelete,
+  onThreadRightClick,
+  getThreadTags,
   className
 }) => {
   /**
@@ -126,6 +132,8 @@ export const ThreadList: React.FC<ThreadListProps> = ({
           onDelete={onDeleteThread}
           onPin={onTogglePin}
           onCancelDelete={onCancelDelete}
+          onRightClick={onThreadRightClick}
+          getThreadTags={getThreadTags}
         />
       ))}
     </div>

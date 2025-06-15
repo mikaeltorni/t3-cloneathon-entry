@@ -102,6 +102,7 @@ export interface DocumentAttachment {
  * @property currentModel - Currently selected model for this thread
  * @property lastUsedModel - Last model that was actually used for a message in this thread
  * @property isPinned - Whether the thread is pinned to the top of the list
+ * @property tags - Array of tag IDs associated with this thread
  */
 export interface ChatThread {
   id: string;
@@ -112,6 +113,7 @@ export interface ChatThread {
   currentModel?: string; // Currently selected model ID for this thread
   lastUsedModel?: string; // Last model ID that was actually used in this thread
   isPinned?: boolean; // Whether the thread is pinned to the top
+  tags?: string[]; // Array of tag IDs associated with this thread
   contextWindowUsage?: { // Current context window utilization
     used: number;
     total: number;
@@ -119,6 +121,26 @@ export interface ChatThread {
     modelId: string;
     lastUpdated: Date;
   };
+}
+
+/**
+ * Chat tag structure for organizing and filtering chats
+ * 
+ * @interface ChatTag
+ * @property id - Unique tag identifier
+ * @property name - Tag display name
+ * @property color - Tag color in RGB format
+ * @property createdAt - Tag creation timestamp
+ */
+export interface ChatTag {
+  id: string;
+  name: string;
+  color: {
+    r: number; // 0-255
+    g: number; // 0-255
+    b: number; // 0-255
+  };
+  createdAt: Date;
 }
 
 /**

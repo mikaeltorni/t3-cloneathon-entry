@@ -2,6 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Color picker slider styles */
+.slider-red::-webkit-slider-thumb,
+.slider-green::-webkit-slider-thumb,
+.slider-blue::-webkit-slider-thumb {
+  appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  border: 2px solid #374151;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.slider-red::-moz-range-thumb,
+.slider-green::-moz-range-thumb,
+.slider-blue::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  border: 2px solid #374151;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Hide default scrollbar for tag filter */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar { 
+  display: none;  /* Safari and Chrome */
+}
+
 /* Custom scrollbar styles for better UX */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

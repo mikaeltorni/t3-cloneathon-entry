@@ -138,6 +138,37 @@ export class ThreadCrudService {
   }
 
   /**
+   * Update thread tags
+   * 
+   * @param threadId - Thread ID to update
+   * @param tags - Array of tag IDs to assign to the thread
+   * @returns Promise with updated chat thread
+   */
+  async updateThreadTags(threadId: string, tags: string[]): Promise<ChatThread> {
+    if (!threadId?.trim()) {
+      throw new Error('Thread ID is required');
+    }
+
+    if (!Array.isArray(tags)) {
+      throw new Error('Tags must be an array');
+    }
+
+    try {
+      logger.info(`Updating thread tags: ${threadId} -> [${tags.join(', ')}]`);
+      
+      const updatedThread = await this.httpClient.patch<ChatThread>(`/chats/${threadId}/tags`, {
+        tags
+      });
+      
+      logger.info(`Successfully updated thread tags: ${threadId}`);
+      return updatedThread;
+    } catch (error) {
+      logger.error(`Failed to update thread tags: ${threadId}`, error as Error);
+      throw new Error('Failed to update chat tags. Please try again.');
+    }
+  }
+
+  /**
    * Create factory method for dependency injection
    * 
    * @param httpClient - HTTP client instance

@@ -14,12 +14,14 @@
  *   - Responsive design
  *   - Mobile sidebar toggle functionality
  *   - Cache security: Clears session cache on both login and logout
+ *   - Integrated Trello-style tagging system
  */
 import { useEffect, useState } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { ModelSidebar } from './components/ModelSidebar';
+import { TagSystem, useTagSystemContext } from './components/TagSystem';
 import { SidebarToggle } from './components/ui/SidebarToggle';
 import { SignInForm } from './components/auth/SignInForm';
 import { ConnectionError } from './components/error/ConnectionError';
@@ -31,19 +33,19 @@ import { useLogger } from './hooks/useLogger';
 import { useAuth } from './hooks/useAuth';
 import { useSidebarToggle } from './hooks/useSidebarToggle';
 import { clearAllCaches } from './utils/sessionCache';
+import type { ChatThread } from '../../src/shared/types';
 
 /**
- * Main application component
- * 
- * @returns React component
+ * Inner app content that has access to TagSystem context
  */
-function AppContent() {
+function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   // Use custom hooks for state management
-  const chat = useChat();
   const models = useModels();
-  const { user, loading: authLoading } = useAuth();
   const sidebar = useSidebarToggle();
   const { debug } = useLogger('App');
+
+  // Get tagging context
+  const { filteredThreads, handleContextMenu, getThreadTags } = useTagSystemContext();
 
   // Track current model selection (for sidebar display)
   const [currentModel, setCurrentModel] = useState<string>('google/gemini-2.5-flash-preview');
@@ -71,36 +73,6 @@ function AppContent() {
       }
     }
   }, [chat.currentThread?.id, debug]); // Removed other dependencies to only sync on thread ID change
-
-  // Models are now auto-loaded by useModels hook - no manual call needed!
-
-  // Load threads only after user is authenticated
-  useEffect(() => {
-    if (user && !authLoading) {
-      debug('User authenticated, clearing any existing cache and loading fresh data...');
-      
-      // Clear any existing cache to ensure clean state for this user session
-      clearAllCaches();
-      debug('🗑️ All cache layers cleared for security');
-      
-      // Add a small delay to ensure Firebase token is ready
-      const loadWithDelay = async () => {
-        try {
-          // Wait for token to be available
-          await user.getIdToken();
-          chat.loadThreads();
-        } catch (error) {
-          console.error('Failed to get auth token, retrying in 1 second...', error);
-          // Retry after a short delay if token isn't ready
-          setTimeout(() => {
-            chat.loadThreads();
-          }, 1000);
-        }
-      };
-      
-      loadWithDelay();
-    }
-  }, [user, authLoading, debug, chat.loadThreads]);
 
   /**
    * Handle manual refresh of threads from server
@@ -152,6 +124,132 @@ function AppContent() {
     );
   }
 
+  return (
+    <div className="h-screen bg-gray-50">
+      {/* Floating Toggle Button - Only visible when sidebar is closed */}
+      {!sidebar.isOpen && (
+        <SidebarToggle 
+          isOpen={sidebar.isOpen}
+          onToggle={sidebar.toggle}
+        />
+      )}
+
+      {/* Enhanced Fixed Chat Sidebar with Model Information and Tag Support */}
+      <ChatSidebar
+        threads={filteredThreads}
+        currentThreadId={chat.currentThread?.id || null}
+        onThreadSelect={chat.handleThreadSelect}
+        onNewChat={chat.handleNewChat}
+        onDeleteThread={chat.handleDeleteThread}
+        onTogglePinThread={chat.handleTogglePinThread}
+        onRefreshThreads={handleRefreshThreads}
+        loading={chat.threadsLoading}
+        isOpen={sidebar.isOpen}
+        onClose={sidebar.close}
+        onToggle={sidebar.toggle}
+        availableModels={models.availableModels}
+        onModelChange={handleModelChange}
+        currentModel={currentModel}
+        onThreadRightClick={handleContextMenu}
+        getThreadTags={getThreadTags}
+      />
+
+      {/* Main Chat Area - Offset by sidebar width when open, with right margin for ModelSidebar */}
+      <div 
+        className={cn(
+          'h-full flex flex-col transition-all duration-300',
+          {
+            'ml-80': sidebar.isOpen,
+            'ml-0': !sidebar.isOpen
+          },
+          // Always leave space for ModelSidebar tab on the right
+          'mr-16'
+        )}
+      >
+        {/* Error Banner */}
+        {chat.error && !isConnectionError(chat.error) && (
+          <ErrorBanner 
+            error={chat.error} 
+            onDismiss={chat.clearError} 
+          />
+        )}
+
+        {/* Chat Interface */}
+        <div className="flex-1">
+          <ChatInterface
+            currentThread={chat.currentThread}
+            onSendMessage={chat.handleSendMessage}
+            loading={chat.loading}
+            availableModels={models.availableModels}
+            images={chat.images}
+            documents={chat.documents}
+            onImagesChange={chat.handleImagesChange}
+            onDocumentsChange={chat.handleDocumentsChange}
+            sidebarOpen={sidebar.isOpen}
+            currentTokenMetrics={chat.currentTokenMetrics}
+            selectedModel={currentModel}
+            onModelChange={handleCurrentModelChange}
+          />
+        </div>
+      </div>
+
+      {/* Model Selection Sidebar - Right Side */}
+      <ModelSidebar
+        value={currentModel}
+        onChange={handleCurrentModelChange}
+        models={models.availableModels}
+        loading={models.modelsLoading}
+      />
+    </div>
+  );
+}
+
+/**
+ * Main application component
+ * 
+ * @returns React component
+ */
+function AppContent() {
+  // Use custom hooks for state management
+  const chat = useChat();
+  const { user, loading: authLoading } = useAuth();
+  const { debug } = useLogger('AppContent');
+
+  // Load threads only after user is authenticated
+  useEffect(() => {
+    if (user && !authLoading) {
+      debug('User authenticated, clearing any existing cache and loading fresh data...');
+      
+      // Clear any existing cache to ensure clean state for this user session
+      clearAllCaches();
+      debug('🗑️ All cache layers cleared for security');
+      
+      // Add a small delay to ensure Firebase token is ready
+      const loadWithDelay = async () => {
+        try {
+          // Wait for token to be available
+          await user.getIdToken();
+          chat.loadThreads();
+        } catch (error) {
+          console.error('Failed to get auth token, retrying in 1 second...', error);
+          // Retry after a short delay if token isn't ready
+          setTimeout(() => {
+            chat.loadThreads();
+          }, 1000);
+        }
+      };
+      
+      loadWithDelay();
+    }
+  }, [user, authLoading, debug, chat.loadThreads]);
+
+  /**
+   * Handle thread updates (including tag assignments)
+   */
+  const handleThreadUpdate = async (threadId: string, updates: Partial<ChatThread>) => {
+    await chat.handleThreadUpdate(threadId, updates);
+  };
+
   // Show sign-in form if user is not authenticated
   if (!authLoading && !user) {
     return (
@@ -165,80 +263,12 @@ function AppContent() {
 
   return (
     <ErrorBoundary>
-      <div className="h-screen bg-gray-50">
-        {/* Floating Toggle Button - Only visible when sidebar is closed */}
-        {!sidebar.isOpen && (
-          <SidebarToggle 
-            isOpen={sidebar.isOpen}
-            onToggle={sidebar.toggle}
-          />
-        )}
-
-        {/* Enhanced Fixed Chat Sidebar with Model Information */}
-        <ChatSidebar
-          threads={chat.threads}
-          currentThreadId={chat.currentThread?.id || null}
-          onThreadSelect={chat.handleThreadSelect}
-          onNewChat={chat.handleNewChat}
-          onDeleteThread={chat.handleDeleteThread}
-          onTogglePinThread={chat.handleTogglePinThread}
-          onRefreshThreads={handleRefreshThreads}
-          loading={chat.threadsLoading}
-          isOpen={sidebar.isOpen}
-          onClose={sidebar.close}
-          onToggle={sidebar.toggle}
-          availableModels={models.availableModels}
-          onModelChange={handleModelChange}
-          currentModel={currentModel}
-        />
-
-        {/* Main Chat Area - Offset by sidebar width when open, with right margin for ModelSidebar */}
-        <div 
-          className={cn(
-            'h-full flex flex-col transition-all duration-300',
-            {
-              'ml-80': sidebar.isOpen,
-              'ml-0': !sidebar.isOpen
-            },
-            // Always leave space for ModelSidebar tab on the right
-            'mr-16'
-          )}
-        >
-          {/* Error Banner */}
-          {chat.error && !isConnectionError(chat.error) && (
-            <ErrorBanner 
-              error={chat.error} 
-              onDismiss={chat.clearError} 
-            />
-          )}
-
-          {/* Chat Interface */}
-          <div className="flex-1">
-            <ChatInterface
-              currentThread={chat.currentThread}
-              onSendMessage={chat.handleSendMessage}
-              loading={chat.loading}
-              availableModels={models.availableModels}
-              images={chat.images}
-              documents={chat.documents}
-              onImagesChange={chat.handleImagesChange}
-              onDocumentsChange={chat.handleDocumentsChange}
-              sidebarOpen={sidebar.isOpen}
-              currentTokenMetrics={chat.currentTokenMetrics}
-              selectedModel={currentModel}
-              onModelChange={handleCurrentModelChange}
-            />
-          </div>
-        </div>
-
-        {/* Model Selection Sidebar - Right Side */}
-        <ModelSidebar
-          value={currentModel}
-          onChange={handleCurrentModelChange}
-          models={models.availableModels}
-          loading={models.modelsLoading}
-        />
-      </div>
+      <TagSystem
+        threads={chat.threads}
+        onThreadUpdate={handleThreadUpdate}
+      >
+        <AppInner chat={chat} />
+      </TagSystem>
     </ErrorBoundary>
   );
 }

@@ -14,8 +14,9 @@ import { Button } from '../ui/Button';
 import { ModelIndicator } from './ModelIndicator';
 import { ThreadActions } from './ThreadActions';
 import { ThreadMeta } from './ThreadMeta';
+import { Tag } from '../ui/Tag';
 import { cn } from '../../utils/cn';
-import type { ChatThread, ModelConfig } from '../../../../src/shared/types';
+import type { ChatThread, ModelConfig, ChatTag } from '../../../../src/shared/types';
 
 /**
  * Props for the ThreadItem component
@@ -41,6 +42,10 @@ interface ThreadItemProps {
   onPin: (threadId: string, currentPinStatus: boolean) => void;
   /** Callback for canceling delete confirmation */
   onCancelDelete: () => void;
+  /** Callback for right-click context menu */
+  onRightClick?: (event: React.MouseEvent, threadId: string) => void;
+  /** Function to get tags for this thread */
+  getThreadTags?: (threadId: string) => ChatTag[];
   /** Additional CSS classes */
   className?: string;
 }
@@ -72,10 +77,13 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
   onDelete,
   onPin,
   onCancelDelete,
+  onRightClick,
+  getThreadTags,
   className
 }) => {
   const isPinned = Boolean(thread.isPinned);
   const lastMessage = thread.messages[thread.messages.length - 1];
+  const threadTags = getThreadTags?.(thread.id) || [];
 
   /**
    * Truncate text to specified length
@@ -93,6 +101,13 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
     }
   }, [thread.id, isConfirmingDelete, onSelect]);
 
+  /**
+   * Handle right-click for context menu
+   */
+  const handleRightClick = useCallback((event: React.MouseEvent) => {
+    onRightClick?.(event, thread.id);
+  }, [onRightClick, thread.id]);
+
   return (
     <div
       className={cn(
@@ -104,6 +119,7 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
         className
       )}
       onClick={handleSelect}
+      onContextMenu={handleRightClick}
     >
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 min-w-0">
@@ -123,6 +139,20 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
             />
           )}
         </div>
+
+        {/* Thread Tags */}
+        {threadTags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {threadTags.map(tag => (
+              <Tag
+                key={tag.id}
+                tag={tag}
+                size="sm"
+                className="pointer-events-none"
+              />
+            ))}
+          </div>
+        )}
         
         {/* Action buttons */}
         <ThreadActions

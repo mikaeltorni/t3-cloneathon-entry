@@ -834,3 +834,405 @@ To add support for new AI providers:
 - [OpenAI Tokenizer Cookbook](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb)
 - [Anthropic Token Counting](https://docs.anthropic.com/en/docs/build-with-claude/token-counting)
 - [Token Counting Best Practices](https://platform.openai.com/docs/guides/text-generation/managing-tokens)
+
+# OpenRouter Chat with Trello-Style Tagging System 🏷️
+
+A sophisticated chat application with OpenRouter API integration and a comprehensive Trello-style tagging system for organizing conversations.
+
+## 🚀 New Features: Chat Tagging System
+
+### Overview
+The application now includes a powerful tagging system that allows you to organize and filter your chat conversations, similar to Trello's label system.
+
+### ✨ Key Features
+
+#### 🏷️ **Tag Management**
+- **Create Custom Tags**: Design your own tags with custom names and colors
+- **RGB Color Picker**: Full RGB (0-255) color selection with sliders and input fields
+- **Color Presets**: Quick selection from 8 predefined colors
+- **Tag Preview**: Real-time preview of tags as you create them
+
+#### 🎯 **Tag Assignment**
+- **Right-Click Context Menu**: Right-click on any chat thread to add/remove tags
+- **Multiple Tags Per Chat**: Assign multiple tags to organize chats by different criteria
+- **Visual Tag Display**: Tags appear under the model name in the sidebar
+- **Instant Updates**: Tag changes are reflected immediately in the UI
+
+#### 🔍 **Smart Filtering**
+- **Tag Filter Bar**: Located at the top of the interface for easy access
+- **[ALL] Button**: Show all chats or filter by specific tags
+- **Multi-Tag Selection**: Select multiple tags to filter conversations
+- **Real-Time Filtering**: Instant filtering as you select/deselect tags
+- **Visual Selection**: Selected tags are highlighted with a blue ring
+
+#### 🎨 **Design & UX**
+- **Trello-Inspired Design**: Familiar tag interface for intuitive use
+- **Responsive Layout**: Works seamlessly on desktop and mobile
+- **Smooth Animations**: Polished transitions and hover effects
+- **Accessibility**: Keyboard navigation and screen reader support
+
+### 🖱️ How to Use
+
+#### Creating Tags
+1. Right-click on any chat thread
+2. Select "Create New Tag" from the context menu
+3. Enter a tag name (up to 50 characters)
+4. Choose a color using:
+   - RGB sliders (0-255 range)
+   - Direct number input
+   - Color presets
+5. Preview your tag in real-time
+6. Click "Create Tag" to save
+
+#### Managing Tags
+- **Add to Chat**: Right-click → Select tag from "Add Tag" section
+- **Remove from Chat**: Right-click → Select tag from "Remove Tag" section (red text)
+- **Filter Chats**: Click tags in the filter bar at the top
+- **Clear Filters**: Click the "ALL" button
+
+#### Visual Indicators
+- **Tag Display**: Tags appear as colored labels under model names
+- **Filter Status**: Selected filter tags have a blue ring
+- **Context Menu**: Available tags show a color dot, assigned tags appear in red for removal
+
+### 🔧 Technical Implementation
+
+#### New Components
+- `Tag` - Individual tag display component
+- `TagModal` - Tag creation/editing modal with color picker
+- `ColorPicker` - RGB color selection with sliders and presets
+- `ContextMenu` - Right-click menu for tag operations
+- `TagFilterBar` - Top filter bar for tag selection
+- `TagSystem` - Main orchestrator component
+
+#### New Hooks
+- `useTags` - Tag CRUD operations and state management
+- `useThreadTags` - Thread tag assignment and filtering logic
+
+#### Data Structure
+```typescript
+interface ChatTag {
+  id: string;
+  name: string;
+  color: { r: number; g: number; b: number };
+  createdAt: Date;
+}
+
+interface ChatThread {
+  // ... existing properties
+  tags?: string[]; // Array of tag IDs
+}
+```
+
+### 🎛️ User Preferences Integration
+- Tags are stored in user preferences in the database
+- Persistent across sessions and devices
+- Synchronized with user authentication
+- Automatic cleanup when tags are deleted
+
+### 🚀 Getting Started with Tags
+
+1. **Start a Conversation**: Create a new chat or select an existing one
+2. **Add Your First Tag**: Right-click the chat → "Create New Tag"
+3. **Organize Your Chats**: Add tags like "Work", "Personal", "Projects", etc.
+4. **Filter Efficiently**: Use the tag filter bar to find conversations quickly
+5. **Customize Colors**: Create a color-coded system that works for you
+
+### 💡 Pro Tips
+- Use different colors for different contexts (blue for work, green for personal)
+- Create tags for projects, topics, or urgency levels
+- Combine multiple tags for complex organization systems
+- Use the "ALL" button to quickly see all conversations
+
+---
+
+## 🛠️ Technology Stack
+
+- **Frontend:** React 18+ with TypeScript
+- **Styling:** Tailwind CSS 3+ with responsive design
+- **Build Tool:** Vite for fast development and optimized builds
+- **Database:** Firebase Firestore with real-time sync
+- **Authentication:** Firebase Auth
+- **State Management:** Custom hooks with local state
+- **HTTP Client:** Fetch API with error handling
+- **Development:** ESLint, TypeScript compiler, Hot reload
+
+## 📦 Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd t3-cloneathon-entry
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   cd web-app && npm install
+   ```
+
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Firebase configuration
+   ```
+
+## 🏃‍♂️ Development
+
+Start the development server:
+```bash
+cd web-app
+npm run dev
+```
+
+The application will be available at `http://localhost:5173`
+
+## 🔧 Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production  
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+- `npm run type-check` - Run TypeScript compiler
+
+## 🏗️ Production Build
+
+For monorepo or multi-app structures:
+```bash
+npm run web:build
+cd web-app && npm run build
+tsc -b && vite build
+```
+
+## 📁 Project Structure
+
+```
+├── src/
+│   ├── components/
+│   │   ├── ui/              # Reusable UI components
+│   │   │   ├── Tag.tsx      # Individual tag display
+│   │   │   ├── TagModal.tsx # Tag creation/editing modal
+│   │   │   ├── TagFilterBar.tsx # Top filter bar
+│   │   │   ├── ContextMenu.tsx  # Right-click menu
+│   │   │   └── ColorPicker.tsx  # RGB color picker
+│   │   ├── TagSystem.tsx    # Main tagging orchestrator
+│   │   └── sidebar/         # Chat sidebar components
+│   ├── hooks/
+│   │   ├── useTags.ts       # Tag CRUD operations
+│   │   └── useThreadTags.ts # Thread-tag assignments
+│   ├── services/
+│   │   └── userPreferencesApi.ts # Firebase tag storage
+│   ├── config/
+│   │   └── firebase.ts      # Firebase configuration
+│   └── types/               # TypeScript definitions
+├── shared/
+│   └── types.ts            # Shared type definitions
+└── firebase_config/
+    └── firestore.rules     # Firestore security rules
+```
+
+## 🎨 Component Architecture
+
+### Tag Management Components
+
+#### `<Tag />` - Individual Tag Display
+```tsx
+import { Tag } from './components/ui/Tag';
+
+<Tag 
+  tag={tag} 
+  size="md" 
+  selected={isSelected}
+  removable={true}
+  onClick={handleClick}
+  onRemove={handleRemove}
+/>
+```
+
+#### `<TagModal />` - Tag Creation/Editing
+```tsx
+import { TagModal } from './components/ui/TagModal';
+
+<TagModal
+  isOpen={isOpen}
+  onClose={handleClose}
+  onSubmit={handleSubmit}
+  title="Create New Tag"
+  submitLabel="Create Tag"
+  initialName="Work"
+  initialColor={{ r: 59, g: 130, b: 246 }}
+/>
+```
+
+#### `<TagFilterBar />` - Top Filter Bar
+```tsx
+import { TagFilterBar } from './components/ui/TagFilterBar';
+
+<TagFilterBar
+  tags={allTags}
+  selectedTags={selectedTagIds}
+  onTagToggle={handleTagToggle}
+  onClearAll={handleClearAll}
+/>
+```
+
+#### `<ContextMenu />` - Right-Click Menu
+```tsx
+import { ContextMenu } from './components/ui/ContextMenu';
+
+<ContextMenu
+  isOpen={isMenuOpen}
+  position={{ x: mouseX, y: mouseY }}
+  items={menuItems}
+  onClose={handleClose}
+/>
+```
+
+### Custom Hooks
+
+#### `useTags()` - Tag Management
+```tsx
+import { useTags } from '../hooks/useTags';
+
+const { 
+  tags, 
+  loading, 
+  error, 
+  createTag, 
+  updateTag, 
+  deleteTag, 
+  refreshTags 
+} = useTags();
+```
+
+#### `useThreadTags()` - Thread-Tag Operations
+```tsx
+import { useThreadTags } from '../hooks/useThreadTags';
+
+const {
+  selectedTagIds,
+  filteredThreads,
+  addTagToThread,
+  removeTagFromThread,
+  toggleTagFilter,
+  clearTagFilters
+} = useThreadTags({ threads, tags, onThreadUpdate });
+```
+
+## 🔧 Configuration
+
+### Firebase Structure
+Tags are stored in the user's Firestore document:
+```
+/users/{userId}/settings/tags
+{
+  tags: [
+    {
+      id: "tag_123456789_abc",
+      name: "Work",
+      color: { r: 59, g: 130, b: 246 },
+      createdAt: Date
+    }
+  ],
+  updatedAt: ServerTimestamp
+}
+```
+
+### Thread Tag Assignment
+Thread documents include tag references:
+```typescript
+interface ChatThread {
+  id: string;
+  title: string;
+  tags?: string[]; // Array of tag IDs
+  // ... other properties
+}
+```
+
+### Firestore Security Rules
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      match /settings/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}
+```
+
+## 🎯 Tagging System Features
+
+### ✅ Implemented Features
+- [x] Trello-style tag creation with color picker
+- [x] RGB color picker with sliders (0-255) and input fields
+- [x] 8 color presets in tag creation modal
+- [x] Right-click context menu on chat threads
+- [x] Tag assignment and removal via context menu
+- [x] "Create New Tag" always available in context menu
+- [x] Filter bar with ALL button and tag selection
+- [x] Real-time tag filtering
+- [x] Visual tag display under model names
+- [x] Firebase Firestore integration
+- [x] Proper TypeScript typing throughout
+- [x] Error handling and logging
+- [x] Responsive design
+
+### 🎨 Visual Design
+- **Tag Chips**: Rounded colored chips with white text
+- **Color Picker**: RGB sliders with live preview and presets
+- **Filter Bar**: Clean top bar with ALL button and scrollable tags
+- **Context Menu**: Right-click menu with icons and color indicators
+- **Hover Effects**: Smooth transitions and visual feedback
+
+### 🔍 User Experience
+- **Intuitive**: Right-click any chat to access tag options
+- **Visual**: Color-coded tags for easy identification
+- **Fast**: Instant filtering and real-time updates
+- **Flexible**: Custom colors and unlimited tag creation
+- **Accessible**: Keyboard navigation and screen reader support
+
+## 🧪 Testing
+
+The tagging system is ready for testing! Key scenarios to test:
+
+1. **Tag Creation**: Right-click chat → Create New Tag → Test color picker
+2. **Tag Assignment**: Right-click chat → Add available tags
+3. **Tag Removal**: Right-click chat → Remove assigned tags (red options)
+4. **Filtering**: Use filter bar to show/hide chats by tags
+5. **Multiple Tags**: Assign multiple tags to same chat
+6. **Cross-Session**: Tags should persist across browser sessions
+
+## 🚀 Deployment
+
+Tags are stored in Firebase Firestore and will automatically deploy with your Firebase configuration. No additional deployment steps needed for the tagging system.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+## 🏷️ Tagging System Status: ✅ COMPLETE & READY FOR TESTING
+
+The Trello-style tagging system has been fully implemented with:
+- ✅ All linting errors resolved
+- ✅ Firebase Firestore integration complete
+- ✅ All requested features implemented
+- ✅ TypeScript types properly defined
+- ✅ Components properly integrated
+- ✅ Error handling and logging in place
+
+**Ready for user testing!** 🎉

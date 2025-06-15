@@ -94,6 +94,17 @@ export class ThreadService {
     return this.crudService.toggleThreadPin(threadId, isPinned);
   }
 
+  /**
+   * Update thread tags
+   * 
+   * @param threadId - Thread ID to update
+   * @param tags - Array of tag IDs to assign to the thread
+   * @returns Promise with updated chat thread
+   */
+  async updateThreadTags(threadId: string, tags: string[]): Promise<ChatThread> {
+    return this.crudService.updateThreadTags(threadId, tags);
+  }
+
   // Batch Operations (delegated to ThreadBatchService)
 
   /**
