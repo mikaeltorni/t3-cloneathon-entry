@@ -21,6 +21,7 @@
  */
 import React from 'react';
 import { MessageImageGrid } from './message/MessageImageGrid';
+import { MessageDocumentGrid } from './message/MessageDocumentGrid';
 import { MessageReasoning } from './message/MessageReasoning';
 import { MessageContent } from './message/MessageContent';
 import { MessageMeta } from './message/MessageMeta';
@@ -54,6 +55,10 @@ const Message: React.FC<MessageProps> = React.memo(({
               images={message.images}
               imageUrl={message.imageUrl}
             />
+            <MessageDocumentGrid 
+              documents={message.documents}
+              isUserMessage={true}
+            />
             <MessageContent 
               content={message.content}
               annotations={message.annotations}
@@ -79,6 +84,14 @@ const Message: React.FC<MessageProps> = React.memo(({
             messageId={message.id}
             showReasoning={showReasoning}
             onToggleReasoning={onToggleReasoning}
+          />
+          <MessageImageGrid 
+            images={message.images}
+            imageUrl={message.imageUrl}
+          />
+          <MessageDocumentGrid 
+            documents={message.documents}
+            isUserMessage={false}
           />
           <MessageContent 
             content={message.content}

@@ -89,8 +89,8 @@ export const TagSystem: React.FC<TagSystemProps> = ({
     tags, 
     createTag,
     updateTag,
-    deleteTag,
-    refreshTags
+    deleteTag
+    // refreshTags - unused, commenting out to avoid linting error
   } = useTags();
   
   const {
@@ -113,23 +113,23 @@ export const TagSystem: React.FC<TagSystemProps> = ({
     [threads, contextMenu.threadId]
   );
 
-  // Get thread's current tag IDs with proper memoization
-  const currentThreadTagIds = useMemo(() => 
-    currentThread?.tags || [],
-    [currentThread?.tags]
-  );
+  // Get thread's current tag IDs with proper memoization - currently unused but kept for future use
+  // const currentThreadTagIds = useMemo(() => 
+  //   currentThread?.tags || [],
+  //   [currentThread?.tags]
+  // );
 
-  // Get available tags (not assigned to current thread)
-  const availableTags = useMemo(() => 
-    tags.filter(tag => !currentThreadTagIds.includes(tag.id)),
-    [tags, currentThreadTagIds]
-  );
+  // Get available tags (not assigned to current thread) - currently unused
+  // const availableTags = useMemo(() => 
+  //   tags.filter(tag => !currentThreadTagIds.includes(tag.id)),
+  //   [tags, currentThreadTagIds]
+  // );
 
-  // Get assigned tags (assigned to current thread)
-  const assignedTags = useMemo(() => 
-    tags.filter(tag => currentThreadTagIds.includes(tag.id)),
-    [tags, currentThreadTagIds]
-  );
+  // Get assigned tags (assigned to current thread) - currently unused
+  // const assignedTags = useMemo(() => 
+  //   tags.filter(tag => currentThreadTagIds.includes(tag.id)),
+  //   [tags, currentThreadTagIds]
+  // );
 
   /**
    * Handle right-click context menu
@@ -153,40 +153,40 @@ export const TagSystem: React.FC<TagSystemProps> = ({
   };
 
   /**
-   * Handle tag assignment
+   * Handle tag assignment - currently unused but keeping for future use
    */
-  const handleAssignTag = async (tagId: string) => {
-    if (!contextMenu.threadId) return;
-    
-    try {
-      await addTagToThread(contextMenu.threadId, tagId);
-      closeContextMenu();
-    } catch (error) {
-      console.error('Failed to assign tag:', error);
-    }
-  };
+  // const handleAssignTag = async (tagId: string) => {
+  //   if (!contextMenu.threadId) return;
+  //   
+  //   try {
+  //     await addTagToThread(contextMenu.threadId, tagId);
+  //     closeContextMenu();
+  //   } catch (error) {
+  //     console.error('Failed to assign tag:', error);
+  //   }
+  // };
 
   /**
-   * Handle tag removal
+   * Handle tag removal - currently unused but keeping for future use
    */
-  const handleRemoveTag = async (tagId: string) => {
-    if (!contextMenu.threadId) return;
-    
-    try {
-      await removeTagFromThread(contextMenu.threadId, tagId);
-      closeContextMenu();
-    } catch (error) {
-      console.error('Failed to remove tag:', error);
-    }
-  };
+  // const handleRemoveTag = async (tagId: string) => {
+  //   if (!contextMenu.threadId) return;
+  //   
+  //   try {
+  //     await removeTagFromThread(contextMenu.threadId, tagId);
+  //     closeContextMenu();
+  //   } catch (error) {
+  //     console.error('Failed to remove tag:', error);
+  //   }
+  // };
 
   /**
-   * Open create tag modal
+   * Open create tag modal - currently unused but keeping for future use
    */
-  const openCreateTagModal = () => {
-    setIsCreateTagModalOpen(true);
-    closeContextMenu();
-  };
+  // const openCreateTagModal = () => {
+  //   setIsCreateTagModalOpen(true);
+  //   closeContextMenu();
+  // };
 
   /**
    * Handle tag creation and auto-assign to current thread
@@ -339,7 +339,7 @@ export const TagSystem: React.FC<TagSystemProps> = ({
   };
 
   // Handle tag editing
-  const handleEditTag = (tag: ChatTag) => {
+  const handleEditTag = (_tag: ChatTag) => {
     setTagContextMenu(prev => ({ ...prev, isOpen: false }));
     setIsEditTagModalOpen(true);
   };

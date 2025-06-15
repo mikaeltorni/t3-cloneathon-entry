@@ -18,7 +18,7 @@
 import { logger } from '../utils/logger';
 import { HttpClient } from './httpClient';
 import type { StreamingCallbacks } from './types/apiTypes';
-import type { CreateMessageRequest, CreateMessageResponse, ChatMessage, TokenMetrics } from '../../../src/shared/types';
+import type { CreateMessageRequest, CreateMessageResponse, ChatMessage, TokenMetrics, WebSearchAnnotation } from '../../../src/shared/types';
 
 /**
  * Streaming service for real-time message processing
@@ -199,7 +199,7 @@ export class StreamingService {
       case 'annotations_chunk':
         logger.debug(`Annotations chunk: count=${(chunk.annotations as unknown[])?.length || 0}`);
         if (callbacks.onAnnotationsChunk && chunk.annotations) {
-          callbacks.onAnnotationsChunk(chunk.annotations as unknown[]);
+          callbacks.onAnnotationsChunk(chunk.annotations as WebSearchAnnotation[]);
         }
         break;
         

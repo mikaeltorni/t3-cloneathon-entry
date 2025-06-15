@@ -124,6 +124,7 @@ class FirestoreChatStorageService implements ChatStorageService {
       ...(data.modelId && { modelId: data.modelId }),
       ...(data.reasoning && { reasoning: data.reasoning }), // Reasoning tokens from AI models
       ...(data.images && { images: data.images }), // Multiple image attachments
+      ...(data.documents && { documents: data.documents }), // Multiple document attachments
     };
   }
 

@@ -19,7 +19,8 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { logger } from '../utils/logger';
-import { tokenizerService, TokenTracker } from '../services/tokenizerService';
+import { tokenizerService } from '../services/tokenizerService';
+import { TokenTracker } from '../services/tokenizer';
 import type { TokenMetrics } from '../../../src/shared/types';
 import type { CostBreakdown } from '../services/types/tokenizer';
 

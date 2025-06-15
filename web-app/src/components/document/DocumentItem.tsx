@@ -1,7 +1,7 @@
 /**
  * DocumentItem.tsx
  * 
- * Individual document item component
+ * Individual document item component for upload area
  * 
  * Components:
  *   DocumentItem

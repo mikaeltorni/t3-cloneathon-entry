@@ -133,14 +133,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
 
     try {
-      // Convert messages to format expected by tokenizer
-      const messagesForTokenizer = currentMessages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
-
+      // Use current messages directly as they are already ChatMessage[]
       const contextUsage = await tokenizerService.calculateConversationContextUsage(
-        messagesForTokenizer, 
+        currentMessages, 
         selectedModel
       );
 
