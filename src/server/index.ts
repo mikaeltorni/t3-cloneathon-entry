@@ -51,7 +51,10 @@ const userPreferencesController = createUserPreferencesController();
 const documentController = createDocumentController();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json({ 
   limit: '50mb' // Increased limit to handle multiple base64-encoded images
 }));
