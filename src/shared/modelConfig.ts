@@ -124,27 +124,27 @@ export const SHARED_MODEL_CONFIG = {
   // },
 
   // // === Anthropic Models ===
-  // 'anthropic/claude-4-sonnet': {
-  //   name: 'Claude 4 Sonnet',
-  //   description: 'Next-generation Claude model with enhanced reasoning and multimodal capabilities',
-  //   released: '2025-01-01', // Anticipated
-  //   hasReasoning: true,
-  //   reasoningType: 'thinking' as const,
-  //   reasoningMode: 'optional' as const,
-  //   supportsEffortControl: true,
-  //   webSearchMode: 'optional' as const,
-  //   webSearchPricing: 'standard' as const,
-  //   supportsWebEffortControl: true,
-  //   color: '#FF7A00',
-  //   bgColor: '#FFF7ED',
-  //   textColor: '#C2410C',
-  //   contextLength: 200000,
-  //   maxOutputTokens: 64000,
-  //   provider: 'anthropic' as const,
-  //   inputCostPer1k: 0.005,
-  //   outputCostPer1k: 0.025,
-  //   hasVision: true
-  // },
+  'anthropic/claude-4-sonnet-20250522': {
+    name: 'Claude 4 Sonnet',
+    description: 'Claude Sonnet 4 significantly enhances the capabilities of its predecessor, Sonnet 3.7, excelling in both coding and reasoning tasks with improved precision and controllability. Achieving state-of-the-art performance on SWE-bench (72.7%), Sonnet 4 balances capability and computational efficiency, making it suitable for a broad range of applications from routine coding tasks to complex software development projects. Key enhancements include improved autonomous codebase navigation, reduced error rates in agent-driven workflows, and increased reliability in following intricate instructions. Sonnet 4 is optimized for practical everyday use, providing advanced reasoning capabilities while maintaining efficiency and responsiveness in diverse internal and external scenarios.',
+    released: '2025-05-22',
+    hasReasoning: true,
+    reasoningType: 'optional' as const,
+    reasoningMode: 'effort' as const,
+    supportsEffortControl: true,
+    webSearchMode: 'optional' as const,
+    webSearchPricing: 'standard' as const,
+    supportsWebEffortControl: true,
+    color: '#4285F4',
+    bgColor: '#E8F0FE',
+    textColor: '#1A73E8',
+    contextLength: 200000,
+    provider: 'anthropic' as const,
+    inputCostPer1k: 0.000375,
+    outputCostPer1k: 0.0015,
+    hasVision: true
+  },
+
 
   // === Google Models ===
   'google/gemini-2.5-pro-preview-06-05': {
@@ -173,7 +173,7 @@ export const SHARED_MODEL_CONFIG = {
     description: 'Gemini 2.5 Flash May 20th Checkpoint is Google\'s state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in "thinking" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling',
     released: '2025-05-20',
     hasReasoning: true,
-    reasoningType: 'thinking' as const,
+    reasoningType: 'effort' as const,
     reasoningMode: 'optional' as const,
     supportsEffortControl: true,
     webSearchMode: 'optional' as const,
