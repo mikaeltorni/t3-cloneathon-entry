@@ -268,24 +268,8 @@ function AppContent() {
     await chat.handleThreadUpdate(threadId, updates);
   };
 
-  // Show loading screen while checking authentication
-  if (authLoading) {
-    return (
-      <ErrorBoundary>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-gray-600">Loading...</p>
-            </div>
-          </div>
-        </div>
-      </ErrorBoundary>
-    );
-  }
-
   // Show sign-in form if user is not authenticated
-  if (!user) {
+  if (!authLoading && !user) {
     return (
       <ErrorBoundary>
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
