@@ -54,7 +54,7 @@ export const MessageReasoning: React.FC<MessageReasoningProps> = ({
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-          Reasoning {showReasoning ? '(Hide)' : '(Show)'}
+          Reasoning
         </button>
         
         {showReasoning && (
