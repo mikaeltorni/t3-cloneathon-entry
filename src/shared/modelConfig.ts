@@ -52,6 +52,12 @@ export interface SharedModelConfig {
 /**
  * Complete model configuration based on latest OpenRouter models
  * Updated January 2025 with newest releases
+ *
+ * All reasoning toggles and modes are consistent:
+ * - If hasReasoning: true, then reasoningMode is not 'none', reasoningType is 'effort', supportsEffortControl is true
+ * - If hasReasoning: false, then reasoningMode is 'none', reasoningType is 'internal', supportsEffortControl is false
+ * - Forced reasoning models use reasoningMode: 'forced' with reasoningType: 'effort'
+ * - Optional reasoning models use reasoningMode: 'optional' with reasoningType: 'effort'
  */
 export const SHARED_MODEL_CONFIG = {
   // === OpenAI Models ===
