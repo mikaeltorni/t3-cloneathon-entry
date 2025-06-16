@@ -404,8 +404,12 @@ export class ChatController {
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
+
+      const streamingOrigin = process.env.NODE_ENV === 'production' 
+        ? process.env.PRODUCTION_ORIGINS?.split(',')[0] || ''
+        : process.env.DEVELOPMENT_ORIGINS?.split(',')[0] || 'http://localhost:3000';
+
+      res.setHeader('Access-Control-Allow-Origin', streamingOrigin);
 
       console.log(`[ChatController] Starting streaming message for thread: ${threadId || 'new'} for user: ${req.user.uid}`);
 
