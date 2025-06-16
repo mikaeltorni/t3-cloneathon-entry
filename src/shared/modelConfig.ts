@@ -78,73 +78,73 @@ export const SHARED_MODEL_CONFIG = {
     hasVision: true
   },
   
-  'openai/gpt-4.5': {
-    name: 'GPT-4.5 "Orion"',
-    description: 'Next-generation OpenAI model with enhanced capabilities and larger output window',
-    released: '2025-01-01', // Anticipated
-    hasReasoning: false,
-    reasoningType: 'internal' as const,
-    reasoningMode: 'none' as const,
-    supportsEffortControl: false,
-    webSearchMode: 'optional' as const,
-    webSearchPricing: 'openai' as const,
-    supportsWebEffortControl: true,
-    color: '#10A37F',
-    bgColor: '#F0FDF4',
-    textColor: '#065F46',
-    contextLength: 128000,
-    maxOutputTokens: 32768,
-    provider: 'openai' as const,
-    encoding: 'o200k_base',
-    inputCostPer1k: 0.005,
-    outputCostPer1k: 0.02,
-    hasVision: true
-  },
+  // 'openai/gpt-4.5': {
+  //   name: 'GPT-4.5 "Orion"',
+  //   description: 'Next-generation OpenAI model with enhanced capabilities and larger output window',
+  //   released: '2025-01-01', // Anticipated
+  //   hasReasoning: false,
+  //   reasoningType: 'internal' as const,
+  //   reasoningMode: 'none' as const,
+  //   supportsEffortControl: false,
+  //   webSearchMode: 'optional' as const,
+  //   webSearchPricing: 'openai' as const,
+  //   supportsWebEffortControl: true,
+  //   color: '#10A37F',
+  //   bgColor: '#F0FDF4',
+  //   textColor: '#065F46',
+  //   contextLength: 128000,
+  //   maxOutputTokens: 32768,
+  //   provider: 'openai' as const,
+  //   encoding: 'o200k_base',
+  //   inputCostPer1k: 0.005,
+  //   outputCostPer1k: 0.02,
+  //   hasVision: true
+  // },
   
-  'openai/o3': {
-    name: 'OpenAI o3',
-    description: 'Advanced reasoning model with deep research capabilities',
-    released: '2025-01-01', // Anticipated
-    hasReasoning: true,
-    reasoningType: 'effort' as const,
-    reasoningMode: 'forced' as const,
-    supportsEffortControl: true,
-    webSearchMode: 'optional' as const,
-    webSearchPricing: 'openai' as const,
-    supportsWebEffortControl: true,
-    color: '#FF6B35',
-    bgColor: '#FFF7ED',
-    textColor: '#C2410C',
-    contextLength: 128000,
-    provider: 'openai' as const,
-    encoding: 'o200k_base',
-    inputCostPer1k: 0.02,
-    outputCostPer1k: 0.08,
-    hasVision: true
-  },
+  // 'openai/o3': {
+  //   name: 'OpenAI o3',
+  //   description: 'Advanced reasoning model with deep research capabilities',
+  //   released: '2025-01-01', // Anticipated
+  //   hasReasoning: true,
+  //   reasoningType: 'effort' as const,
+  //   reasoningMode: 'forced' as const,
+  //   supportsEffortControl: true,
+  //   webSearchMode: 'optional' as const,
+  //   webSearchPricing: 'openai' as const,
+  //   supportsWebEffortControl: true,
+  //   color: '#FF6B35',
+  //   bgColor: '#FFF7ED',
+  //   textColor: '#C2410C',
+  //   contextLength: 128000,
+  //   provider: 'openai' as const,
+  //   encoding: 'o200k_base',
+  //   inputCostPer1k: 0.02,
+  //   outputCostPer1k: 0.08,
+  //   hasVision: true
+  // },
 
-  // === Anthropic Models ===
-  'anthropic/claude-4-sonnet': {
-    name: 'Claude 4 Sonnet',
-    description: 'Next-generation Claude model with enhanced reasoning and multimodal capabilities',
-    released: '2025-01-01', // Anticipated
-    hasReasoning: true,
-    reasoningType: 'thinking' as const,
-    reasoningMode: 'optional' as const,
-    supportsEffortControl: true,
-    webSearchMode: 'optional' as const,
-    webSearchPricing: 'standard' as const,
-    supportsWebEffortControl: true,
-    color: '#FF7A00',
-    bgColor: '#FFF7ED',
-    textColor: '#C2410C',
-    contextLength: 200000,
-    maxOutputTokens: 64000,
-    provider: 'anthropic' as const,
-    inputCostPer1k: 0.005,
-    outputCostPer1k: 0.025,
-    hasVision: true
-  },
+  // // === Anthropic Models ===
+  // 'anthropic/claude-4-sonnet': {
+  //   name: 'Claude 4 Sonnet',
+  //   description: 'Next-generation Claude model with enhanced reasoning and multimodal capabilities',
+  //   released: '2025-01-01', // Anticipated
+  //   hasReasoning: true,
+  //   reasoningType: 'thinking' as const,
+  //   reasoningMode: 'optional' as const,
+  //   supportsEffortControl: true,
+  //   webSearchMode: 'optional' as const,
+  //   webSearchPricing: 'standard' as const,
+  //   supportsWebEffortControl: true,
+  //   color: '#FF7A00',
+  //   bgColor: '#FFF7ED',
+  //   textColor: '#C2410C',
+  //   contextLength: 200000,
+  //   maxOutputTokens: 64000,
+  //   provider: 'anthropic' as const,
+  //   inputCostPer1k: 0.005,
+  //   outputCostPer1k: 0.025,
+  //   hasVision: true
+  // },
 
   // === Google Models ===
   'google/gemini-2.5-pro-preview': {
@@ -189,89 +189,89 @@ export const SHARED_MODEL_CONFIG = {
     hasVision: true
   },
 
-  // === Meta Models ===
-  'meta/llama-4-maverick': {
-    name: 'Llama 4 Maverick',
-    description: 'Meta\'s flagship open-source model with massive context window',
-    released: '2025-01-01', // Anticipated
-    hasReasoning: false,
-    reasoningType: 'internal' as const,
-    reasoningMode: 'none' as const,
-    supportsEffortControl: false,
-    webSearchMode: 'none' as const,
-    supportsWebEffortControl: false,
-    color: '#1877F2',
-    bgColor: '#EBF3FF',
-    textColor: '#1565C0',
-    contextLength: 1000000,
-    provider: 'meta' as const,
-    inputCostPer1k: 0.0005,
-    outputCostPer1k: 0.0015,
-    hasVision: true
-  },
+  // // === Meta Models ===
+  // 'meta/llama-4-maverick': {
+  //   name: 'Llama 4 Maverick',
+  //   description: 'Meta\'s flagship open-source model with massive context window',
+  //   released: '2025-01-01', // Anticipated
+  //   hasReasoning: false,
+  //   reasoningType: 'internal' as const,
+  //   reasoningMode: 'none' as const,
+  //   supportsEffortControl: false,
+  //   webSearchMode: 'none' as const,
+  //   supportsWebEffortControl: false,
+  //   color: '#1877F2',
+  //   bgColor: '#EBF3FF',
+  //   textColor: '#1565C0',
+  //   contextLength: 1000000,
+  //   provider: 'meta' as const,
+  //   inputCostPer1k: 0.0005,
+  //   outputCostPer1k: 0.0015,
+  //   hasVision: true
+  // },
 
-  'meta/llama-4-scout': {
-    name: 'Llama 4 Scout',
-    description: 'Ultra-large context Meta model with 10M token window',
-    released: '2025-01-01', // Anticipated
-    hasReasoning: false,
-    reasoningType: 'internal' as const,
-    reasoningMode: 'none' as const,
-    supportsEffortControl: false,
-    webSearchMode: 'none' as const,
-    supportsWebEffortControl: false,
-    color: '#1877F2',
-    bgColor: '#EBF3FF',
-    textColor: '#1565C0',
-    contextLength: 10000000,
-    provider: 'meta' as const,
-    inputCostPer1k: 0.001,
-    outputCostPer1k: 0.003,
-    hasVision: true
-  },
+  // 'meta/llama-4-scout': {
+  //   name: 'Llama 4 Scout',
+  //   description: 'Ultra-large context Meta model with 10M token window',
+  //   released: '2025-01-01', // Anticipated
+  //   hasReasoning: false,
+  //   reasoningType: 'internal' as const,
+  //   reasoningMode: 'none' as const,
+  //   supportsEffortControl: false,
+  //   webSearchMode: 'none' as const,
+  //   supportsWebEffortControl: false,
+  //   color: '#1877F2',
+  //   bgColor: '#EBF3FF',
+  //   textColor: '#1565C0',
+  //   contextLength: 10000000,
+  //   provider: 'meta' as const,
+  //   inputCostPer1k: 0.001,
+  //   outputCostPer1k: 0.003,
+  //   hasVision: true
+  // },
 
-  // === DeepSeek Models ===
-  'deepseek/deepseek-v3': {
-    name: 'DeepSeek V3',
-    description: 'Advanced general-purpose model with strong coding and reasoning abilities',
-    released: '2024-12-26',
-    hasReasoning: false,
-    reasoningType: 'internal' as const,
-    reasoningMode: 'none' as const,
-    supportsEffortControl: false,
-    webSearchMode: 'optional' as const,
-    webSearchPricing: 'standard' as const,
-    supportsWebEffortControl: true,
-    color: '#3B82F6',
-    bgColor: '#EFF6FF',
-    textColor: '#1D4ED8',
-    contextLength: 131072,
-    provider: 'deepseek' as const,
-    inputCostPer1k: 0.00038,
-    outputCostPer1k: 0.00089,
-    hasVision: false
-  },
+  // // === DeepSeek Models ===
+  // 'deepseek/deepseek-v3': {
+  //   name: 'DeepSeek V3',
+  //   description: 'Advanced general-purpose model with strong coding and reasoning abilities',
+  //   released: '2024-12-26',
+  //   hasReasoning: false,
+  //   reasoningType: 'internal' as const,
+  //   reasoningMode: 'none' as const,
+  //   supportsEffortControl: false,
+  //   webSearchMode: 'optional' as const,
+  //   webSearchPricing: 'standard' as const,
+  //   supportsWebEffortControl: true,
+  //   color: '#3B82F6',
+  //   bgColor: '#EFF6FF',
+  //   textColor: '#1D4ED8',
+  //   contextLength: 131072,
+  //   provider: 'deepseek' as const,
+  //   inputCostPer1k: 0.00038,
+  //   outputCostPer1k: 0.00089,
+  //   hasVision: false
+  // },
 
-  'deepseek/deepseek-r1-0528': {
-    name: 'DeepSeek R1',
-    description: 'Open-source reasoning model with full reasoning token visibility',
-    released: '2025-01-20',
-    hasReasoning: true,
-    reasoningType: 'effort' as const,
-    reasoningMode: 'forced' as const,
-    supportsEffortControl: true,
-    webSearchMode: 'optional' as const,
-    webSearchPricing: 'standard' as const,
-    supportsWebEffortControl: true,
-    color: '#3B82F6',
-    bgColor: '#EFF6FF',
-    textColor: '#1D4ED8',
-    contextLength: 164000,
-    provider: 'deepseek' as const,
-    inputCostPer1k: 0.0005,
-    outputCostPer1k: 0.00215,
-    hasVision: false
-  },
+  // 'deepseek/deepseek-r1-0528': {
+  //   name: 'DeepSeek R1',
+  //   description: 'Open-source reasoning model with full reasoning token visibility',
+  //   released: '2025-01-20',
+  //   hasReasoning: true,
+  //   reasoningType: 'effort' as const,
+  //   reasoningMode: 'forced' as const,
+  //   supportsEffortControl: true,
+  //   webSearchMode: 'optional' as const,
+  //   webSearchPricing: 'standard' as const,
+  //   supportsWebEffortControl: true,
+  //   color: '#3B82F6',
+  //   bgColor: '#EFF6FF',
+  //   textColor: '#1D4ED8',
+  //   contextLength: 164000,
+  //   provider: 'deepseek' as const,
+  //   inputCostPer1k: 0.0005,
+  //   outputCostPer1k: 0.00215,
+  //   hasVision: false
+  // },
 
   // === Perplexity Models ===
   'perplexity/sonar-reasoning': {
@@ -335,94 +335,94 @@ export const SHARED_MODEL_CONFIG = {
     inputCostPer1k: 0.001,
     outputCostPer1k: 0.001,
     hasVision: false
-  },
-
-  // === Other Models ===
-  'cohere/command-a': {
-    name: 'Command A',
-    description: 'Cohere\'s RAG-focused model with advanced retrieval capabilities',
-    released: '2025-01-01', // Anticipated
-    hasReasoning: false,
-    reasoningType: 'internal' as const,
-    reasoningMode: 'none' as const,
-    supportsEffortControl: false,
-    webSearchMode: 'optional' as const,
-    webSearchPricing: 'standard' as const,
-    supportsWebEffortControl: true,
-    color: '#39C6B4',
-    bgColor: '#F0FDFA',
-    textColor: '#0D9488',
-    contextLength: 256000,
-    maxOutputTokens: 8000,
-    provider: 'cohere' as const,
-    inputCostPer1k: 0.002,
-    outputCostPer1k: 0.008,
-    hasVision: false
-  },
-
-  'mistralai/mistral-large-2': {
-    name: 'Mistral Large 2',
-    description: 'Next-generation Mistral model with multimodal capabilities via Pixtral',
-    released: '2025-01-01', // Anticipated
-    hasReasoning: false,
-    reasoningType: 'internal' as const,
-    reasoningMode: 'none' as const,
-    supportsEffortControl: false,
-    webSearchMode: 'optional' as const,
-    webSearchPricing: 'standard' as const,
-    supportsWebEffortControl: true,
-    color: '#FF7000',
-    bgColor: '#FFF7ED',
-    textColor: '#C2410C',
-    contextLength: 128000,
-    provider: 'mistralai' as const,
-    inputCostPer1k: 0.003,
-    outputCostPer1k: 0.012,
-    hasVision: true
-  },
-
-  'xai/grok-2': {
-    name: 'Grok-2',
-    description: 'xAI\'s flagship model with real-time capabilities and humor',
-    released: '2025-01-01', // Anticipated
-    hasReasoning: false,
-    reasoningType: 'internal' as const,
-    reasoningMode: 'none' as const,
-    supportsEffortControl: false,
-    webSearchMode: 'optional' as const,
-    webSearchPricing: 'standard' as const,
-    supportsWebEffortControl: true,
-    color: '#000000',
-    bgColor: '#F8F9FA',
-    textColor: '#212529',
-    contextLength: 128000,
-    provider: 'xai' as const,
-    inputCostPer1k: 0.005,
-    outputCostPer1k: 0.02,
-    hasVision: true
-  },
-
-  'reka/reka-core': {
-    name: 'Reka Core',
-    description: 'Advanced multimodal model with strong vision and reasoning capabilities',
-    released: '2024-10-15',
-    hasReasoning: false,
-    reasoningType: 'internal' as const,
-    reasoningMode: 'none' as const,
-    supportsEffortControl: false,
-    webSearchMode: 'optional' as const,
-    webSearchPricing: 'standard' as const,
-    supportsWebEffortControl: true,
-    color: '#6366F1',
-    bgColor: '#EEF2FF',
-    textColor: '#4338CA',
-    contextLength: 128000,
-    maxOutputTokens: 8192,
-    provider: 'reka' as const,
-    inputCostPer1k: 0.0025,
-    outputCostPer1k: 0.01,
-    hasVision: true
   }
+
+  // // === Other Models ===
+  // 'cohere/command-a': {
+  //   name: 'Command A',
+  //   description: 'Cohere\'s RAG-focused model with advanced retrieval capabilities',
+  //   released: '2025-01-01', // Anticipated
+  //   hasReasoning: false,
+  //   reasoningType: 'internal' as const,
+  //   reasoningMode: 'none' as const,
+  //   supportsEffortControl: false,
+  //   webSearchMode: 'optional' as const,
+  //   webSearchPricing: 'standard' as const,
+  //   supportsWebEffortControl: true,
+  //   color: '#39C6B4',
+  //   bgColor: '#F0FDFA',
+  //   textColor: '#0D9488',
+  //   contextLength: 256000,
+  //   maxOutputTokens: 8000,
+  //   provider: 'cohere' as const,
+  //   inputCostPer1k: 0.002,
+  //   outputCostPer1k: 0.008,
+  //   hasVision: false
+  // },
+
+  // 'mistralai/mistral-large-2': {
+  //   name: 'Mistral Large 2',
+  //   description: 'Next-generation Mistral model with multimodal capabilities via Pixtral',
+  //   released: '2025-01-01', // Anticipated
+  //   hasReasoning: false,
+  //   reasoningType: 'internal' as const,
+  //   reasoningMode: 'none' as const,
+  //   supportsEffortControl: false,
+  //   webSearchMode: 'optional' as const,
+  //   webSearchPricing: 'standard' as const,
+  //   supportsWebEffortControl: true,
+  //   color: '#FF7000',
+  //   bgColor: '#FFF7ED',
+  //   textColor: '#C2410C',
+  //   contextLength: 128000,
+  //   provider: 'mistralai' as const,
+  //   inputCostPer1k: 0.003,
+  //   outputCostPer1k: 0.012,
+  //   hasVision: true
+  // },
+
+  // 'xai/grok-2': {
+  //   name: 'Grok-2',
+  //   description: 'xAI\'s flagship model with real-time capabilities and humor',
+  //   released: '2025-01-01', // Anticipated
+  //   hasReasoning: false,
+  //   reasoningType: 'internal' as const,
+  //   reasoningMode: 'none' as const,
+  //   supportsEffortControl: false,
+  //   webSearchMode: 'optional' as const,
+  //   webSearchPricing: 'standard' as const,
+  //   supportsWebEffortControl: true,
+  //   color: '#000000',
+  //   bgColor: '#F8F9FA',
+  //   textColor: '#212529',
+  //   contextLength: 128000,
+  //   provider: 'xai' as const,
+  //   inputCostPer1k: 0.005,
+  //   outputCostPer1k: 0.02,
+  //   hasVision: true
+  // },
+
+  // 'reka/reka-core': {
+  //   name: 'Reka Core',
+  //   description: 'Advanced multimodal model with strong vision and reasoning capabilities',
+  //   released: '2024-10-15',
+  //   hasReasoning: false,
+  //   reasoningType: 'internal' as const,
+  //   reasoningMode: 'none' as const,
+  //   supportsEffortControl: false,
+  //   webSearchMode: 'optional' as const,
+  //   webSearchPricing: 'standard' as const,
+  //   supportsWebEffortControl: true,
+  //   color: '#6366F1',
+  //   bgColor: '#EEF2FF',
+  //   textColor: '#4338CA',
+  //   contextLength: 128000,
+  //   maxOutputTokens: 8192,
+  //   provider: 'reka' as const,
+  //   inputCostPer1k: 0.0025,
+  //   outputCostPer1k: 0.01,
+  //   hasVision: true
+  // }
 } as const;
 
 export type ModelId = keyof typeof SHARED_MODEL_CONFIG;
