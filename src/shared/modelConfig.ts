@@ -428,7 +428,7 @@ export const SHARED_MODEL_CONFIG = {
 export type ModelId = keyof typeof SHARED_MODEL_CONFIG;
 
 // Default model
-export const DEFAULT_MODEL: ModelId = 'google/gemini-2.5-flash-preview';
+export const DEFAULT_MODEL: ModelId = 'google/gemini-2.5-flash-preview-05-20';
 
 /**
  * Get available models by provider
