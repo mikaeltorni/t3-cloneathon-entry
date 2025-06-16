@@ -147,10 +147,10 @@ export const SHARED_MODEL_CONFIG = {
   // },
 
   // === Google Models ===
-  'google/gemini-2.5-pro-preview': {
+  'google/gemini-2.5-pro-preview-06-05': {
     name: 'Gemini 2.5 Pro',
     description: 'Google\'s most capable model with massive context window and native web search',
-    released: '2024-12-19',
+    released: '2025-06-05',
     hasReasoning: true,
     reasoningType: 'thinking' as const,
     reasoningMode: 'optional' as const,
