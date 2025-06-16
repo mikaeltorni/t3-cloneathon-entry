@@ -124,12 +124,18 @@ export const UserProfile: React.FC = () => {
         </Button>
       </div>
 
-      {/* User Status or Additional Info (Optional) */}
-      <div className="mt-2 text-xs text-gray-400">
-        <span className="inline-flex items-center">
-          <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5"></span>
-          Online
-        </span>
+      {/* Project Information */}
+      <div className="mt-2 text-xs text-gray-400 space-y-1">
+        <div>v16062025</div>
+        <div>Made by Mikael Törni</div>
+        <a 
+          href="https://github.com/mikaeltorni/t3-cloneathon-entry" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-blue-500 hover:text-blue-600 hover:underline transition-colors duration-200"
+        >
+          View on GitHub
+        </a>
       </div>
     </div>
   );
