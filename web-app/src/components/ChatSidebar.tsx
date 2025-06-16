@@ -55,6 +55,7 @@ interface ChatSidebarProps {
   onNewChat: () => void;
   onDeleteThread: (threadId: string) => void;
   onTogglePinThread: (threadId: string, isPinned: boolean) => void;
+  onRefreshThreads?: () => Promise<void>; // Manual thread refresh callback
   loading: boolean;
   isOpen?: boolean;
   onClose?: () => void;
@@ -75,6 +76,7 @@ interface ChatSidebarProps {
  * @param onNewChat - Callback for new chat creation
  * @param onDeleteThread - Callback for thread deletion
  * @param onTogglePinThread - Callback for pinning/unpinning threads
+ * @param onRefreshThreads - Callback for manual thread refresh
  * @param loading - Loading state for threads
  * @param availableModels - Available models for display and selection
  * @param onModelChange - Callback when model is changed for a thread
@@ -88,6 +90,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onNewChat,
   onDeleteThread,
   onTogglePinThread,
+  onRefreshThreads,
   loading,
   isOpen = false,
   onClose,
@@ -100,6 +103,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [pinningThreadId, setPinningThreadId] = useState<string | null>(null);
+
+  // Mark onRefreshThreads as intentionally available for programmatic use
+  void onRefreshThreads;
 
   const { debug, log } = useLogger('ChatSidebar');
 
