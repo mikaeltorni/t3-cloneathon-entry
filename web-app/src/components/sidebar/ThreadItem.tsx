@@ -17,6 +17,7 @@ import { ThreadMeta } from './ThreadMeta';
 import { ThreadMenu } from './ThreadMenu';
 import { Tag } from '../ui/Tag';
 import { cn } from '../../utils/cn';
+import { useTagSystemContext } from '../TagSystem';
 import type { ChatThread, ModelConfig, ChatTag } from '../../../../src/shared/types';
 
 /**
@@ -90,7 +91,10 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
 
   const isPinned = Boolean(thread.isPinned);
   const lastMessage = thread.messages[thread.messages.length - 1];
-  const threadTags = getThreadTags?.(thread.id) || [];
+  
+  // Use optimistic tags for instant feedback
+  const { getOptimisticThreadTags } = useTagSystemContext();
+  const threadTags = getOptimisticThreadTags(thread.id);
 
   /**
    * Truncate text to specified length
@@ -192,7 +196,7 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
       {/* Thread Tags - Positioned below AI message and above timestamp */}
       {threadTags.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
-          {threadTags.map(tag => (
+          {threadTags.map((tag: ChatTag) => (
             <Tag
               key={tag.id}
               tag={tag}

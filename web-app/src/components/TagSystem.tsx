@@ -9,7 +9,7 @@
  * Usage: <TagSystem threads={threads} onThreadUpdate={handleThreadUpdate} />
  */
 
-import React, { useState, useMemo, useEffect, createContext, useContext } from 'react';
+import React, { useState, useMemo, useEffect, createContext, useContext, useCallback } from 'react';
 import type { ChatThread, ChatTag } from '../../../src/shared/types';
 import type { ContextMenuItem } from './ui/ContextMenu';
 import { ContextMenu } from './ui/ContextMenu';
@@ -32,6 +32,11 @@ interface TagSystemContextValue {
   removeTagFromThread: (threadId: string, tagId: string) => Promise<void>;
   createTag: (name: string, color: { r: number; g: number; b: number }) => Promise<ChatTag>;
   openCreateTagModal: () => void;
+  // Optimistic states for instant feedback
+  getOptimisticThreadTags: (threadId: string) => ChatTag[];
+  setOptimisticAssigned: (threadId: string, tagId: string) => void;
+  setOptimisticRemoved: (threadId: string, tagId: string) => void;
+  clearOptimistic: (threadId: string, tagId: string) => void;
 }
 
 const TagSystemContext = createContext<TagSystemContextValue | null>(null);
@@ -88,6 +93,10 @@ export const TagSystem: React.FC<TagSystemProps> = ({
   // Modal states
   const [isCreateTagModalOpen, setIsCreateTagModalOpen] = useState(false);
   const [isEditTagModalOpen, setIsEditTagModalOpen] = useState(false);
+
+  // Optimistic states for instant feedback across all components
+  const [optimisticAssigned, setOptimisticAssignedState] = useState<Map<string, Set<string>>>(new Map());
+  const [optimisticRemoved, setOptimisticRemovedState] = useState<Map<string, Set<string>>>(new Map());
 
   // Hooks
   const { 
@@ -356,6 +365,87 @@ export const TagSystem: React.FC<TagSystemProps> = ({
     setIsCreateTagModalOpen(true);
   };
 
+  /**
+   * Get thread tags with optimistic updates applied
+   */
+  const getOptimisticThreadTags = useCallback((threadId: string): ChatTag[] => {
+    const realTags = getThreadTags(threadId);
+    const realTagIds = realTags.map(tag => tag.id);
+    
+    const threadOptimisticAssigned = optimisticAssigned.get(threadId) || new Set();
+    const threadOptimisticRemoved = optimisticRemoved.get(threadId) || new Set();
+    
+    // Start with real tags, remove optimistically removed ones
+    const filteredTags = realTags.filter(tag => !threadOptimisticRemoved.has(tag.id));
+    
+    // Add optimistically assigned tags
+    const assignedTags = Array.from(threadOptimisticAssigned)
+      .filter(tagId => !realTagIds.includes(tagId)) // Don't duplicate real tags
+      .map(tagId => tags.find(tag => tag.id === tagId))
+      .filter(Boolean) as ChatTag[];
+    
+    return [...filteredTags, ...assignedTags];
+  }, [getThreadTags, optimisticAssigned, optimisticRemoved, tags]);
+
+  /**
+   * Set optimistic assigned state
+   */
+  const setOptimisticAssigned = useCallback((threadId: string, tagId: string) => {
+    setOptimisticAssignedState(prev => {
+      const newMap = new Map(prev);
+      const threadSet = newMap.get(threadId) || new Set();
+      threadSet.add(tagId);
+      newMap.set(threadId, threadSet);
+      return newMap;
+    });
+  }, []);
+
+  /**
+   * Set optimistic removed state
+   */
+  const setOptimisticRemoved = useCallback((threadId: string, tagId: string) => {
+    setOptimisticRemovedState(prev => {
+      const newMap = new Map(prev);
+      const threadSet = newMap.get(threadId) || new Set();
+      threadSet.add(tagId);
+      newMap.set(threadId, threadSet);
+      return newMap;
+    });
+  }, []);
+
+  /**
+   * Clear optimistic state for a specific tag
+   */
+  const clearOptimistic = useCallback((threadId: string, tagId: string) => {
+    setOptimisticAssignedState(prev => {
+      const newMap = new Map(prev);
+      const threadSet = newMap.get(threadId);
+      if (threadSet) {
+        threadSet.delete(tagId);
+        if (threadSet.size === 0) {
+          newMap.delete(threadId);
+        } else {
+          newMap.set(threadId, threadSet);
+        }
+      }
+      return newMap;
+    });
+    
+    setOptimisticRemovedState(prev => {
+      const newMap = new Map(prev);
+      const threadSet = newMap.get(threadId);
+      if (threadSet) {
+        threadSet.delete(tagId);
+        if (threadSet.size === 0) {
+          newMap.delete(threadId);
+        } else {
+          newMap.set(threadId, threadSet);
+        }
+      }
+      return newMap;
+    });
+  }, []);
+
   const contextValue: TagSystemContextValue = {
     tags,
     selectedTags: selectedTagIds,
@@ -370,7 +460,12 @@ export const TagSystem: React.FC<TagSystemProps> = ({
     addTagToThread,
     removeTagFromThread,
     createTag,
-    openCreateTagModal
+    openCreateTagModal,
+    // Optimistic states for instant feedback
+    getOptimisticThreadTags,
+    setOptimisticAssigned,
+    setOptimisticRemoved,
+    clearOptimistic
   };
 
   return (

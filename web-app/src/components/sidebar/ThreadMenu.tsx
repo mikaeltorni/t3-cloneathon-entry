@@ -65,8 +65,6 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
   className
 }) => {
   const [isOpen, setIsOpen] = useState(isContextMenu);
-  const [optimisticAssigned, setOptimisticAssigned] = useState<Set<string>>(new Set());
-  const [optimisticRemoved, setOptimisticRemoved] = useState<Set<string>>(new Set());
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -125,13 +123,13 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
    * Handle tag assignment/removal with instant visual feedback
    */
   const handleToggleTag = async (tagId: string, isAssigned: boolean) => {
-    // Show instant visual feedback
+    // Show instant visual feedback using shared optimistic state
     if (!isAssigned) {
-      // Adding tag: show "✓ Assigned" immediately
-      setOptimisticAssigned(prev => new Set([...prev, tagId]));
+      // Adding tag: show optimistically
+      tagSystem.setOptimisticAssigned(thread.id, tagId);
     } else {
-      // Removing tag: hide "✓ Assigned" immediately
-      setOptimisticRemoved(prev => new Set([...prev, tagId]));
+      // Removing tag: hide optimistically
+      tagSystem.setOptimisticRemoved(thread.id, tagId);
     }
 
     try {
@@ -141,31 +139,13 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
         await tagSystem.addTagToThread(thread.id, tagId);
       }
       
-      // Clear optimistic states after successful server response
-      setOptimisticAssigned(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(tagId);
-        return newSet;
-      });
-      setOptimisticRemoved(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(tagId);
-        return newSet;
-      });
+      // Clear optimistic state after successful server response
+      tagSystem.clearOptimistic(thread.id, tagId);
     } catch (error) {
       console.error('Failed to toggle tag:', error);
       
-      // Revert optimistic states on error
-      setOptimisticAssigned(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(tagId);
-        return newSet;
-      });
-      setOptimisticRemoved(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(tagId);
-        return newSet;
-      });
+      // Revert optimistic state on error
+      tagSystem.clearOptimistic(thread.id, tagId);
     }
   };
 
@@ -234,6 +214,9 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
             <div className="space-y-1 max-h-32 overflow-y-auto">
               {tagSystem.tags.map((tag) => {
                 const isAssigned = threadTags.some((t: ChatTag) => t.id === tag.id);
+                const optimisticTags = tagSystem.getOptimisticThreadTags(thread.id);
+                const isOptimisticallyAssigned = optimisticTags.some(t => t.id === tag.id);
+                
                 return (
                   <div
                     key={tag.id}
@@ -243,7 +226,7 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
                     }}
                     className={cn(
                       'flex items-center p-2 rounded text-xs cursor-pointer transition-all duration-200',
-                      isAssigned 
+                      (isAssigned || isOptimisticallyAssigned) 
                         ? 'bg-gray-50 border-2 border-gray-300 shadow-sm' 
                         : 'hover:bg-gray-50 border-2 border-transparent hover:border-gray-200'
                     )}
@@ -254,7 +237,7 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
                       removable={false} 
                       className="transition-all duration-200"
                     />
-                    {(isAssigned || optimisticAssigned.has(tag.id)) && !optimisticRemoved.has(tag.id) && (
+                    {(isAssigned || isOptimisticallyAssigned) && (
                       <div className="ml-auto flex items-center">
                         <div className="text-green-600 text-xs font-medium flex items-center">
                           <span className="text-base mr-1">✓</span>
