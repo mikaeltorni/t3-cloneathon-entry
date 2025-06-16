@@ -50,10 +50,43 @@ const modelsController = createModelsController(OPENROUTER_API_KEY);
 const userPreferencesController = createUserPreferencesController();
 const documentController = createDocumentController();
 
-// Middleware
+/**
+ * Get allowed origins from environment variables
+ */
+export const getAllowedOrigins = (): string[] => {
+  if (process.env.NODE_ENV === 'production') {
+    const prodOrigins = process.env.PRODUCTION_ORIGINS;
+    if (!prodOrigins) {
+      console.error('❌ PRODUCTION_ORIGINS not set in production environment');
+      console.error('💡 Set it with: PRODUCTION_ORIGINS="https://yourdomain.com,https://www.yourdomain.com"');
+      return [];
+    }
+    const origins = prodOrigins.split(',').map(origin => origin.trim());
+    
+    // Validate production origins
+    origins.forEach(origin => {
+      if (!origin.startsWith('https://')) {
+        console.warn(`⚠️ Production origin "${origin}" should use HTTPS`);
+      }
+    });
+    
+    return origins;
+  } else {
+    const devOrigins = process.env.DEVELOPMENT_ORIGINS;
+    return devOrigins ? devOrigins.split(',').map(origin => origin.trim()) : 
+           ['http://localhost:3000', 'http://localhost:5173'];
+  }
+};
+
+// Initialize CORS with environment-based origins
+const allowedOrigins = getAllowedOrigins();
+console.log(`🔒 CORS Configuration: ${allowedOrigins.length} allowed origins:`, allowedOrigins);
+
 app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ 
   limit: '50mb' // Increased limit to handle multiple base64-encoded images
