@@ -65,6 +65,7 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
   className
 }) => {
   const [isOpen, setIsOpen] = useState(isContextMenu);
+  const [optimisticAssigned, setOptimisticAssigned] = useState<Set<string>>(new Set());
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -120,17 +121,42 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
   };
 
   /**
-   * Handle tag assignment/removal
+   * Handle tag assignment/removal with instant visual feedback
    */
   const handleToggleTag = async (tagId: string, isAssigned: boolean) => {
+    // Show instant "✓ Assigned" feedback
+    if (!isAssigned) {
+      setOptimisticAssigned(prev => new Set([...prev, tagId]));
+    } else {
+      setOptimisticAssigned(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(tagId);
+        return newSet;
+      });
+    }
+
     try {
       if (isAssigned) {
         await tagSystem.removeTagFromThread(thread.id, tagId);
       } else {
         await tagSystem.addTagToThread(thread.id, tagId);
       }
+      
+      // Clear optimistic state after successful server response
+      setOptimisticAssigned(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(tagId);
+        return newSet;
+      });
     } catch (error) {
       console.error('Failed to toggle tag:', error);
+      
+      // Revert optimistic state on error
+      setOptimisticAssigned(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(tagId);
+        return newSet;
+      });
     }
   };
 
@@ -219,7 +245,7 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
                       removable={false} 
                       className="transition-all duration-200"
                     />
-                    {isAssigned && (
+                    {(isAssigned || optimisticAssigned.has(tag.id)) && (
                       <div className="ml-auto flex items-center">
                         <div className="text-green-600 text-xs font-medium flex items-center">
                           <span className="text-base mr-1">✓</span>
