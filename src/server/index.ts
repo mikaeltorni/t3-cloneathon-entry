@@ -301,7 +301,7 @@ app.listen(PORT, () => {
   console.log(`💬 Chat API: http://localhost:${PORT}/api/chats`);
   console.log(`🤖 Models API: http://localhost:${PORT}/api/models`);
   console.log(`💚 Health: http://localhost:${PORT}/api/health`);
-  console.log(`🔑 OpenRouter API Key: ${OPENROUTER_API_KEY ? '✅ Configured' : '❌ Missing'}`);
+  console.log(`🔑 OpenRouter API Key: ${OPENROUTER_API_KEY ? '✅ Configured' : '❌ Missing (see env.template)'}`);
   console.log(`📂 Static files: ${path.join(__dirname, '../../web-app/dist')}`);
   console.log('');
   console.log('🎯 Ready for database integration and authentication!');
