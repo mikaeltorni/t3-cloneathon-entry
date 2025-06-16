@@ -109,9 +109,7 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
       {/* Sidebar */}
       <div 
         className={cn(
-          'fixed right-0 top-0 w-80 bg-gradient-to-b from-gray-50 to-gray-100 border-l border-gray-200 flex-col h-full z-40 transition-transform duration-300',
-          // Always show as flex, but use transform to hide/show
-          'flex',
+          'fixed right-0 top-0 w-80 bg-gradient-to-b from-gray-50 to-gray-100 border-l border-gray-200 flex flex-col h-full z-40 transition-transform duration-300',
           // Transform based on isOpen state for all screen sizes
           isOpen ? 'translate-x-0' : 'translate-x-full',
           className
@@ -119,9 +117,9 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
         data-no-drop="true"
       >
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 bg-white shadow-sm">
+        <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-white shadow-sm">
           {/* Top row: Title + Close button */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-bold text-gray-900">AI Models</h1>
             
             {/* Close button */}
@@ -129,7 +127,7 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
               onClick={onClose}
               variant="ghost"
               size="sm"
-              className="p-2 rounded-xl border border-gray-300 hover:bg-gray-50"
+              className="p-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors"
               aria-label="Close model sidebar"
             >
               <svg
@@ -148,7 +146,7 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
             </Button>
           </div>
           
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-gray-500 text-center leading-relaxed">
             Choose your AI assistant • {modelCount} models available
             {pinnedCount > 0 && (
               <span className="text-amber-600 ml-1">
@@ -159,7 +157,7 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
         </div>
 
         {/* Model list with enhanced scrolling */}
-        <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-3 custom-scrollbar min-h-0">
           {loading ? (
             <LoadingState />
           ) : (
@@ -176,8 +174,8 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50">
-          <div className="text-xs text-gray-500 text-center">
+        <div className="flex-shrink-0 p-4 border-t border-gray-100 bg-gray-50">
+          <div className="text-xs text-gray-500 text-center leading-relaxed">
             Click a model to select it, or pin your favorites for easy access
           </div>
         </div>
@@ -190,11 +188,11 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
  * Loading skeleton component
  */
 const LoadingState: React.FC = () => (
-  <div className="space-y-3">
+  <div className="space-y-3 w-full">
     {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
       <div
         key={i}
-        className="h-16 bg-gray-200 rounded-lg animate-pulse"
+        className="h-16 bg-gray-200 rounded-lg animate-pulse w-full"
       />
     ))}
   </div>
