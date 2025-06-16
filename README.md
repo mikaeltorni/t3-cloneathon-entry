@@ -9,6 +9,7 @@ A modern full-stack chat application built with React, TypeScript, Express.js, a
 - **Model Selection Sidebar**: Right-side hover-to-reveal sidebar for easy AI model switching
 - **Firebase Rate Limiting**: Simple and effective rate limiting using firebase-functions-rate-limiter
 - **Real-time User Experience**: Client-side throttling with visual feedback
+- **Mobile-Friendly File Attachments**: Dedicated attachment buttons for images and documents
 - **Responsive Design**: Tailwind CSS with mobile-first approach
 - **Production Ready**: Firebase/Google Cloud optimized architecture
 
@@ -32,6 +33,59 @@ We've implemented several efficiency improvements to handle large numbers of cha
 - `GET /api/chats?limit=50&summaryOnly=true` - Efficient thread list loading
 - `POST /api/chats/messages/batch` - Batch message retrieval for up to 20 threads
 - Enhanced pagination with cursor-based navigation
+
+## 📎 Mobile-Friendly File Attachments
+
+### **Dedicated Attachment Buttons**
+The chat interface now includes visible attachment buttons that make file uploads accessible on mobile devices:
+
+#### **Key Features**
+- **Image Attachment Button**: Dedicated button with image icon for photo uploads
+- **Document Attachment Button**: Separate button for document uploads (PDF, TXT, MD, etc.)
+- **Mobile-Optimized**: Touch-friendly buttons with proper sizing for mobile screens
+- **Visual Feedback**: Color-coded hover states and disabled states when limits reached
+- **File Limits**: Maximum 5 images and 5 documents per message
+- **Multiple Selection**: Support for selecting multiple files at once
+- **Progress Indication**: Shows current attachment count (e.g., "3/5")
+
+#### **Supported File Types**
+- **Images**: JPEG, PNG, GIF, WebP (max 10MB each)
+- **Documents**: PDF, TXT, MD, JSON, CSV, XML, HTML, JS, TS, CSS, YAML (max 50MB each)
+
+#### **Mobile Experience**
+- **Responsive Layout**: Buttons scale appropriately on different screen sizes
+- **Touch Optimization**: `touch-manipulation` CSS for better mobile interaction
+- **Accessible Design**: Proper focus states and keyboard navigation
+- **Visual Hierarchy**: Clear distinction between attachment and send buttons
+
+#### **Technical Implementation**
+```tsx
+// Attachment buttons with file processing
+<button
+  type="button"
+  onClick={triggerImagePicker}
+  disabled={isImageButtonDisabled}
+  className="p-2 sm:p-2.5 rounded-lg border transition-colors touch-manipulation"
+  title={`Add images (${images.length}/${maxImages})`}
+>
+  <Image className="w-5 h-5" />
+</button>
+
+// Hidden file input
+<input
+  ref={imageInputRef}
+  type="file"
+  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+  multiple
+  onChange={handleImageSelect}
+  className="hidden"
+/>
+```
+
+#### **Dual Upload Methods**
+The app now supports two methods for file attachments:
+1. **Button-Based Upload**: Click attachment buttons to open file picker
+2. **Drag-and-Drop**: Drag files anywhere in the chat area (desktop primarily)
 
 ## 🎨 Model Selection
 
