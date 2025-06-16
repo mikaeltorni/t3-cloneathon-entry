@@ -198,33 +198,40 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
               <span className="text-sm font-medium text-gray-700">Tags</span>
             </div>
 
-            {/* Available tags with add/remove buttons */}
+            {/* Available tags with highlighted selection */}
             <div className="space-y-1 max-h-32 overflow-y-auto">
               {tagSystem.tags.map((tag) => {
                 const isAssigned = threadTags.some((t: ChatTag) => t.id === tag.id);
                 return (
                   <div
                     key={tag.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleTag(tag.id, isAssigned);
+                    }}
                     className={cn(
-                      'flex items-center justify-between p-2 rounded text-xs',
-                      isAssigned ? 'bg-blue-50' : 'hover:bg-gray-50'
+                      'flex items-center p-2 rounded text-xs cursor-pointer transition-all duration-200',
+                      isAssigned 
+                        ? 'bg-gradient-to-r from-blue-100 to-blue-50 border-2 border-blue-300 shadow-md ring-2 ring-blue-200 ring-offset-1' 
+                        : 'hover:bg-gray-50 border-2 border-transparent hover:border-gray-200'
                     )}
                   >
-                    <Tag tag={tag} size="sm" removable={false} />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleTag(tag.id, isAssigned);
-                      }}
+                    <Tag 
+                      tag={tag} 
+                      size="sm" 
+                      removable={false} 
                       className={cn(
-                        'px-2 py-1 rounded text-xs font-medium',
-                        isAssigned
-                          ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                          : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        'transition-all duration-200',
+                        isAssigned && 'ring-2 ring-white ring-offset-2 shadow-lg transform scale-110'
                       )}
-                    >
-                      {isAssigned ? 'Remove' : 'Add'}
-                    </button>
+                    />
+                    {isAssigned && (
+                      <div className="ml-auto flex items-center">
+                        <div className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
+                          ✓ Assigned
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
