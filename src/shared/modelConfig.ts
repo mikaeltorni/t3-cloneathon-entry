@@ -168,10 +168,10 @@ export const SHARED_MODEL_CONFIG = {
     hasVision: true
   },
   
-  'google/gemini-2.5-flash-preview': {
+  'google/gemini-2.5-flash-preview-05-20': {
     name: 'Gemini 2.5 Flash',
-    description: 'Fast and efficient multimodal model with large context window',
-    released: '2024-12-19',
+    description: 'Gemini 2.5 Flash May 20th Checkpoint is Google\'s state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in "thinking" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling',
+    released: '2025-05-20',
     hasReasoning: true,
     reasoningType: 'thinking' as const,
     reasoningMode: 'optional' as const,
@@ -182,7 +182,7 @@ export const SHARED_MODEL_CONFIG = {
     color: '#4285F4',
     bgColor: '#E8F0FE',
     textColor: '#1A73E8',
-    contextLength: 1000000,
+    contextLength: 1048576,
     provider: 'google' as const,
     inputCostPer1k: 0.000375,
     outputCostPer1k: 0.0015,
