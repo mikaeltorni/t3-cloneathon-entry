@@ -212,7 +212,7 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
                     className={cn(
                       'flex items-center p-2 rounded text-xs cursor-pointer transition-all duration-200',
                       isAssigned 
-                        ? 'bg-gradient-to-r from-blue-100 to-blue-50 border-2 border-blue-300 shadow-md ring-2 ring-blue-200 ring-offset-1' 
+                        ? 'bg-gray-50 border-2 border-gray-300 shadow-sm' 
                         : 'hover:bg-gray-50 border-2 border-transparent hover:border-gray-200'
                     )}
                   >
@@ -220,15 +220,13 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
                       tag={tag} 
                       size="sm" 
                       removable={false} 
-                      className={cn(
-                        'transition-all duration-200',
-                        isAssigned && 'ring-2 ring-white ring-offset-2 shadow-lg transform scale-110'
-                      )}
+                      className="transition-all duration-200"
                     />
                     {isAssigned && (
                       <div className="ml-auto flex items-center">
-                        <div className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
-                          ✓ Assigned
+                        <div className="text-green-600 text-xs font-medium flex items-center">
+                          <span className="text-base mr-1">✓</span>
+                          Assigned
                         </div>
                       </div>
                     )}
