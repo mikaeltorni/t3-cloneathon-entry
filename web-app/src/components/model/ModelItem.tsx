@@ -10,7 +10,6 @@
  */
 
 import React from 'react';
-import { ModelIcon } from './ModelIcon';
 import { ModelBadges } from './ModelBadges';
 import { ModelPinButton } from './ModelPinButton';
 import { cn } from '../../utils/cn';
@@ -92,7 +91,6 @@ export const ModelItem: React.FC<ModelItemProps> = ({
             <span className="text-sm font-semibold">
               {model.name}
             </span>
-            <ModelIcon model={model} size="sm" />
           </div>
         </div>
 
