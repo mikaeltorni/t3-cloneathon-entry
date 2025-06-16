@@ -11,7 +11,7 @@
  */
 import React, { useRef } from 'react';
 import { Button } from '../ui/Button';
-import { Paperclip, Image, FileText } from 'lucide-react';
+import { Image, FileText } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useLogger } from '../../hooks/useLogger';
 import { useFileProcessing } from '../../hooks/fileDropZone/useFileProcessing';

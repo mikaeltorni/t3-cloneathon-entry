@@ -259,48 +259,26 @@ export const SHARED_MODEL_CONFIG = {
   //   hasVision: true
   // },
 
-  // // === DeepSeek Models ===
-  // 'deepseek/deepseek-v3': {
-  //   name: 'DeepSeek V3',
-  //   description: 'Advanced general-purpose model with strong coding and reasoning abilities',
-  //   released: '2024-12-26',
-  //   hasReasoning: false,
-  //   reasoningType: 'internal' as const,
-  //   reasoningMode: 'none' as const,
-  //   supportsEffortControl: false,
-  //   webSearchMode: 'optional' as const,
-  //   webSearchPricing: 'standard' as const,
-  //   supportsWebEffortControl: true,
-  //   color: '#3B82F6',
-  //   bgColor: '#EFF6FF',
-  //   textColor: '#1D4ED8',
-  //   contextLength: 131072,
-  //   provider: 'deepseek' as const,
-  //   inputCostPer1k: 0.00038,
-  //   outputCostPer1k: 0.00089,
-  //   hasVision: false
-  // },
-
-  // 'deepseek/deepseek-r1-0528': {
-  //   name: 'DeepSeek R1',
-  //   description: 'Open-source reasoning model with full reasoning token visibility',
-  //   released: '2025-01-20',
-  //   hasReasoning: true,
-  //   reasoningType: 'effort' as const,
-  //   reasoningMode: 'forced' as const,
-  //   supportsEffortControl: true,
-  //   webSearchMode: 'optional' as const,
-  //   webSearchPricing: 'standard' as const,
-  //   supportsWebEffortControl: true,
-  //   color: '#3B82F6',
-  //   bgColor: '#EFF6FF',
-  //   textColor: '#1D4ED8',
-  //   contextLength: 164000,
-  //   provider: 'deepseek' as const,
-  //   inputCostPer1k: 0.0005,
-  //   outputCostPer1k: 0.00215,
-  //   hasVision: false
-  // },
+  'deepseek/deepseek-r1-0528': {
+    name: 'DeepSeek R1 0528',
+    description: `May 28th update to the original DeepSeek R1. Performance on par with OpenAI o1, but open-sourced and with fully open reasoning tokens. It's 671B parameters in size, with 37B active in an inference pass. Fully open-source model.`,
+    released: '2025-05-28',
+    hasReasoning: true,
+    reasoningType: 'effort' as const,
+    reasoningMode: 'forced' as const,
+    supportsEffortControl: true,
+    webSearchMode: 'optional' as const,
+    webSearchPricing: 'standard' as const,
+    supportsWebEffortControl: true,
+    color: '#3B82F6',
+    bgColor: '#EFF6FF',
+    textColor: '#1D4ED8',
+    contextLength: 128000,
+    provider: 'deepseek' as const,
+    inputCostPer1k: 0.0005,
+    outputCostPer1k: 0.00215,
+    hasVision: false,
+  },
 
   // === Perplexity Models ===
   'perplexity/sonar-reasoning': {
