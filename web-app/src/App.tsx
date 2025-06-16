@@ -102,25 +102,25 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   };
 
   /**
-   * Enhanced sidebar toggle with mutual exclusivity
+   * Enhanced sidebar toggle with mutual exclusivity on mobile only
    */
   const handleChatSidebarToggle = () => {
-    // If model sidebar is open, close it first
-    if (isModelSidebarOpen) {
+    // Only enforce mutual exclusivity on mobile where dark overlay appears
+    if (isMobileScreen() && isModelSidebarOpen) {
       setIsModelSidebarOpen(false);
-      debug('🔄 Auto-closed model sidebar to open chat sidebar');
+      debug('🔄 Auto-closed model sidebar to open chat sidebar (mobile overlay mode)');
     }
     sidebar.toggle();
   };
 
   /**
-   * Enhanced model sidebar toggle with mutual exclusivity
+   * Enhanced model sidebar toggle with mutual exclusivity on mobile only
    */
   const handleModelSidebarToggle = () => {
-    // If chat sidebar is open, close it first
-    if (sidebar.isOpen) {
+    // Only enforce mutual exclusivity on mobile where dark overlay appears
+    if (isMobileScreen() && sidebar.isOpen) {
       sidebar.close();
-      debug('🔄 Auto-closed chat sidebar to open model sidebar');
+      debug('🔄 Auto-closed chat sidebar to open model sidebar (mobile overlay mode)');
     }
     setIsModelSidebarOpen(!isModelSidebarOpen);
   };
