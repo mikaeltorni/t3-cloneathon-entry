@@ -63,7 +63,7 @@ export const SHARED_MODEL_CONFIG = {
   // === OpenAI Models ===
   'openai/gpt-4o': {
     name: 'GPT-4o',
-    description: 'Advanced multimodal model from OpenAI with excellent reasoning and vision capabilities',
+    description: 'OpenAI’s flagship multimodal model with strong reasoning and vision. Excels at general tasks and supports large context windows.',
     released: '2024-05-13',
     hasReasoning: false,
     reasoningType: 'internal' as const,
@@ -129,10 +129,9 @@ export const SHARED_MODEL_CONFIG = {
   //   hasVision: true
   // },
 
-    
   'openai/o4-mini-2025-04-16': {
     name: 'OpenAI o4 Mini',
-    description: 'OpenAI o4-mini is a compact reasoning model in the o-series, optimized for fast, cost-efficient performance while retaining strong multimodal and agentic capabilities. It supports tool use and demonstrates competitive reasoning and coding performance across benchmarks like AIME (99.5% with Python) and SWE-bench, outperforming its predecessor o3-mini and even approaching o3 in some domains. Despite its smaller size, o4-mini exhibits high accuracy in STEM tasks, visual problem solving (e.g., MathVista, MMMU), and code editing. It is especially well-suited for high-throughput scenarios where latency or cost is critical. Thanks to its efficient architecture and refined reinforcement learning training, o4-mini can chain tools, generate structured outputs, and solve multi-step tasks with minimal delay—often in under a minute.',
+    description: 'Compact o-series model optimized for speed and cost. Delivers strong reasoning, coding, and vision for high-throughput scenarios.',
     released: '2025-04-16',
     hasReasoning: true,
     reasoningType: 'effort' as const,
@@ -156,7 +155,7 @@ export const SHARED_MODEL_CONFIG = {
   // === Anthropic Models ===
   'anthropic/claude-4-sonnet-20250522': {
     name: 'Claude 4 Sonnet',
-    description: 'Claude Sonnet 4 significantly enhances the capabilities of its predecessor, Sonnet 3.7, excelling in both coding and reasoning tasks with improved precision and controllability. Achieving state-of-the-art performance on SWE-bench (72.7%), Sonnet 4 balances capability and computational efficiency, making it suitable for a broad range of applications from routine coding tasks to complex software development projects. Key enhancements include improved autonomous codebase navigation, reduced error rates in agent-driven workflows, and increased reliability in following intricate instructions. Sonnet 4 is optimized for practical everyday use, providing advanced reasoning capabilities while maintaining efficiency and responsiveness in diverse internal and external scenarios.',
+    description: 'Anthropic’s Claude Sonnet 4 excels at coding and reasoning with high efficiency. Great for both everyday and complex software tasks.',
     released: '2025-05-22',
     hasReasoning: true,
     reasoningType: 'effort' as const,
@@ -178,7 +177,7 @@ export const SHARED_MODEL_CONFIG = {
   // === Google Models ===
   'google/gemini-2.5-pro-preview-06-05': {
     name: 'Gemini 2.5 Pro',
-    description: 'Gemini 2.5 Pro is Google’s state-of-the-art AI model designed for advanced reasoning, coding, mathematics, and scientific tasks. It employs “thinking” capabilities, enabling it to reason through responses with enhanced accuracy and nuanced context handling. Gemini 2.5 Pro achieves top-tier performance on multiple benchmarks, including first-place positioning on the LMArena leaderboard, reflecting superior human-preference alignment and complex problem-solving abilities.',
+    description: 'Google’s top AI for advanced reasoning, coding, and science. Excels at complex problem-solving and nuanced context handling.',
     released: '2025-06-05',
     hasReasoning: true,
     reasoningType: 'effort' as const,
@@ -199,7 +198,7 @@ export const SHARED_MODEL_CONFIG = {
   
   'google/gemini-2.5-flash-preview-05-20': {
     name: 'Gemini 2.5 Flash',
-    description: 'Gemini 2.5 Flash May 20th Checkpoint is Google\'s state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in "thinking" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling',
+    description: 'Google’s fast, efficient model for reasoning, coding, and math. Delivers accurate results with low latency and large context.',
     released: '2025-05-20',
     hasReasoning: true,
     reasoningType: 'effort' as const,
@@ -261,7 +260,7 @@ export const SHARED_MODEL_CONFIG = {
 
   'deepseek/deepseek-r1-0528': {
     name: 'DeepSeek R1 0528',
-    description: `May 28th update to the original DeepSeek R1. Performance on par with OpenAI o1, but open-sourced and with fully open reasoning tokens. It's 671B parameters in size, with 37B active in an inference pass. Fully open-source model.`,
+    description: 'Open-source model with strong reasoning and performance, comparable to OpenAI o1. Updated May 2025.',
     released: '2025-05-28',
     hasReasoning: true,
     reasoningType: 'effort' as const,
@@ -283,7 +282,7 @@ export const SHARED_MODEL_CONFIG = {
   // === Perplexity Models ===
   'perplexity/sonar-reasoning': {
     name: 'Sonar Reasoning',
-    description: 'Reasoning model with built-in web search by Perplexity (based on DeepSeek R1)',
+    description: 'Perplexity’s reasoning model with built-in web search. Based on DeepSeek R1.',
     released: '2025-01-29',
     hasReasoning: true,
     reasoningType: 'effort' as const,
@@ -304,7 +303,7 @@ export const SHARED_MODEL_CONFIG = {
 
   'perplexity/sonar-pro': {
     name: 'Sonar Pro',
-    description: 'Advanced web-first model with professional search capabilities',
+    description: 'Advanced web-first model with professional search. Designed for fast, accurate information retrieval.',
     released: '2025-03-07',
     hasReasoning: false,
     reasoningType: 'internal' as const,
@@ -325,7 +324,7 @@ export const SHARED_MODEL_CONFIG = {
 
   'perplexity/sonar': {
     name: 'Sonar',
-    description: 'Lightweight, fast web search model optimized for speed',
+    description: 'Lightweight, fast web search model optimized for speed and efficiency.',
     released: '2025-01-27',
     hasReasoning: false,
     reasoningType: 'internal' as const,
