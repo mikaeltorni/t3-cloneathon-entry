@@ -318,7 +318,7 @@ export const SHARED_MODEL_CONFIG = {
     bgColor: '#F0FDFA',
     textColor: '#0D9488',
     contextLength: 127000,
-    provider: 'perplexity' as const,
+    provider: 'deepseek' as const,
     inputCostPer1k: 0.001,
     outputCostPer1k: 0.005,
     hasVision: false
@@ -339,7 +339,7 @@ export const SHARED_MODEL_CONFIG = {
     bgColor: '#F0FDFA',
     textColor: '#0D9488',
     contextLength: 200000,
-    provider: 'perplexity' as const,
+    provider: 'deepseek' as const,
     inputCostPer1k: 0.003,
     outputCostPer1k: 0.015,
     hasVision: false
@@ -360,7 +360,7 @@ export const SHARED_MODEL_CONFIG = {
     bgColor: '#F0FDFA',
     textColor: '#0D9488',
     contextLength: 127000,
-    provider: 'perplexity' as const,
+    provider: 'deepseek' as const,
     inputCostPer1k: 0.001,
     outputCostPer1k: 0.001,
     hasVision: false
