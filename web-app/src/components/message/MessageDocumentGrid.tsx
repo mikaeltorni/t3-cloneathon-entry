@@ -85,7 +85,7 @@ export const MessageDocumentGrid: React.FC<MessageDocumentGridProps> = ({
         ))}
       </div>
     );
-  }, [documents]);
+  }, [documents, isUserMessage]);
 
   return documentGrid;
 }; 

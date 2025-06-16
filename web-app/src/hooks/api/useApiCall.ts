@@ -167,6 +167,7 @@ export function useApiCall<TData>(
     if (refetchOnMount || dependencies.length > 0) {
       executeCall();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [executeCall, refetchOnMount, ...dependencies]);
 
   // Setup refetch interval

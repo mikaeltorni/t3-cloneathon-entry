@@ -29,7 +29,8 @@ import { ConnectionError } from './components/error/ConnectionError';
 import { ErrorBanner } from './components/error/ErrorBanner';
 import { cn } from './utils/cn';
 import { useChat } from './hooks/useChat';
-import { ModelsProvider, useModels } from './contexts/ModelsContext';
+import { ModelsProvider } from './contexts/ModelsContext';
+import { useModels } from './hooks/useModels';
 import { useLogger } from './hooks/useLogger';
 import { useAuth } from './hooks/useAuth';
 import { useSidebarToggle } from './hooks/useSidebarToggle';
@@ -76,7 +77,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         debug(`✅ Thread model sync: keeping current model ${currentModel} for thread ${chat.currentThread.id}`);
       }
     }
-  }, [chat.currentThread?.id, debug]); // Removed other dependencies to only sync on thread ID change
+  }, [chat.currentThread?.id, chat.currentThread, currentModel, debug]); // Include all dependencies
 
   /**
    * Handle manual refresh of threads from server
@@ -259,7 +260,7 @@ function AppContent() {
       
       loadWithDelay();
     }
-  }, [user, authLoading, debug, chat.loadThreads]);
+  }, [user, authLoading, debug, chat, chat.loadThreads]);
 
   /**
    * Handle thread updates (including tag assignments)

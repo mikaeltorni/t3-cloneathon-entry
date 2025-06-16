@@ -3,12 +3,12 @@
  * 
  * Context for AI models with efficient caching and batch operations
  */
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { chatApiService } from '../services/chatApi';
 import type { ModelConfig } from '../../../src/shared/types';
 
-interface ModelsContextType {
+export interface ModelsContextType {
   availableModels: Record<string, ModelConfig>;
   modelsLoading: boolean;
   modelsError: string | null;
@@ -25,7 +25,7 @@ interface ModelsContextType {
   getCachedModelsTimestamp: () => number | null;
 }
 
-const ModelsContext = createContext<ModelsContextType | undefined>(undefined);
+export const ModelsContext = createContext<ModelsContextType | undefined>(undefined);
 
 const MODELS_CACHE_KEY = 'cached_models';
 const MODELS_CACHE_TIMESTAMP_KEY = 'cached_models_timestamp';
@@ -218,10 +218,4 @@ export const ModelsProvider: React.FC<ModelsProviderProps> = ({ children }) => {
   );
 };
 
-export const useModels = (): ModelsContextType => {
-  const context = useContext(ModelsContext);
-  if (context === undefined) {
-    throw new Error('useModels must be used within a ModelsProvider');
-  }
-  return context;
-};
+// useModels hook moved to separate file to fix react-refresh/only-export-components warning

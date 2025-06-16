@@ -106,31 +106,31 @@ export function useChat(): UseChatReturn {
   // Wrapper functions to match expected interface
   const loadThreads = useCallback(async () => {
     await threadOps.loadThreads();
-  }, [threadOps.loadThreads]);
+  }, [threadOps]);
 
   const selectThread = useCallback(async (threadId: string | null) => {
     await threadOps.selectThread(threadId);
-  }, [threadOps.selectThread]);
+  }, [threadOps]);
 
   const handleThreadSelect = useCallback(async (threadId: string) => {
     await threadOps.selectThread(threadId);
-  }, [threadOps.selectThread]);
+  }, [threadOps]);
 
   const handleDeleteThread = useCallback(async (threadId: string) => {
     await threadOps.deleteThread(threadId);
-  }, [threadOps.deleteThread]);
+  }, [threadOps]);
 
   const togglePin = useCallback(async (threadId: string) => {
     await threadOps.togglePin(threadId);
-  }, [threadOps.togglePin]);
+  }, [threadOps]);
 
   const handleTogglePinThread = useCallback(async (threadId: string) => {
     await threadOps.togglePin(threadId);
-  }, [threadOps.togglePin]);
+  }, [threadOps]);
 
   const updateThread = useCallback((updatedThread: ChatThread) => {
     threadOps.updateThreadInList(updatedThread);
-  }, [threadOps.updateThreadInList]);
+  }, [threadOps]);
 
   const handleThreadUpdate = useCallback(async (threadId: string, updates: Partial<ChatThread>) => {
     // Find the current thread
@@ -186,24 +186,24 @@ export function useChat(): UseChatReturn {
     };
     
     await messagingOps.sendMessage(request);
-  }, [chatState.currentThread?.id, messagingOps.sendMessage]);
+  }, [chatState, messagingOps]);
 
   const handleImagesChange = useCallback((images: ImageAttachment[]) => {
     chatState.setImages(images);
-  }, [chatState.setImages]);
+  }, [chatState]);
 
   const handleDocumentsChange = useCallback((documents: DocumentAttachment[]) => {
     chatState.setDocuments(documents);
-  }, [chatState.setDocuments]);
+  }, [chatState]);
 
   const resetChat = useCallback(() => {
     chatState.resetState();
     threadOps.createNewChat();
-  }, [chatState.resetState, threadOps.createNewChat]);
+  }, [chatState, threadOps]);
 
   const clearError = useCallback(() => {
     chatState.clearError();
-  }, [chatState.clearError]);
+  }, [chatState]);
 
   return {
     // State from chatState

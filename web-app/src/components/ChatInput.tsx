@@ -183,7 +183,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         }
       }, 0);
     }
-  }, [onHeightChange, debug]);
+  }, [textareaRef, onHeightChange, debug]);
 
   /**
    * Measure input bar height and notify parent

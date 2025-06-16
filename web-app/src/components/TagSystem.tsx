@@ -9,7 +9,7 @@
  * Usage: <TagSystem threads={threads} onThreadUpdate={handleThreadUpdate} />
  */
 
-import React, { useState, useMemo, createContext, useContext, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, createContext, useContext } from 'react';
 import type { ChatThread, ChatTag } from '../../../src/shared/types';
 import type { ContextMenuItem } from './ui/ContextMenu';
 import { ContextMenu } from './ui/ContextMenu';
@@ -31,7 +31,7 @@ interface TagSystemContextValue {
 
 const TagSystemContext = createContext<TagSystemContextValue | null>(null);
 
-export const useTagSystemContext = () => {
+export const useTagSystemContext = () => { // eslint-disable-line react-refresh/only-export-components
   const context = useContext(TagSystemContext);
   if (!context) {
     throw new Error('useTagSystemContext must be used within TagSystem');

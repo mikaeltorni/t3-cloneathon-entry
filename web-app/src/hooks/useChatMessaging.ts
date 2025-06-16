@@ -105,7 +105,7 @@ export const useChatMessaging = (
 
     // Update the ref
     currentThreadIdRef.current = newThreadId;
-  }, [currentThread?.id, chatApiService, setIsSending, setError]);
+  }, [currentThread?.id, chatApiService, setIsSending, setError, debug]);
 
   // Separate effect for cleanup on unmount only
   useEffect(() => {
@@ -116,7 +116,7 @@ export const useChatMessaging = (
         chatApiService.cancelActiveStream();
       }
     };
-  }, []); // Empty dependency array - only runs on mount/unmount
+  }, [debug, chatApiService]); // Include dependencies
 
   /**
    * Send message with streaming support
@@ -460,7 +460,7 @@ export const useChatMessaging = (
     } finally {
       setIsSending(false);
     }
-  }, [currentThread, chatApiService, log, logError, threadOps, setCurrentThread, setIsSending, setError, setCurrentTokenMetrics, clearAttachments]); // Removed debug to prevent unnecessary recreation
+  }, [currentThread, chatApiService, log, logError, threadOps, setCurrentThread, setIsSending, setError, setCurrentTokenMetrics, clearAttachments, debug]);
 
   /**
    * Cancel any active streaming request
@@ -473,7 +473,7 @@ export const useChatMessaging = (
     // Also clear the sending state
     setIsSending(false);
     setError(null);
-  }, [chatApiService, setIsSending, setError]); // Removed debug to prevent unnecessary recreation
+  }, [chatApiService, setIsSending, setError, debug]);
 
   return {
     sendMessage,

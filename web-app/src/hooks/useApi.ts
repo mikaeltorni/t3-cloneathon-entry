@@ -57,7 +57,7 @@ export function useApiCall<T>(
   
   useEffect(() => {
     fetchData();
-  }, dependencies);
+  }, [fetchData, ...dependencies]); // eslint-disable-line react-hooks/exhaustive-deps
   
   return { ...state, refetch: fetchData };
 }
