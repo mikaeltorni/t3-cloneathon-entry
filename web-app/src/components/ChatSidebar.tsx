@@ -202,8 +202,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         <SidebarHeader
           onToggle={onToggle}
           onNewChat={handleNewChat}
-          onRefresh={onRefreshThreads}
-          loading={loading}
           threadCount={threads.length}
           pinnedCount={pinnedCount}
         />
