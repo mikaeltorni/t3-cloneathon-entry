@@ -260,7 +260,7 @@ function AppContent() {
       
       loadWithDelay();
     }
-  }, [user, authLoading, debug, chat, chat.loadThreads]);
+  }, [user, authLoading, debug]); // Removed chat and chat.loadThreads from dependencies
 
   /**
    * Handle thread updates (including tag assignments)
