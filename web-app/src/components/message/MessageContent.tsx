@@ -82,7 +82,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({
           em: ({ children }) => <em className="italic">{children}</em>,
           code: ({ children, ...props }) => {
             const codeString = Array.isArray(children) ? children.join('') : String(children);
-            if ((props as any).inline) {
+            if ('inline' in props && props.inline) {
               return (
                 <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
                   {children}

@@ -179,7 +179,7 @@ export class OpenAITokenizerProvider implements TokenizerProvider {
    * @param modelInfo - Model configuration (unused but required by interface)
    * @returns Estimated token count
    */
-  async estimateTokensInChunk(chunk: string, model: string, _modelInfo: ModelInfo): Promise<number> {
+  async estimateTokensInChunk(chunk: string, model: string): Promise<number> {
     try {
       const tokenizer = await this.loadGPTTokenizer(model);
       const tokens = tokenizer.encode(chunk);
@@ -198,7 +198,7 @@ export class OpenAITokenizerProvider implements TokenizerProvider {
    * @param modelInfo - Model configuration (unused but required by interface)
    * @returns Estimated token count
    */
-  estimateTokensInChunkSync(chunk: string, model: string, _modelInfo: ModelInfo): number {
+  estimateTokensInChunkSync(chunk: string, model: string): number {
     if (this.gptTokenizerCache.has(model)) {
       try {
         const tokenizer = this.gptTokenizerCache.get(model)!;

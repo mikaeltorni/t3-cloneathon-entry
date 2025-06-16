@@ -142,13 +142,14 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
         
         {/* Action buttons */}
         <ThreadActions
-          threadId={thread.id}
+          thread={thread}
           isPinned={isPinned}
           isDeleting={isDeleting}
           isPinning={isPinning}
           isConfirmingDelete={isConfirmingDelete}
           onPin={onPin}
           onDelete={onDelete}
+          getThreadTags={getThreadTags}
         />
       </div>
 
