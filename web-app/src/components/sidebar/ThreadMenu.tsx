@@ -194,9 +194,6 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
         >
           {/* Tags section */}
           <div className="p-3 border-b border-gray-100">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Tags</span>
-            </div>
 
             {/* Available tags with highlighted selection */}
             <div className="space-y-1 max-h-32 overflow-y-auto">
