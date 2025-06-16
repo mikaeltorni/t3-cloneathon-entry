@@ -80,10 +80,9 @@ export const MessageContent: React.FC<MessageContentProps> = ({
           h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
           strong: ({ children }) => <strong className="font-bold">{children}</strong>,
           em: ({ children }) => <em className="italic">{children}</em>,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          code: ({ children, inline }: any) => {
+          code: ({ children, ...props }) => {
             const codeString = Array.isArray(children) ? children.join('') : String(children);
-            if (inline) {
+            if ((props as any).inline) {
               return (
                 <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
                   {children}
