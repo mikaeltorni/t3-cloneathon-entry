@@ -201,9 +201,9 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
           ref={buttonRef}
           onClick={toggleMenu}
           className={cn(
-            'opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-lg',
+            'opacity-100 transition-all duration-200 p-2 rounded-lg',
             'text-gray-400 hover:text-gray-600 hover:bg-gray-100',
-            isOpen && 'opacity-100 bg-gray-100 text-gray-600'
+            isOpen && 'bg-gray-100 text-gray-600'
           )}
           title="Thread options"
           aria-label="Open thread options menu"
