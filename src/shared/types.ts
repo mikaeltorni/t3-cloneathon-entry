@@ -408,7 +408,7 @@ export interface ModelConfig {
   name: string;
   description: string;
   hasReasoning: boolean;
-  reasoningType: 'thinking' | 'effort' | 'internal';
+  reasoningType: 'effort' | 'internal';
   reasoningMode: 'forced' | 'optional' | 'none';
   supportsEffortControl?: boolean; // Whether model supports effort level control
   webSearchMode: 'forced' | 'optional' | 'none'; // Whether web search is forced, optional, or unavailable

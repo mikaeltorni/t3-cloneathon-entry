@@ -21,7 +21,7 @@ export interface SharedModelConfig {
   
   // Capabilities
   hasReasoning: boolean;
-  reasoningType?: 'thinking' | 'effort' | 'internal';
+  reasoningType?: 'effort' | 'internal';
   reasoningMode: 'forced' | 'optional' | 'none';
   supportsEffortControl: boolean;
   

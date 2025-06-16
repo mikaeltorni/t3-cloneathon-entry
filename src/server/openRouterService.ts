@@ -318,15 +318,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
           actualModelId = `${modelId}:online` as ModelId;
         }
         
-        // Handle reasoning - Add :thinking suffix for thinking models (after web search processing)
-        if (useReasoning && modelConfig.hasReasoning && modelConfig.reasoningType === 'thinking') {
-          // If we already added :online, replace it with :thinking:online or add :thinking
-          if (actualModelId.endsWith(':online')) {
-            actualModelId = `${modelId}:thinking:online` as ModelId;
-          } else {
-            actualModelId = `${modelId}:thinking` as ModelId;
-          }
-        }
+        // All reasoning models now use 'effort' type - no special model ID modifications needed
         
         console.log(`[OpenRouter] Processing ${messages.length} message(s) with model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}${useWebSearch ? ' (with web search)' : ''}`);
         
@@ -341,20 +333,11 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
 
         // Add reasoning configuration for reasoning models
         if (useReasoning && modelConfig.hasReasoning) {
-          if (modelConfig.reasoningType === 'thinking') {
-            // For thinking models (Anthropic/Gemini), use max_tokens approach
-            const effortToTokens = { low: 1000, medium: 2000, high: 4000 };
-            requestData.reasoning = {
-              max_tokens: effortToTokens[reasoningEffort],
-              exclude: false  // Include reasoning in response
-            };
-          } else if (modelConfig.reasoningType === 'effort') {
-            // For effort models (OpenAI/DeepSeek), use effort parameter
-            requestData.reasoning = {
-              effort: reasoningEffort,
-              exclude: false  // Include reasoning in response
-            };
-          }
+          // All reasoning models now use effort parameter
+          requestData.reasoning = {
+            effort: reasoningEffort,
+            exclude: false  // Include reasoning in response
+          };
           console.log(`[OpenRouter] Configured reasoning for ${actualModelId} (${modelConfig.name}) - type: ${modelConfig.reasoningType}, effort: ${reasoningEffort}`);
         }
 
@@ -473,17 +456,9 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
           actualModelId = `${modelId}:online` as ModelId;
         }
         
-        // Handle reasoning - Add :thinking suffix for thinking models (after web search processing)
-        if (useReasoning && modelConfig.hasReasoning && modelConfig.reasoningType === 'thinking') {
-          // If we already added :online, replace it with :thinking:online or add :thinking
-          if (actualModelId.endsWith(':online')) {
-            actualModelId = `${modelId}:thinking:online` as ModelId;
-          } else {
-            actualModelId = `${modelId}:thinking` as ModelId;
-          }
-        }
+        // All reasoning models now use 'effort' type - no special model ID modifications needed
         
-        console.log(`[OpenRouter] Processing ${messages.length} message(s) with streaming model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}${useWebSearch ? ' (with web search)' : ''}`);
+        console.log(`[OpenRouter] Processing ${messages.length} message(s) with model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}${useWebSearch ? ' (with web search)' : ''}`);
         
         // Format messages for API
         const formattedMessages = formatMessagesForAPI(messages);
@@ -497,20 +472,11 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
 
         // Add reasoning configuration for reasoning models
         if (useReasoning && modelConfig.hasReasoning) {
-          if (modelConfig.reasoningType === 'thinking') {
-            // For thinking models (Anthropic/Gemini), use max_tokens approach
-            const effortToTokens = { low: 1000, medium: 2000, high: 4000 };
-            requestData.reasoning = {
-              max_tokens: effortToTokens[reasoningEffort],
-              exclude: false  // Include reasoning in response
-            };
-          } else if (modelConfig.reasoningType === 'effort') {
-            // For effort models (OpenAI/DeepSeek), use effort parameter
-            requestData.reasoning = {
-              effort: reasoningEffort,
-              exclude: false  // Include reasoning in response
-            };
-          }
+          // All reasoning models now use effort parameter
+          requestData.reasoning = {
+            effort: reasoningEffort,
+            exclude: false  // Include reasoning in response
+          };
           console.log(`[OpenRouter] Configured reasoning for ${actualModelId} (${modelConfig.name}) - type: ${modelConfig.reasoningType}, effort: ${reasoningEffort}`);
         }
 
