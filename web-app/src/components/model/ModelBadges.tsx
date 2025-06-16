@@ -77,6 +77,18 @@ export const ModelBadges: React.FC<ModelBadgesProps> = ({
     );
   }
 
+  // Vision badge
+  if (model.hasVision) {
+    badges.push(
+      <span 
+        key="vision"
+        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700"
+      >
+        👁️ Vision
+      </span>
+    );
+  }
+
   // Web search badge - compact pricing tier info
   if (model.webSearchPricing === 'perplexity') {
     badges.push(

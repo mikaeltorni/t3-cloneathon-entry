@@ -398,6 +398,7 @@ export interface HealthResponse {
  * @property webSearchMode - Whether web search is forced, optional, or unavailable
  * @property webSearchPricing - Pricing tier for web search
  * @property supportsWebEffortControl - Whether model supports web search effort control
+ * @property hasVision - Whether the model supports vision/image capabilities
  * @property color - Brand color for the model (hex code)
  * @property bgColor - Background color for selected state (hex code)
  * @property textColor - Text color for selected state (hex code)
@@ -413,6 +414,7 @@ export interface ModelConfig {
   webSearchMode: 'forced' | 'optional' | 'none'; // Whether web search is forced, optional, or unavailable
   webSearchPricing: 'standard' | 'perplexity' | 'openai'; // Pricing tier for web search
   supportsWebEffortControl?: boolean; // Whether model supports web search effort control
+  hasVision: boolean; // Whether the model supports vision/image capabilities
   color: string;
   bgColor: string;
   textColor: string;
