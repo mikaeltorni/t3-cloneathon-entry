@@ -123,7 +123,7 @@ export const SHARED_MODEL_CONFIG = {
   //   hasVision: true
   // },
 
-  // // === Anthropic Models ===
+  // === Anthropic Models ===
   'anthropic/claude-4-sonnet-20250522': {
     name: 'Claude 4 Sonnet',
     description: 'Claude Sonnet 4 significantly enhances the capabilities of its predecessor, Sonnet 3.7, excelling in both coding and reasoning tasks with improved precision and controllability. Achieving state-of-the-art performance on SWE-bench (72.7%), Sonnet 4 balances capability and computational efficiency, making it suitable for a broad range of applications from routine coding tasks to complex software development projects. Key enhancements include improved autonomous codebase navigation, reduced error rates in agent-driven workflows, and increased reliability in following intricate instructions. Sonnet 4 is optimized for practical everyday use, providing advanced reasoning capabilities while maintaining efficiency and responsiveness in diverse internal and external scenarios.',
