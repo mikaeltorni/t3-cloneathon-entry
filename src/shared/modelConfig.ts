@@ -161,7 +161,7 @@ export const SHARED_MODEL_CONFIG = {
     color: '#4285F4',
     bgColor: '#E8F0FE',
     textColor: '#1A73E8',
-    contextLength: 1000000,
+    contextLength: 1048576,
     provider: 'google' as const,
     inputCostPer1k: 0.00175,
     outputCostPer1k: 0.007,
