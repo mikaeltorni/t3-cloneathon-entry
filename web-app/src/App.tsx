@@ -35,6 +35,7 @@ import { useLogger } from './hooks/useLogger';
 import { useAuth } from './hooks/useAuth';
 import { useSidebarToggle } from './hooks/useSidebarToggle';
 import { clearAllCaches } from './utils/sessionCache';
+import { isMobileScreen } from './utils/deviceUtils';
 import type { ChatThread } from '../../src/shared/types';
 
 /**
@@ -84,6 +85,20 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
    */
   const handleRefreshThreads = async () => {
     await chat.loadThreads(true);
+  };
+
+  /**
+   * Enhanced new chat handler with mobile auto-close
+   */
+  const handleNewChat = () => {
+    // Call the original new chat function
+    chat.handleNewChat();
+    
+    // Auto-close sidebar on mobile for better UX
+    if (isMobileScreen() && sidebar.isOpen) {
+      sidebar.close();
+      debug('🔥 Auto-closed sidebar on mobile after new chat creation');
+    }
   };
 
   /**
@@ -144,7 +159,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         threads={filteredThreads}
         currentThreadId={chat.currentThread?.id || null}
         onThreadSelect={chat.handleThreadSelect}
-        onNewChat={chat.handleNewChat}
+        onNewChat={handleNewChat}
         onDeleteThread={chat.handleDeleteThread}
         onTogglePinThread={chat.handleTogglePinThread}
         onRefreshThreads={handleRefreshThreads}
