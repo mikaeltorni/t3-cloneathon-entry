@@ -213,12 +213,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     <div 
       ref={inputBarRef}
       className={cn(
-        'fixed bottom-0 bg-white border-t border-gray-200 p-4 shadow-lg z-40 transition-all duration-300',
+        'fixed bottom-0 bg-white border-t border-gray-200 shadow-lg z-40 transition-all duration-300',
+        'p-3 sm:p-4', // Responsive padding - smaller on mobile
         sidebarOpen ? 'left-80' : 'left-0',
         modelSidebarOpen ? 'right-80' : 'right-0'
       )}
     >
-      <div className="max-w-4xl mx-auto space-y-4">
+      <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4">
         {/* Image Attachments */}
         <ImageAttachments 
           images={images}
@@ -280,6 +281,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           textareaRef={textareaRef}
           loading={loading}
           canSubmit={canSubmit}
+          images={images}
+          documents={documents}
+          onImagesChange={onImagesChange}
+          onDocumentsChange={onDocumentsChange}
+          maxImages={5}
+          maxDocuments={5}
         />
       </div>
     </div>

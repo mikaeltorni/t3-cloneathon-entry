@@ -63,7 +63,7 @@ export const ImageAttachments: React.FC<ImageAttachmentsProps> = ({
         <h4 className="text-sm font-medium text-gray-700">
           Attached Images ({images.length}/{MAX_IMAGES})
         </h4>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
           {images.map((image) => (
             <div key={image.id} className="relative group">
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border">
