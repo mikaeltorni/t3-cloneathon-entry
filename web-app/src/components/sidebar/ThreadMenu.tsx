@@ -66,6 +66,7 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(isContextMenu);
   const [optimisticAssigned, setOptimisticAssigned] = useState<Set<string>>(new Set());
+  const [optimisticRemoved, setOptimisticRemoved] = useState<Set<string>>(new Set());
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -124,15 +125,13 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
    * Handle tag assignment/removal with instant visual feedback
    */
   const handleToggleTag = async (tagId: string, isAssigned: boolean) => {
-    // Show instant "✓ Assigned" feedback
+    // Show instant visual feedback
     if (!isAssigned) {
+      // Adding tag: show "✓ Assigned" immediately
       setOptimisticAssigned(prev => new Set([...prev, tagId]));
     } else {
-      setOptimisticAssigned(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(tagId);
-        return newSet;
-      });
+      // Removing tag: hide "✓ Assigned" immediately
+      setOptimisticRemoved(prev => new Set([...prev, tagId]));
     }
 
     try {
@@ -142,8 +141,13 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
         await tagSystem.addTagToThread(thread.id, tagId);
       }
       
-      // Clear optimistic state after successful server response
+      // Clear optimistic states after successful server response
       setOptimisticAssigned(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(tagId);
+        return newSet;
+      });
+      setOptimisticRemoved(prev => {
         const newSet = new Set(prev);
         newSet.delete(tagId);
         return newSet;
@@ -151,8 +155,13 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
     } catch (error) {
       console.error('Failed to toggle tag:', error);
       
-      // Revert optimistic state on error
+      // Revert optimistic states on error
       setOptimisticAssigned(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(tagId);
+        return newSet;
+      });
+      setOptimisticRemoved(prev => {
         const newSet = new Set(prev);
         newSet.delete(tagId);
         return newSet;
@@ -245,7 +254,7 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
                       removable={false} 
                       className="transition-all duration-200"
                     />
-                    {(isAssigned || optimisticAssigned.has(tag.id)) && (
+                    {(isAssigned || optimisticAssigned.has(tag.id)) && !optimisticRemoved.has(tag.id) && (
                       <div className="ml-auto flex items-center">
                         <div className="text-green-600 text-xs font-medium flex items-center">
                           <span className="text-base mr-1">✓</span>
