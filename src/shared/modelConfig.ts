@@ -129,6 +129,30 @@ export const SHARED_MODEL_CONFIG = {
   //   hasVision: true
   // },
 
+    
+  'openai/o4-mini-2025-04-16': {
+    name: 'OpenAI o4 Mini',
+    description: 'OpenAI o4-mini is a compact reasoning model in the o-series, optimized for fast, cost-efficient performance while retaining strong multimodal and agentic capabilities. It supports tool use and demonstrates competitive reasoning and coding performance across benchmarks like AIME (99.5% with Python) and SWE-bench, outperforming its predecessor o3-mini and even approaching o3 in some domains. Despite its smaller size, o4-mini exhibits high accuracy in STEM tasks, visual problem solving (e.g., MathVista, MMMU), and code editing. It is especially well-suited for high-throughput scenarios where latency or cost is critical. Thanks to its efficient architecture and refined reinforcement learning training, o4-mini can chain tools, generate structured outputs, and solve multi-step tasks with minimal delay—often in under a minute.',
+    released: '2025-04-16',
+    hasReasoning: true,
+    reasoningType: 'effort' as const,
+    reasoningMode: 'forced' as const,
+    supportsEffortControl: true,
+    webSearchMode: 'optional' as const,
+    webSearchPricing: 'openai' as const,
+    supportsWebEffortControl: true,
+    color: '#10A37F',
+    bgColor: '#F0FDF4',
+    textColor: '#065F46',
+    contextLength: 200000,
+    provider: 'openai' as const,
+    encoding: 'o200k_base',
+    inputCostPer1k: 1.10,
+    outputCostPer1k: 4.40,
+    hasVision: true,
+    inputImageCostPer1k: 0.842
+  },
+
   // === Anthropic Models ===
   'anthropic/claude-4-sonnet-20250522': {
     name: 'Claude 4 Sonnet',
