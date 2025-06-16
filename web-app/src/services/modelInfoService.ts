@@ -27,7 +27,7 @@ const convertSharedConfigToModelInfo = (sharedConfig: SharedModelConfig): ModelI
     provider: sharedConfig.provider as TokenizerProvider,
     modelName: sharedConfig.name,
     encoding: sharedConfig.encoding,
-    maxTokens: sharedConfig.contextLength,
+    maxTokens: sharedConfig.contextLength, // This is the context length from shared config
     inputCostPer1k: sharedConfig.inputCostPer1k,
     outputCostPer1k: sharedConfig.outputCostPer1k
   };
@@ -60,20 +60,23 @@ export class ModelInfoService {
   getModelInfo(model: string): ModelInfo {
     const modelInfo = this.modelDatabase[model];
     if (!modelInfo) {
-      // Try to auto-detect provider based on model name
+      // Fallback for unknown models
       const provider = this.detectProvider(model);
-      logger.warn(`Model ${model} not found in database, using detected provider: ${provider}`);
+      logger.warn(`Model ${model} not found in database, using auto-detected provider: ${provider}`);
       
       return {
         provider,
         modelName: model,
-        maxTokens: 128000, // Default context window
-        inputCostPer1k: 0.001, // Default input cost
-        outputCostPer1k: 0.002 // Default output cost
+        maxTokens: 128000, // Default fallback
+        inputCostPer1k: 0.001,
+        outputCostPer1k: 0.002
       };
     }
+    
     return modelInfo;
   }
+
+
 
   /**
    * Auto-detect provider based on model name patterns
@@ -92,6 +95,9 @@ export class ModelInfoService {
       return 'deepseek';
     } else if (lowerModel.includes('gemini')) {
       return 'google';
+    } else if (lowerModel.includes('perplexity') || lowerModel.includes('sonar')) {
+      // Perplexity models don't have their own tokenizer, treat as auto
+      return 'auto';
     }
     
     return 'auto';

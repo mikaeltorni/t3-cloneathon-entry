@@ -135,19 +135,28 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
 
     try {
-      // Use current messages directly as they are already ChatMessage[]
-      const contextUsage = await tokenizerService.calculateConversationContextUsage(
+      // Get model config for accurate contextLength
+      const modelConfig = availableModels[selectedModel];
+      if (!modelConfig) {
+        debug(`Model config not found for ${selectedModel}`);
+        setContextWindowUsage(null);
+        return;
+      }
+
+      // Use the new method that takes ModelConfig directly for accurate context length
+      const contextUsage = await tokenizerService.calculateConversationContextUsageFromModelConfig(
         currentMessages, 
-        selectedModel
+        selectedModel,
+        modelConfig
       );
 
       setContextWindowUsage(contextUsage);
-      debug(`Context window calculated for ${selectedModel}: ${contextUsage.percentage.toFixed(1)}%`);
+      debug(`Context window calculated for ${selectedModel}: ${contextUsage.percentage.toFixed(1)}% (${contextUsage.used}/${contextUsage.total})`);
     } catch (error) {
       debug('Failed to calculate context window usage:', error);
       setContextWindowUsage(null);
     }
-  }, [selectedModel, currentMessages, debug]);
+  }, [selectedModel, currentMessages, availableModels, debug]);
 
   // Calculate context window usage when model or messages change
   useEffect(() => {

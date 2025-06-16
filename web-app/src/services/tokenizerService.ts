@@ -20,6 +20,7 @@
 
 import { logger } from '../utils/logger';
 import type { TokenMetrics, ChatMessage } from '../../../src/shared/types';
+import type { ModelConfig } from '../../../src/shared/types';
 import type { 
   TokenizerProvider as TokenizerProviderType, 
   TokenizationResult 
@@ -208,6 +209,19 @@ export class TokenizerService {
   async calculateConversationContextUsage(messages: ChatMessage[], modelId: string) {
     const result = await this.tokenizeChat(messages, modelId);
     return this.calculateContextWindowUsage(result.tokenCount, modelId);
+  }
+
+  /**
+   * Calculate conversation context usage using ModelConfig
+   * 
+   * @param messages - Chat messages
+   * @param modelId - Model identifier
+   * @param modelConfig - Frontend model configuration with accurate contextLength
+   * @returns Context window usage for conversation
+   */
+  async calculateConversationContextUsageFromModelConfig(messages: ChatMessage[], modelId: string, modelConfig: ModelConfig) {
+    const result = await this.tokenizeChat(messages, modelId);
+    return contextWindowService.calculateUsageFromModelConfig(result.tokenCount, modelId, modelConfig);
   }
 
   /**

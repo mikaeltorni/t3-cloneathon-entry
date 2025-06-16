@@ -403,6 +403,7 @@ export interface HealthResponse {
  * @property bgColor - Background color for selected state (hex code)
  * @property textColor - Text color for selected state (hex code)
  * @property released - Release date in ISO format (YYYY-MM-DD) for sorting
+ * @property contextLength - Context window size in tokens
  */
 export interface ModelConfig {
   name: string;
@@ -419,6 +420,7 @@ export interface ModelConfig {
   bgColor: string;
   textColor: string;
   released: string;
+  contextLength: number; // Context window size in tokens
 }
 
 /**

@@ -18,6 +18,7 @@
 import { logger } from '../utils/logger';
 import type { ModelInfo } from './types/api';
 import type { ContextWindowUsage } from './types/tokenizer';
+import type { ModelConfig } from '../../../src/shared/types';
 
 /**
  * Service for managing context window usage and limits
@@ -46,6 +47,29 @@ export class ContextWindowService {
     };
 
     logger.debug(`Context usage for ${modelInfo.modelName}: ${result.percentage}% (${usedTokens}/${maxTokens})`);
+    return result;
+  }
+
+  /**
+   * Calculate context window usage using ModelConfig (frontend format)
+   * 
+   * @param usedTokens - Number of tokens currently used
+   * @param modelId - Model identifier
+   * @param modelConfig - Frontend model configuration with contextLength
+   * @returns Context window usage information
+   */
+  calculateUsageFromModelConfig(usedTokens: number, modelId: string, modelConfig: ModelConfig): ContextWindowUsage {
+    const maxTokens = modelConfig.contextLength;
+    const percentage = Math.min((usedTokens / maxTokens) * 100, 100);
+
+    const result: ContextWindowUsage = {
+      used: usedTokens,
+      total: maxTokens,
+      percentage: Math.round(percentage * 100) / 100, // Round to 2 decimal places
+      modelId
+    };
+
+    logger.debug(`Context usage for ${modelConfig.name} (${modelId}): ${result.percentage}% (${usedTokens}/${maxTokens})`);
     return result;
   }
 
