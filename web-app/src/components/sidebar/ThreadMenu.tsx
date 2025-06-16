@@ -197,22 +197,6 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Tags</span>
             </div>
-            
-            {/* Current tags */}
-            {threadTags.length > 0 ? (
-              <div className="flex flex-wrap gap-1 mb-3">
-                {threadTags.map((tag) => (
-                  <Tag
-                    key={tag.id}
-                    tag={tag}
-                    size="sm"
-                    removable={false}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-500 mb-3">No tags assigned</p>
-            )}
 
             {/* Available tags with add/remove buttons */}
             <div className="space-y-1 max-h-32 overflow-y-auto">
