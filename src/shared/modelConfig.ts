@@ -145,7 +145,6 @@ export const SHARED_MODEL_CONFIG = {
     hasVision: true
   },
 
-
   // === Google Models ===
   'google/gemini-2.5-pro-preview-06-05': {
     name: 'Gemini 2.5 Pro',
