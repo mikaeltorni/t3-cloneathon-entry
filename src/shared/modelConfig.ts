@@ -149,7 +149,7 @@ export const SHARED_MODEL_CONFIG = {
   // === Google Models ===
   'google/gemini-2.5-pro-preview-06-05': {
     name: 'Gemini 2.5 Pro',
-    description: 'Google\'s most capable model with massive context window and native web search',
+    description: 'Gemini 2.5 Pro is Google’s state-of-the-art AI model designed for advanced reasoning, coding, mathematics, and scientific tasks. It employs “thinking” capabilities, enabling it to reason through responses with enhanced accuracy and nuanced context handling. Gemini 2.5 Pro achieves top-tier performance on multiple benchmarks, including first-place positioning on the LMArena leaderboard, reflecting superior human-preference alignment and complex problem-solving abilities.',
     released: '2025-06-05',
     hasReasoning: true,
     reasoningType: 'effort' as const,
