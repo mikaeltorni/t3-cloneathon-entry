@@ -27,6 +27,11 @@ interface TagSystemContextValue {
   onClearAll: () => void;
   onTagRightClick: (e: React.MouseEvent, tag: ChatTag) => void;
   onThreadRightClick: (e: React.MouseEvent, threadId: string) => void;
+  // Add tag management functions
+  addTagToThread: (threadId: string, tagId: string) => Promise<void>;
+  removeTagFromThread: (threadId: string, tagId: string) => Promise<void>;
+  createTag: (name: string, color: { r: number; g: number; b: number }) => Promise<ChatTag>;
+  openCreateTagModal: () => void;
 }
 
 const TagSystemContext = createContext<TagSystemContextValue | null>(null);
@@ -344,6 +349,13 @@ export const TagSystem: React.FC<TagSystemProps> = ({
     setIsEditTagModalOpen(true);
   };
 
+  /**
+   * Open create tag modal
+   */
+  const openCreateTagModal = () => {
+    setIsCreateTagModalOpen(true);
+  };
+
   const contextValue: TagSystemContextValue = {
     tags,
     selectedTags: selectedTagIds,
@@ -353,7 +365,12 @@ export const TagSystem: React.FC<TagSystemProps> = ({
     onTagToggle: toggleTagFilter,
     onClearAll: clearTagFilters,
     onTagRightClick: handleTagRightClick,
-    onThreadRightClick: handleContextMenu
+    onThreadRightClick: handleContextMenu,
+    // Add tag management functions
+    addTagToThread,
+    removeTagFromThread,
+    createTag,
+    openCreateTagModal
   };
 
   return (

@@ -40,8 +40,7 @@ interface ThreadListProps {
   onTogglePin: (threadId: string, currentPinStatus: boolean) => void;
   /** Callback for canceling delete confirmation */
   onCancelDelete: () => void;
-  /** Callback for right-click context menu */
-  onThreadRightClick?: (event: React.MouseEvent, threadId: string) => void;
+
   /** Function to get tags for a thread */
   getThreadTags?: (threadId: string) => ChatTag[];
   /** Additional CSS classes */
@@ -77,7 +76,6 @@ export const ThreadList: React.FC<ThreadListProps> = ({
   onDeleteThread,
   onTogglePin,
   onCancelDelete,
-  onThreadRightClick,
   getThreadTags,
   className
 }) => {
@@ -132,7 +130,6 @@ export const ThreadList: React.FC<ThreadListProps> = ({
           onDelete={onDeleteThread}
           onPin={onTogglePin}
           onCancelDelete={onCancelDelete}
-          onRightClick={onThreadRightClick}
           getThreadTags={getThreadTags}
         />
       ))}

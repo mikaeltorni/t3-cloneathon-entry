@@ -63,7 +63,6 @@ interface ChatSidebarProps {
   availableModels?: Record<string, ModelConfig>;
   onModelChange?: (threadId: string, modelId: string) => void;
   currentModel?: string; // Currently selected model in the main interface
-  onThreadRightClick?: (event: React.MouseEvent, threadId: string) => void;
   getThreadTags?: (threadId: string) => ChatTag[];
 }
 
@@ -97,7 +96,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onToggle,
   availableModels = {},
   currentModel,
-  onThreadRightClick,
   getThreadTags
 }) => {
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
@@ -238,7 +236,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
               onDeleteThread={handleDeleteThread}
               onTogglePin={handleTogglePin}
               onCancelDelete={cancelDelete}
-              onThreadRightClick={onThreadRightClick}
               getThreadTags={getThreadTags}
             />
           )}

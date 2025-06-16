@@ -14,6 +14,7 @@ import { Button } from '../ui/Button';
 import { ModelIndicator } from './ModelIndicator';
 import { ThreadActions } from './ThreadActions';
 import { ThreadMeta } from './ThreadMeta';
+import { ThreadMenu } from './ThreadMenu';
 import { Tag } from '../ui/Tag';
 import { cn } from '../../utils/cn';
 import type { ChatThread, ModelConfig, ChatTag } from '../../../../src/shared/types';
@@ -42,8 +43,7 @@ interface ThreadItemProps {
   onPin: (threadId: string, currentPinStatus: boolean) => void;
   /** Callback for canceling delete confirmation */
   onCancelDelete: () => void;
-  /** Callback for right-click context menu */
-  onRightClick?: (event: React.MouseEvent, threadId: string) => void;
+
   /** Function to get tags for this thread */
   getThreadTags?: (threadId: string) => ChatTag[];
   /** Additional CSS classes */
@@ -77,10 +77,17 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
   onDelete,
   onPin,
   onCancelDelete,
-  onRightClick,
   getThreadTags,
   className
 }) => {
+  const [contextMenu, setContextMenu] = React.useState<{
+    isOpen: boolean;
+    position: { x: number; y: number };
+  }>({
+    isOpen: false,
+    position: { x: 0, y: 0 }
+  });
+
   const isPinned = Boolean(thread.isPinned);
   const lastMessage = thread.messages[thread.messages.length - 1];
   const threadTags = getThreadTags?.(thread.id) || [];
@@ -105,8 +112,21 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
    * Handle right-click for context menu
    */
   const handleRightClick = useCallback((event: React.MouseEvent) => {
-    onRightClick?.(event, thread.id);
-  }, [onRightClick, thread.id]);
+    event.preventDefault();
+    event.stopPropagation();
+    
+    setContextMenu({
+      isOpen: true,
+      position: { x: event.clientX, y: event.clientY }
+    });
+  }, [thread.id]);
+
+  /**
+   * Close context menu
+   */
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(prev => ({ ...prev, isOpen: false }));
+  }, []);
 
   return (
     <div
@@ -221,6 +241,20 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
             </Button>
           </div>
         </div>
+      )}
+
+      {/* Context Menu */}
+      {contextMenu.isOpen && (
+        <ThreadMenu
+          thread={thread}
+          isDeleting={isDeleting}
+          isConfirmingDelete={isConfirmingDelete}
+          onDelete={onDelete}
+          getThreadTags={getThreadTags}
+          isContextMenu={true}
+          position={contextMenu.position}
+          onClose={closeContextMenu}
+        />
       )}
     </div>
   );

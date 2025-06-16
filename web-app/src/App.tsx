@@ -51,7 +51,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   const [isModelSidebarOpen, setIsModelSidebarOpen] = useState(false);
 
   // Get tagging context
-  const { filteredThreads, handleContextMenu, getThreadTags } = useTagSystemContext();
+  const { filteredThreads, getThreadTags } = useTagSystemContext();
 
   // Track current model selection (for sidebar display)
   const [currentModel, setCurrentModel] = useState<string>('google/gemini-2.5-flash-preview');
@@ -194,7 +194,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         availableModels={models.availableModels}
         onModelChange={handleModelChange}
         currentModel={currentModel}
-        onThreadRightClick={handleContextMenu}
+        
         getThreadTags={getThreadTags}
       />
 
