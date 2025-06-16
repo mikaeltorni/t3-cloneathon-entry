@@ -102,6 +102,30 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   };
 
   /**
+   * Enhanced sidebar toggle with mutual exclusivity
+   */
+  const handleChatSidebarToggle = () => {
+    // If model sidebar is open, close it first
+    if (isModelSidebarOpen) {
+      setIsModelSidebarOpen(false);
+      debug('🔄 Auto-closed model sidebar to open chat sidebar');
+    }
+    sidebar.toggle();
+  };
+
+  /**
+   * Enhanced model sidebar toggle with mutual exclusivity
+   */
+  const handleModelSidebarToggle = () => {
+    // If chat sidebar is open, close it first
+    if (sidebar.isOpen) {
+      sidebar.close();
+      debug('🔄 Auto-closed chat sidebar to open model sidebar');
+    }
+    setIsModelSidebarOpen(!isModelSidebarOpen);
+  };
+
+  /**
    * Handle model change for a specific thread
    */
   const handleModelChange = async (threadId: string, modelId: string) => {
@@ -150,7 +174,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
       {!sidebar.isOpen && (
         <SidebarToggle 
           isOpen={sidebar.isOpen}
-          onToggle={sidebar.toggle}
+          onToggle={handleChatSidebarToggle}
         />
       )}
 
@@ -166,7 +190,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         loading={chat.threadsLoading}
         isOpen={sidebar.isOpen}
         onClose={sidebar.close}
-        onToggle={sidebar.toggle}
+        onToggle={handleChatSidebarToggle}
         availableModels={models.availableModels}
         onModelChange={handleModelChange}
         currentModel={currentModel}
@@ -177,7 +201,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
       {/* Model Sidebar Toggle Button - Top Right */}
       <ModelSidebarToggle
         isOpen={isModelSidebarOpen}
-        onToggle={() => setIsModelSidebarOpen(!isModelSidebarOpen)}
+        onToggle={handleModelSidebarToggle}
         currentModel={currentModel}
         models={models.availableModels}
         loading={models.modelsLoading}
