@@ -53,6 +53,15 @@ The chat interface now includes visible attachment buttons that make file upload
 - **Images**: JPEG, PNG, GIF, WebP (max 10MB each)
 - **Documents**: PDF, TXT, MD, JSON, CSV, XML, HTML, JS, TS, CSS, YAML (max 50MB each)
 
+#### **Android JPEG Upload Fix**
+Fixed a critical issue where JPEG files from Android devices would fail to upload with "invalid nested entity" Firestore errors:
+
+- **Root Cause**: Android devices sometimes include additional metadata in JPEG files that are not serializable by Firestore
+- **Solution**: Added image/document attachment sanitization that filters out non-serializable properties
+- **Implementation**: `sanitizeImageAttachments()` and `sanitizeDocumentAttachments()` functions clean data before Firestore storage
+- **Backward Compatibility**: JPG files continue to work normally, fix is specific to JPEG metadata issues
+- **Error Prevention**: Prevents "Property array contains an invalid nested entity" errors during message storage
+
 #### **Mobile Experience**
 - **Responsive Layout**: Buttons scale appropriately on different screen sizes
 - **Touch Optimization**: `touch-manipulation` CSS for better mobile interaction

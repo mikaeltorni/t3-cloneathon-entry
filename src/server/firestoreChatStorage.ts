@@ -33,6 +33,85 @@ class FirestoreChatStorageError extends Error {
 }
 
 /**
+ * Sanitize image attachments for Firestore storage
+ * Removes any non-serializable properties that might cause "invalid nested entity" errors
+ * 
+ * @param images - Array of image attachments
+ * @returns Sanitized array of image attachments
+ */
+function sanitizeImageAttachments(images: any[]): any[] {
+  if (!Array.isArray(images)) {
+    return [];
+  }
+
+  return images.map(image => {
+    if (!image || typeof image !== 'object') {
+      return null;
+    }
+
+    // Only keep the basic required properties for ImageAttachment
+    const sanitized: any = {};
+    
+    // Copy only known safe properties
+    if (typeof image.id === 'string') sanitized.id = image.id;
+    if (typeof image.url === 'string') sanitized.url = image.url;
+    if (typeof image.name === 'string') sanitized.name = image.name;
+    if (typeof image.size === 'number') sanitized.size = image.size;
+    if (typeof image.type === 'string') sanitized.type = image.type;
+
+    // Ensure all required properties are present
+    if (!sanitized.id || !sanitized.url || !sanitized.name || 
+        typeof sanitized.size !== 'number' || !sanitized.type) {
+      console.warn('[Firestore] Skipping invalid image attachment:', image);
+      return null;
+    }
+
+    return sanitized;
+  }).filter(image => image !== null); // Remove any null entries
+}
+
+/**
+ * Sanitize document attachments for Firestore storage
+ * Removes any non-serializable properties that might cause "invalid nested entity" errors
+ * 
+ * @param documents - Array of document attachments
+ * @returns Sanitized array of document attachments
+ */
+function sanitizeDocumentAttachments(documents: any[]): any[] {
+  if (!Array.isArray(documents)) {
+    return [];
+  }
+
+  return documents.map(doc => {
+    if (!doc || typeof doc !== 'object') {
+      return null;
+    }
+
+    // Only keep the basic required properties for DocumentAttachment
+    const sanitized: any = {};
+    
+    // Copy only known safe properties
+    if (typeof doc.id === 'string') sanitized.id = doc.id;
+    if (typeof doc.url === 'string') sanitized.url = doc.url;
+    if (typeof doc.name === 'string') sanitized.name = doc.name;
+    if (typeof doc.size === 'number') sanitized.size = doc.size;
+    if (typeof doc.type === 'string') sanitized.type = doc.type;
+    if (typeof doc.content === 'string') sanitized.content = doc.content;
+    if (typeof doc.category === 'string') sanitized.category = doc.category;
+
+    // Ensure all required properties are present
+    if (!sanitized.id || !sanitized.url || !sanitized.name || 
+        typeof sanitized.size !== 'number' || !sanitized.type || 
+        !sanitized.content || !sanitized.category) {
+      console.warn('[Firestore] Skipping invalid document attachment:', doc);
+      return null;
+    }
+
+    return sanitized;
+  }).filter(doc => doc !== null); // Remove any null entries
+}
+
+/**
  * Chat storage service interface (enhanced with efficient batch operations)
  */
 interface ChatStorageService {
@@ -709,7 +788,19 @@ class FirestoreChatStorageService implements ChatStorageService {
 
       console.log(`[Firestore] Adding ${message.role} message to thread ${threadId} for user: ${userId}`);
 
-      // Add message to messages subcollection
+      // Sanitize attachments to prevent "invalid nested entity" errors
+      const sanitizedImages = message.images ? sanitizeImageAttachments(message.images) : undefined;
+      const sanitizedDocuments = message.documents ? sanitizeDocumentAttachments(message.documents) : undefined;
+
+      if (message.images && sanitizedImages && sanitizedImages.length !== message.images.length) {
+        console.warn(`[Firestore] Some image attachments were sanitized/removed: ${message.images.length} -> ${sanitizedImages.length}`);
+      }
+
+      if (message.documents && sanitizedDocuments && sanitizedDocuments.length !== message.documents.length) {
+        console.warn(`[Firestore] Some document attachments were sanitized/removed: ${message.documents.length} -> ${sanitizedDocuments.length}`);
+      }
+
+      // Add message to messages subcollection with sanitized attachments
       await this.getChatMessagesCollection(userId, threadId).doc(message.id).set({
         role: message.role,
         content: message.content,
@@ -717,7 +808,8 @@ class FirestoreChatStorageService implements ChatStorageService {
         ...(message.imageUrl && { imageUrl: message.imageUrl }),
         ...(message.modelId && { modelId: message.modelId }),
         ...(message.reasoning && { reasoning: message.reasoning }), // Save reasoning tokens for supported AI models
-        ...(message.images && { images: message.images }), // Save multiple image attachments
+        ...(sanitizedImages && sanitizedImages.length > 0 && { images: sanitizedImages }), // Save sanitized image attachments
+        ...(sanitizedDocuments && sanitizedDocuments.length > 0 && { documents: sanitizedDocuments }), // Save sanitized document attachments
       });
 
       // Update thread's updatedAt timestamp and track lastUsedModel
@@ -919,4 +1011,4 @@ class FirestoreChatStorageService implements ChatStorageService {
 }
 
 // Export singleton instance
-export const firestoreChatStorage: ChatStorageService = new FirestoreChatStorageService(); 
+export const firestoreChatStorage: ChatStorageService = new FirestoreChatStorageService();
