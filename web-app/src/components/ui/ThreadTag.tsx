@@ -158,7 +158,7 @@ export const ThreadTag: React.FC<ThreadTagProps> = ({
     timeoutRef.current = setTimeout(async () => {
       try {
         await performOperation(targetState);
-      } catch (error) {
+      } catch {
         // Error handling is done in performOperation
       } finally {
         timeoutRef.current = null;

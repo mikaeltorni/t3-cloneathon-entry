@@ -223,8 +223,8 @@ export class ChatApiService {
       console.error(`❌ [API-${apiCallId}] Error details:`, {
         name: (error as Error).name,
         message: (error as Error).message,
-        response: (error as any).response?.data,
-        status: (error as any).response?.status
+        response: (error as { response?: { data?: unknown; status?: number } }).response?.data,
+        status: (error as { response?: { data?: unknown; status?: number } }).response?.status
       });
       console.log(`🌐 [API-${apiCallId}] ========== API TAG UPDATE CALL FAILED ==========`);
       throw error;

@@ -81,7 +81,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
   const { debug, warn } = useLogger('MessageInput');
-  const { processImageFile, processDocumentFile } = useFileProcessing();
+  const { processImageFile, processDocumentFile, createTemporaryImageAttachment, createTemporaryDocumentAttachment } = useFileProcessing();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -106,18 +106,65 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
     debug(`Processing ${filesToProcess.length} image files`);
 
+    // Create temporary attachments with upload state
+    const temporaryImages = filesToProcess.map(file => createTemporaryImageAttachment(file));
+
+    // Add temporary images immediately
+    let currentImages = [...images, ...temporaryImages];
+    onImagesChange(currentImages);
+
+    // Process files and update progress
     const newImages: ImageAttachment[] = [];
-    for (const file of filesToProcess) {
-      const result = await processImageFile(file);
-      if (result.success && result.attachment) {
-        newImages.push(result.attachment as ImageAttachment);
+    for (let i = 0; i < filesToProcess.length; i++) {
+      const file = filesToProcess[i];
+      const tempAttachment = temporaryImages[i];
+
+      try {
+        const result = await processImageFile(file, (progress) => {
+          // Update progress for this specific attachment
+          const updatedImages = currentImages.map((img: ImageAttachment) => 
+            img.id === tempAttachment.id 
+              ? { ...img, progress }
+              : img
+          );
+          currentImages = updatedImages;
+          onImagesChange(updatedImages);
+        });
+
+        if (result.success && result.attachment) {
+          newImages.push(result.attachment as ImageAttachment);
+          
+          // Replace temporary attachment with final one
+          const updatedImages = currentImages.map((img: ImageAttachment) => 
+            img.id === tempAttachment.id 
+              ? { ...result.attachment, isUploading: false } as ImageAttachment
+              : img
+          );
+          currentImages = updatedImages;
+          onImagesChange(updatedImages);
+        } else {
+          // Mark as failed
+          const updatedImages = currentImages.map((img: ImageAttachment) => 
+            img.id === tempAttachment.id 
+              ? { ...img, isUploading: false, error: 'Processing failed' }
+              : img
+          );
+          currentImages = updatedImages;
+          onImagesChange(updatedImages);
+        }
+      } catch {
+        // Mark as failed
+        const updatedImages = currentImages.map((img: ImageAttachment) => 
+          img.id === tempAttachment.id 
+            ? { ...img, isUploading: false, error: 'Processing failed' }
+            : img
+        );
+        currentImages = updatedImages;
+        onImagesChange(updatedImages);
       }
     }
 
-    if (newImages.length > 0) {
-      onImagesChange([...images, ...newImages]);
-      debug(`Added ${newImages.length} new images`);
-    }
+    debug(`Successfully processed ${newImages.length} image files`);
 
     // Reset input
     e.target.value = '';
@@ -141,18 +188,65 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
     debug(`Processing ${filesToProcess.length} document files`);
 
+    // Create temporary attachments with upload state
+    const temporaryDocuments = filesToProcess.map(file => createTemporaryDocumentAttachment(file));
+
+    // Add temporary documents immediately
+    let currentDocuments = [...documents, ...temporaryDocuments];
+    onDocumentsChange(currentDocuments);
+
+    // Process files and update progress
     const newDocuments: DocumentAttachment[] = [];
-    for (const file of filesToProcess) {
-      const result = await processDocumentFile(file);
-      if (result.success && result.attachment) {
-        newDocuments.push(result.attachment as DocumentAttachment);
+    for (let i = 0; i < filesToProcess.length; i++) {
+      const file = filesToProcess[i];
+      const tempAttachment = temporaryDocuments[i];
+
+      try {
+        const result = await processDocumentFile(file, (progress) => {
+          // Update progress for this specific attachment
+          const updatedDocuments = currentDocuments.map((doc: DocumentAttachment) => 
+            doc.id === tempAttachment.id 
+              ? { ...doc, progress }
+              : doc
+          );
+          currentDocuments = updatedDocuments;
+          onDocumentsChange(updatedDocuments);
+        });
+
+        if (result.success && result.attachment) {
+          newDocuments.push(result.attachment as DocumentAttachment);
+          
+          // Replace temporary attachment with final one
+          const updatedDocuments = currentDocuments.map((doc: DocumentAttachment) => 
+            doc.id === tempAttachment.id 
+              ? { ...result.attachment, isUploading: false } as DocumentAttachment
+              : doc
+          );
+          currentDocuments = updatedDocuments;
+          onDocumentsChange(updatedDocuments);
+        } else {
+          // Mark as failed
+          const updatedDocuments = currentDocuments.map((doc: DocumentAttachment) => 
+            doc.id === tempAttachment.id 
+              ? { ...doc, isUploading: false, error: 'Processing failed' }
+              : doc
+          );
+          currentDocuments = updatedDocuments;
+          onDocumentsChange(updatedDocuments);
+        }
+      } catch {
+        // Mark as failed
+        const updatedDocuments = currentDocuments.map((doc: DocumentAttachment) => 
+          doc.id === tempAttachment.id 
+            ? { ...doc, isUploading: false, error: 'Processing failed' }
+            : doc
+        );
+        currentDocuments = updatedDocuments;
+        onDocumentsChange(updatedDocuments);
       }
     }
 
-    if (newDocuments.length > 0) {
-      onDocumentsChange([...documents, ...newDocuments]);
-      debug(`Added ${newDocuments.length} new documents`);
-    }
+    debug(`Successfully processed ${newDocuments.length} document files`);
 
     // Reset input
     e.target.value = '';

@@ -59,6 +59,9 @@ export interface ChatMessage {
  * @property name - Original filename
  * @property size - File size in bytes
  * @property type - MIME type
+ * @property isUploading - Whether the file is currently being processed
+ * @property progress - Upload/processing progress (0-100)
+ * @property error - Error message if processing failed
  */
 export interface ImageAttachment {
   id: string;
@@ -66,6 +69,9 @@ export interface ImageAttachment {
   name: string;
   size: number;
   type: string; // MIME type like 'image/jpeg'
+  isUploading?: boolean; // Whether the file is currently being processed
+  progress?: number; // Upload/processing progress (0-100)
+  error?: string; // Error message if processing failed
 }
 
 /**
@@ -79,6 +85,9 @@ export interface ImageAttachment {
  * @property type - MIME type
  * @property content - Extracted text content from the document
  * @property category - Document category for UI display
+ * @property isUploading - Whether the file is currently being processed
+ * @property progress - Upload/processing progress (0-100)
+ * @property error - Error message if processing failed
  */
 export interface DocumentAttachment {
   id: string;
@@ -88,6 +97,9 @@ export interface DocumentAttachment {
   type: string; // MIME type like 'application/pdf', 'text/plain', etc.
   content: string; // Extracted text content
   category: 'pdf' | 'text' | 'markdown' | 'other';
+  isUploading?: boolean; // Whether the file is currently being processed
+  progress?: number; // Upload/processing progress (0-100)
+  error?: string; // Error message if processing failed
 }
 
 /**
