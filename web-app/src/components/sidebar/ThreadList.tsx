@@ -80,26 +80,76 @@ export const ThreadList: React.FC<ThreadListProps> = ({
   className
 }) => {
   /**
-   * Get model configuration by ID
+   * Get model configuration by ID with DEFAULT_MODEL fallback
    */
   const getModelConfig = useCallback((modelId: string | undefined): ModelConfig | null => {
-    if (!modelId || !availableModels[modelId]) return null;
-    return availableModels[modelId];
+    if (!modelId) return null;
+    
+    // Try to get the exact model first
+    if (availableModels[modelId]) {
+      return availableModels[modelId];
+    }
+    
+    // If model not found, log a warning but don't fallback yet
+    console.warn(`[ThreadList] Model not found in availableModels: ${modelId}. Available models:`, Object.keys(availableModels));
+    return null;
   }, [availableModels]);
 
   /**
-   * Get the display model for a thread (prioritize currentModel, then lastUsedModel)
+   * Get the display model for a thread with comprehensive fallback logic
    */
   const getThreadDisplayModel = useCallback((thread: ChatThread): ModelConfig | null => {
-    // For current thread, show the currently selected model from main interface
-    if (thread.id === currentThreadId && currentModel) {
-      return getModelConfig(currentModel);
+    // PRIORITY 1: Always prioritize the thread's own stored model data
+    // This ensures each thread shows its own model, not a global state
+    let modelId: string | undefined = thread.currentModel || thread.lastUsedModel;
+    
+    // PRIORITY 2: For the currently selected thread, only override with currentModel 
+    // if the thread doesn't have its own model data yet (new thread scenario)
+    if (thread.id === currentThreadId && !modelId && currentModel) {
+      modelId = currentModel;
+      console.debug(`[ThreadList] Using global currentModel for new thread ${thread.id}: ${currentModel}`);
     }
     
-    // Otherwise, show the thread's current model or last used model
-    const modelId = thread.currentModel || thread.lastUsedModel;
-    return getModelConfig(modelId);
-  }, [currentThreadId, currentModel, getModelConfig]);
+    // PRIORITY 3: Fallback to extracting model from thread messages if thread model data is missing
+    if (!modelId && thread.messages && thread.messages.length > 0) {
+      // Look for the most recent assistant message with a modelId
+      const assistantMessages = thread.messages
+        .filter(msg => msg.role === 'assistant' && msg.modelId)
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      
+      if (assistantMessages.length > 0) {
+        modelId = assistantMessages[0].modelId;
+        console.debug(`[ThreadList] Using fallback model from message for thread ${thread.id}: ${modelId}`);
+      }
+    }
+    
+    // Enhanced debugging to track why models might disappear
+    console.debug(`[ThreadList] Model resolution for thread ${thread.id}:`, {
+      threadId: thread.id,
+      threadCurrentModel: thread.currentModel,
+      threadLastUsedModel: thread.lastUsedModel,
+      isCurrentThread: thread.id === currentThreadId,
+      globalCurrentModel: currentModel,
+      resolvedModelId: modelId,
+      threadTitle: thread.title.substring(0, 30),
+      messagesCount: thread.messages?.length || 0
+    });
+    
+    // Try to get the model config
+    let modelConfig = getModelConfig(modelId);
+    
+    // Log if we have a model ID but can't find the config
+    if (!modelConfig && modelId) {
+      console.warn(`[ThreadList] Model config not found for modelId: ${modelId} in thread ${thread.id}. Available models:`, Object.keys(availableModels));
+    }
+    
+    // Log when no model is found at all
+    if (!modelConfig && !modelId) {
+      console.debug(`[ThreadList] No model information found for thread ${thread.id}. Thread may be new or missing model data.`);
+    }
+    
+    return modelConfig;
+  }, [currentThreadId, currentModel, getModelConfig, availableModels]);
 
   /**
    * Sort threads with pinned threads at the top
