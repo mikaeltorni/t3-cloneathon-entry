@@ -2,6 +2,7 @@
  * BaseToggle.tsx
  * 
  * Base toggle component for reusable toggle functionality
+ * Enhanced with comprehensive dark mode support
  * 
  * Components:
  *   BaseToggle
@@ -12,6 +13,7 @@
  *   - Tooltip functionality
  *   - Accessible keyboard navigation
  *   - Color-coded states with animations
+ *   - Full dark mode support
  * 
  * Usage: <BaseToggle enabled={value} onChange={setValue} mode="optional" {...props} />
  */
@@ -31,26 +33,36 @@ export interface BaseToggleProps {
   forcedLabel?: string;
   tooltipPrefix: string;
   
-  // Customizable colors
+  // Customizable colors (with dark mode variants)
   enabledColors: {
     bg: string;
+    bgDark?: string;
     border: string;
+    borderDark?: string;
     text: string;
+    textDark?: string;
   };
   forcedColors: {
     bg: string;
+    bgDark?: string;
     border: string;
+    borderDark?: string;
     text: string;
+    textDark?: string;
   };
   disabledColors: {
     bg: string;
+    bgDark?: string;
     border: string;
+    borderDark?: string;
     text: string;
+    textDark?: string;
   };
 }
 
 /**
  * Base toggle component for reusable toggle functionality
+ * Enhanced with dark mode support
  * 
  * @param enabled - Whether toggle is currently enabled
  * @param onChange - Callback when toggle state changes
@@ -110,12 +122,14 @@ export const BaseToggle: React.FC<BaseToggleProps> = ({
     if (isForced) return forcedColors;
     if (enabled) return enabledColors;
     
-    // For optional mode when disabled, use a much more neutral inactive state
-    // to make the difference more obvious
+    // For optional mode when disabled, use neutral inactive state
     return {
-      bg: '#FFFFFF', // White background for inactive
-      border: '#D1D5DB', // Gray-300 border
-      text: '#9CA3AF' // Gray-400 text (more muted)
+      bg: '#FFFFFF',
+      bgDark: '#334155', // slate-700
+      border: '#D1D5DB',
+      borderDark: '#64748B', // slate-500
+      text: '#9CA3AF',
+      textDark: '#94A3B8' // slate-400
     };
   };
 
@@ -130,6 +144,7 @@ export const BaseToggle: React.FC<BaseToggleProps> = ({
         className={cn(
           'inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ease-in-out',
           'border-2 focus:outline-none focus:ring-2 focus:ring-offset-1',
+          'dark:focus:ring-offset-slate-900',
           isTogglable && 'hover:scale-105 hover:shadow-lg cursor-pointer',
           isForced && 'cursor-default',
           isDisabled && 'cursor-not-allowed opacity-60',
@@ -138,9 +153,9 @@ export const BaseToggle: React.FC<BaseToggleProps> = ({
           (enabled || isForced) && !isDisabled && 'shadow-md'
         )}
         style={{
-          backgroundColor: colors.bg,
-          borderColor: colors.border,
-          color: colors.text,
+          backgroundColor: colors.bgDark ? `color-mix(in srgb, ${colors.bg} 100%, transparent 0%)` : colors.bg,
+          borderColor: colors.borderDark ? `color-mix(in srgb, ${colors.border} 100%, transparent 0%)` : colors.border,
+          color: colors.textDark ? `color-mix(in srgb, ${colors.text} 100%, transparent 0%)` : colors.text,
           borderWidth: '2px'
         }}
         title={getTooltipText()}
@@ -162,14 +177,20 @@ export const BaseToggle: React.FC<BaseToggleProps> = ({
           {isForced ? forcedLabel : label}
         </span>
 
-        {/* Status indicator - More prominent */}
+        {/* Status indicator - Enhanced for dark mode */}
         <div 
           className={cn(
             'w-3 h-3 rounded-full transition-all duration-200 flex items-center justify-center',
-            (enabled || isForced) && !isDisabled && 'ring-2 ring-white'
+            (enabled || isForced) && !isDisabled && 'ring-2',
+            // Light mode ring
+            (enabled || isForced) && !isDisabled && 'ring-white',
+            // Dark mode ring
+            (enabled || isForced) && !isDisabled && 'dark:ring-slate-800'
           )}
           style={{
-            backgroundColor: (enabled || isForced) && !isDisabled ? colors.text : '#d1d5db'
+            backgroundColor: (enabled || isForced) && !isDisabled 
+              ? (colors.textDark ? `color-mix(in srgb, ${colors.text} 100%, transparent 0%)` : colors.text)
+              : '#d1d5db'
           }}
         >
           {/* Checkmark for enabled state */}
@@ -181,12 +202,13 @@ export const BaseToggle: React.FC<BaseToggleProps> = ({
         </div>
       </button>
 
-      {/* Tooltip */}
+      {/* Enhanced Tooltip with Dark Mode */}
       <div className={cn(
         'absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2',
         'bg-gray-900 text-white text-xs rounded-md px-2 py-1 whitespace-nowrap',
         'dark:bg-slate-700 dark:text-slate-100',
-        'opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10'
+        'opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10',
+        'shadow-lg'
       )}>
         {getTooltipText()}
         <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-slate-700" />

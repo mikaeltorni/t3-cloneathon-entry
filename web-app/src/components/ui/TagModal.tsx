@@ -2,14 +2,20 @@
  * TagModal.tsx
  * 
  * Modal component for creating and editing tags
+ * Enhanced with comprehensive dark mode support
  * 
  * Components:
  *   TagModal
  * 
- * Usage: <TagModal isOpen={true} onClose={handleClose} onSubmit={handleSubmit} />
+ * Usage: <TagModal isOpen={isOpen} onClose={onClose} onSave={onSave} />
  */
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { ColorPicker } from './ColorPicker';
+import { Button } from './Button';
+import { cn } from '../../utils/cn';
+// Remove TagColor import as it's not used directly
 
 interface TagModalProps {
   isOpen: boolean;
@@ -94,25 +100,34 @@ export const TagModal: React.FC<TagModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black bg-opacity-50 dark:bg-opacity-70" 
+        onClick={handleClose}
+      />
+      
+      {/* Modal */}
+      <div className="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md mx-4 shadow-xl border dark:border-slate-600">
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <button
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{title}</h2>
+          <button 
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          {/* Tag Name Input */}
-          <div className="mb-4">
-            <label htmlFor="tag-name" className="block text-sm font-medium text-gray-700 mb-2">
+        {/* Form */}
+        <div className="space-y-4">
+          {/* Tag Name */}
+          <div>
+            <label htmlFor="tag-name" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
               Tag Name
             </label>
             <input
@@ -120,152 +135,192 @@ export const TagModal: React.FC<TagModalProps> = ({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter tag name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              autoFocus
-              required
+              placeholder="Enter tag name..."
+              className={cn(
+                'w-full px-3 py-2 border rounded-md shadow-sm',
+                'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                'bg-white border-gray-300 text-gray-900 placeholder-gray-500',
+                'dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-400',
+                'dark:focus:ring-blue-400'
+              )}
             />
           </div>
 
-          {/* Color Preview */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Color Preview
+          {/* Color Selection - Enhanced with dark mode */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+              Tag Color
             </label>
-            <div className="flex items-center space-x-3">
-              <div
-                className="w-8 h-8 rounded-full border-2 border-gray-300"
-                style={{ backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})` }}
-              />
-              <div
-                className="px-3 py-1 rounded-full text-white text-sm font-medium"
-                style={{ backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})` }}
-              >
-                {name || 'Tag Preview'}
-              </div>
-            </div>
+            <ColorPicker 
+              color={color} 
+              onChange={setColor}
+              className="mb-4"
+            />
           </div>
 
-          {/* Color Picker */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Color
-            </label>
-            <div className="space-y-3">
-              {/* Red Channel */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs text-gray-600">Red</label>
+          {/* RGB Sliders - Enhanced with dark mode */}
+          <div className="space-y-3">
+            {/* Red Slider */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <div className="flex items-center justify-between">
+                  <span>Red</span>
                   <input
                     type="number"
                     min="0"
                     max="255"
                     value={color.r}
                     onChange={(e) => setColor(prev => ({ ...prev, r: parseInt(e.target.value) || 0 }))}
-                    className="w-16 px-2 py-1 text-xs border border-gray-300 rounded"
+                    className={cn(
+                      'w-16 px-2 py-1 text-xs border rounded',
+                      'bg-white border-gray-300 text-gray-900',
+                      'dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100'
+                    )}
                   />
                 </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="255"
-                  value={color.r}
-                  onChange={(e) => setColor(prev => ({ ...prev, r: parseInt(e.target.value) }))}
-                  className="w-full h-2 bg-red-200 rounded-lg appearance-none cursor-pointer slider-red"
-                />
-              </div>
+                <label className="text-xs text-gray-600 dark:text-slate-400">Red</label>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="255"
+                value={color.r}
+                onChange={(e) => setColor(prev => ({ ...prev, r: parseInt(e.target.value) }))}
+                className={cn(
+                  'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer',
+                  'dark:bg-slate-600',
+                  '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4',
+                  '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-500 [&::-webkit-slider-thumb]:cursor-pointer',
+                  '[&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full',
+                  '[&::-moz-range-thumb]:bg-red-500 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none'
+                )}
+              />
+            </div>
 
-              {/* Green Channel */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs text-gray-600">Green</label>
+            {/* Green Slider */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <div className="flex items-center justify-between">
+                  <span>Green</span>
                   <input
                     type="number"
                     min="0"
                     max="255"
                     value={color.g}
                     onChange={(e) => setColor(prev => ({ ...prev, g: parseInt(e.target.value) || 0 }))}
-                    className="w-16 px-2 py-1 text-xs border border-gray-300 rounded"
+                    className={cn(
+                      'w-16 px-2 py-1 text-xs border rounded',
+                      'bg-white border-gray-300 text-gray-900',
+                      'dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100'
+                    )}
                   />
                 </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="255"
-                  value={color.g}
-                  onChange={(e) => setColor(prev => ({ ...prev, g: parseInt(e.target.value) }))}
-                  className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer slider-green"
-                />
-              </div>
+                <label className="text-xs text-gray-600 dark:text-slate-400">Green</label>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="255"
+                value={color.g}
+                onChange={(e) => setColor(prev => ({ ...prev, g: parseInt(e.target.value) }))}
+                className={cn(
+                  'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer',
+                  'dark:bg-slate-600',
+                  '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4',
+                  '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer',
+                  '[&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full',
+                  '[&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none'
+                )}
+              />
+            </div>
 
-              {/* Blue Channel */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs text-gray-600">Blue</label>
+            {/* Blue Slider */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                <div className="flex items-center justify-between">
+                  <span>Blue</span>
                   <input
                     type="number"
                     min="0"
                     max="255"
                     value={color.b}
                     onChange={(e) => setColor(prev => ({ ...prev, b: parseInt(e.target.value) || 0 }))}
-                    className="w-16 px-2 py-1 text-xs border border-gray-300 rounded"
+                    className={cn(
+                      'w-16 px-2 py-1 text-xs border rounded',
+                      'bg-white border-gray-300 text-gray-900',
+                      'dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100'
+                    )}
                   />
                 </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="255"
-                  value={color.b}
-                  onChange={(e) => setColor(prev => ({ ...prev, b: parseInt(e.target.value) }))}
-                  className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer slider-blue"
-                />
-              </div>
+                <label className="text-xs text-gray-600 dark:text-slate-400">Blue</label>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="255"
+                value={color.b}
+                onChange={(e) => setColor(prev => ({ ...prev, b: parseInt(e.target.value) }))}
+                className={cn(
+                  'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer',
+                  'dark:bg-slate-600',
+                  '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4',
+                  '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:cursor-pointer',
+                  '[&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full',
+                  '[&::-moz-range-thumb]:bg-blue-500 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-none'
+                )}
+              />
             </div>
 
-            {/* Color Presets */}
-            <div className="mt-4">
-              <label className="block text-xs text-gray-600 mb-2">Presets</label>
+            {/* Quick Presets - Enhanced with dark mode */}
+            <div>
+              <label className="block text-xs text-gray-600 dark:text-slate-400 mb-2">Presets</label>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { r: 239, g: 68, b: 68 },   // Red
-                  { r: 245, g: 158, b: 11 },  // Orange
-                  { r: 250, g: 204, b: 21 },  // Yellow
-                  { r: 34, g: 197, b: 94 },   // Green
-                  { r: 59, g: 130, b: 246 },  // Blue
-                  { r: 147, g: 51, b: 234 },  // Purple
-                  { r: 236, g: 72, b: 153 },  // Pink
-                  { r: 107, g: 114, b: 128 }  // Gray
-                ].map((preset, index) => (
+                  { name: 'Red', color: { r: 239, g: 68, b: 68 } },
+                  { name: 'Orange', color: { r: 251, g: 146, b: 60 } },
+                  { name: 'Yellow', color: { r: 245, g: 208, b: 45 } },
+                  { name: 'Green', color: { r: 34, g: 197, b: 94 } },
+                  { name: 'Blue', color: { r: 59, g: 130, b: 246 } },
+                  { name: 'Purple', color: { r: 168, g: 85, b: 247 } },
+                  { name: 'Pink', color: { r: 236, g: 72, b: 153 } },
+                  { name: 'Gray', color: { r: 107, g: 114, b: 128 } }
+                ].map((preset) => (
                   <button
-                    key={index}
-                    type="button"
-                    onClick={() => setColor(preset)}
-                    className="w-6 h-6 rounded-full border-2 border-gray-300 hover:border-gray-400 transition-colors"
-                    style={{ backgroundColor: `rgb(${preset.r}, ${preset.g}, ${preset.b})` }}
+                    key={preset.name}
+                    onClick={() => setColor(preset.color)}
+                    className="w-6 h-6 rounded border-2 border-gray-200 dark:border-slate-600 hover:border-gray-400 dark:hover:border-slate-400 transition-colors"
+                    style={{ backgroundColor: `rgb(${preset.color.r}, ${preset.color.g}, ${preset.color.b})` }}
+                    title={preset.name}
                   />
                 ))}
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              {submitLabel}
-            </button>
-          </div>
-        </form>
+        {/* Actions */}
+        <div className="flex justify-end space-x-2 mt-6">
+          <button
+            onClick={handleClose}
+            className={cn(
+              'px-4 py-2 text-sm font-medium rounded-md transition-colors',
+              'text-gray-700 bg-gray-100 hover:bg-gray-200',
+              'dark:text-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600',
+              'focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-slate-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800'
+            )}
+          >
+            Cancel
+          </button>
+          <Button
+            onClick={handleSubmit}
+            disabled={!name.trim()}
+            variant="primary"
+          >
+            {submitLabel}
+          </Button>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }; 
