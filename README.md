@@ -153,6 +153,19 @@ const isMobile = isMobileScreen(); // Returns true for width < 768px
 
 ## 🎨 Model Selection
 
+### **Persistent Model Selection with User Preferences**
+The application features intelligent model selection that remembers your preferences across sessions and per-thread:
+
+#### **Key Features**
+- **Per-Thread Model Memory**: Each chat thread remembers its selected model independently
+- **Global Last Selected Model**: Your most recent model choice is saved for new chats
+- **Multi-Level Persistence**: 
+  - Thread-specific model selection (stored in Firebase)
+  - User preferences with server synchronization
+  - Local storage cache for immediate access
+- **Smart Fallback Logic**: Falls back through user preferences → cached selection → default model
+- **Cross-Session Persistence**: Model selection survives browser refreshes and app restarts
+
 ### **Modal-Style Model Selector**
 The application features a user-friendly modal-style model selector that provides seamless AI model switching without cluttering the interface:
 

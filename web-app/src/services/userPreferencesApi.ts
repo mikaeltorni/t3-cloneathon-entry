@@ -6,6 +6,7 @@
  * Features:
  *   - User preferences CRUD operations
  *   - Model pinning functionality
+ *   - Last selected model persistence
  *   - Tag management with Firebase Firestore
  *   - Authentication-aware requests
  *   - Error handling and logging
@@ -20,6 +21,7 @@ import type { ChatTag } from '../../../src/shared/types';
  */
 export interface UserPreferences {
   pinnedModels: string[];
+  lastSelectedModel?: string; // Last model selected by user (for new chats)
   theme?: 'light' | 'dark' | 'auto';
   defaultModel?: string;
   createdAt: Date;

@@ -6,6 +6,7 @@
  * Features:
  *   - User-specific preferences storage
  *   - Model pinning functionality
+ *   - Last selected model persistence
  *   - Real-time data synchronization
  *   - Authentication-aware storage
  * 
@@ -21,6 +22,7 @@ import { db } from './config/firebase-admin';
  */
 export interface UserPreferences {
   pinnedModels: string[]; // Array of pinned model IDs
+  lastSelectedModel?: string; // Last model selected by user (for new chats)
   theme?: 'light' | 'dark' | 'auto';
   defaultModel?: string;
   createdAt: Date;
@@ -72,6 +74,7 @@ class FirestoreUserPreferencesService implements UserPreferencesService {
 
     return {
       pinnedModels: data.pinnedModels || [],
+      lastSelectedModel: data.lastSelectedModel || undefined,
       theme: data.theme || 'auto',
       defaultModel: data.defaultModel || undefined,
       createdAt: data.createdAt?.toDate() || new Date(),
@@ -137,6 +140,7 @@ class FirestoreUserPreferencesService implements UserPreferencesService {
 
       const updatedPreferences: UserPreferences = {
         pinnedModels: preferences.pinnedModels ?? existingPreferences?.pinnedModels ?? [],
+        lastSelectedModel: preferences.lastSelectedModel ?? existingPreferences?.lastSelectedModel,
         theme: preferences.theme ?? existingPreferences?.theme ?? 'auto',
         defaultModel: preferences.defaultModel ?? existingPreferences?.defaultModel,
         createdAt: existingPreferences?.createdAt ?? now,

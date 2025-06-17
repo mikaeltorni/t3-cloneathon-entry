@@ -39,6 +39,7 @@ import { isMobileScreen } from './utils/deviceUtils';
 import type { ChatThread } from '../../src/shared/types';
 import { DEFAULT_MODEL } from '../../src/shared/modelConfig';
 import { useTagSystemContext } from './components/TagSystem';
+import { useUserPreferences } from './hooks/useUserPreferences';
 
 /**
  * Inner app content that has access to TagSystem context
@@ -47,6 +48,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   // Use custom hooks for state management
   const models = useModels();
   const sidebar = useSidebarToggle();
+  const userPreferences = useUserPreferences();
   const { debug } = useLogger('App');
   
   // Model sidebar state
@@ -56,14 +58,27 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   const { filteredThreads, getThreadTags } = useTagSystemContext();
 
   // Track current model selection (for sidebar display)
-  const [currentModel, setCurrentModel] = useState<string>(DEFAULT_MODEL);
+  // Use user's last selected model as the default instead of DEFAULT_MODEL
+  const [currentModel, setCurrentModel] = useState<string>(
+    userPreferences.lastSelectedModel || DEFAULT_MODEL
+  );
+
+  // Update currentModel when user preferences load/change
+  useEffect(() => {
+    if (userPreferences.lastSelectedModel && !chat.currentThread) {
+      // Only update when no thread is selected (new chat scenario)
+      debug(`🔄 Using user's last selected model for new chat: ${userPreferences.lastSelectedModel}`);
+      setCurrentModel(userPreferences.lastSelectedModel);
+    }
+  }, [userPreferences.lastSelectedModel, chat.currentThread, debug]);
 
   // Sync currentModel when thread changes - but ONLY when switching threads, not during message generation
   useEffect(() => {
     if (chat.currentThread) {
-      // Use the thread's current model, or last used model, or fall back to default
+      // Use the thread's current model, or last used model, or fall back to user's preferred model
       const threadModel = chat.currentThread.currentModel || 
                           chat.currentThread.lastUsedModel || 
+                          userPreferences.lastSelectedModel ||
                           DEFAULT_MODEL;
       
       // CRITICAL: Only sync model when thread ID actually changes (switching threads)
@@ -77,8 +92,15 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
       } else {
         debug(`✅ Thread model sync: keeping current model ${currentModel} for thread ${chat.currentThread.id}`);
       }
+    } else {
+      // No thread selected (new chat scenario) - use user's last selected model
+      const preferredModel = userPreferences.lastSelectedModel || DEFAULT_MODEL;
+      if (preferredModel !== currentModel) {
+        debug(`🔄 No thread selected, using user's preferred model: ${preferredModel}`);
+        setCurrentModel(preferredModel);
+      }
     }
-  }, [chat.currentThread?.id, chat.currentThread?.currentModel, chat.currentThread?.lastUsedModel, currentModel, debug]);
+  }, [chat.currentThread?.id, chat.currentThread?.currentModel, chat.currentThread?.lastUsedModel, userPreferences.lastSelectedModel, currentModel, debug]);
 
   /**
    * Handle manual refresh of threads from server
@@ -135,6 +157,11 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
       // Update current model if it's for the active thread
       if (threadId === chat.currentThread?.id) {
         setCurrentModel(modelId);
+        
+        // Also update user's last selected model preference (for new chats)
+        userPreferences.updateLastSelectedModel(modelId).catch(error => {
+          debug(`⚠️ Failed to update user's last selected model: ${error.message}`);
+        });
       }
       
       // Update the thread's current model in Firebase
@@ -146,6 +173,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
       if (threadId === chat.currentThread?.id) {
         const fallbackModel = chat.currentThread?.currentModel || 
                              chat.currentThread?.lastUsedModel || 
+                             userPreferences.lastSelectedModel ||
                              DEFAULT_MODEL;
         setCurrentModel(fallbackModel);
       }
@@ -159,6 +187,12 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
     debug(`🔄 Model change requested: ${modelId} (previous: ${currentModel})`);
     setCurrentModel(modelId);
     debug(`✅ Current model changed to: ${modelId}`);
+    
+    // Update user's last selected model preference (for new chats)
+    userPreferences.updateLastSelectedModel(modelId).catch(error => {
+      debug(`⚠️ Failed to update user's last selected model: ${error.message}`);
+    });
+    
     // If there's an active thread, update its model preference
     if (chat.currentThread?.id) {
       handleModelChange(chat.currentThread.id, modelId);

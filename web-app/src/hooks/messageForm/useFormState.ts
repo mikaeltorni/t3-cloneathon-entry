@@ -5,6 +5,7 @@
  */
 import { useState, useCallback, useEffect } from 'react';
 import { useLogger } from '../useLogger';
+import { useUserPreferences } from '../useUserPreferences';
 import { DEFAULT_MODEL } from '../../../../src/shared/modelConfig';
 
 export interface FormStateConfig {
@@ -30,14 +31,16 @@ export interface UseFormStateReturn {
 }
 
 export function useFormState(config: FormStateConfig = {}): UseFormStateReturn {
-  const { selectedModel: externalSelectedModel, onModelChange, defaultModel = DEFAULT_MODEL } = config;
+  const { selectedModel: externalSelectedModel, onModelChange, defaultModel } = config;
   const { debug } = useLogger('useFormState');
+  const userPreferences = useUserPreferences();
 
   const [message, setMessage] = useState('');
 
+  // Improved model selection logic with user preferences fallback
   const selectedModel = externalSelectedModel !== undefined && externalSelectedModel !== null 
     ? externalSelectedModel 
-    : defaultModel;
+    : defaultModel || userPreferences.lastSelectedModel || DEFAULT_MODEL;
   
   const setSelectedModel = useCallback((model: string) => {
     if (onModelChange) {
@@ -73,9 +76,10 @@ export function useFormState(config: FormStateConfig = {}): UseFormStateReturn {
       externalSelectedModel,
       selectedModel,
       defaultModel,
+      userLastSelected: userPreferences.lastSelectedModel,
       fallbackUsed: externalSelectedModel === undefined || externalSelectedModel === null
     });
-  }, [externalSelectedModel, selectedModel, defaultModel, debug]);
+  }, [externalSelectedModel, selectedModel, defaultModel, userPreferences.lastSelectedModel, debug]);
 
   useEffect(() => {
     localStorage.setItem('useWebSearch', JSON.stringify(useWebSearch));
