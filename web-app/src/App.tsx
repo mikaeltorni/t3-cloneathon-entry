@@ -14,7 +14,7 @@
  * 
  * Usage: Default export as main app component
  */
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';

@@ -92,8 +92,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const inputBarRef = useRef<HTMLDivElement>(null);
   const { debug } = useLogger('ChatInput');
   
-  // Mobile scroll state management - use external state or create default
-  const mobileScrollState = externalMobileScrollState || useMobileScrollState();
+  // Mobile scroll state management - always call hook but use external state if provided
+  const internalMobileScrollState = useMobileScrollState();
+  const mobileScrollState = externalMobileScrollState || internalMobileScrollState;
   
   // State for context window usage
   const [contextWindowUsage, setContextWindowUsage] = useState<{

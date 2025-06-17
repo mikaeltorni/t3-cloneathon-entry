@@ -136,7 +136,7 @@ export const ThreadList: React.FC<ThreadListProps> = ({
     });
     
     // Try to get the model config
-    let modelConfig = getModelConfig(modelId);
+    const modelConfig = getModelConfig(modelId);
     
     // // Log if we have a model ID but can't find the config
     // if (!modelConfig && modelId) {
