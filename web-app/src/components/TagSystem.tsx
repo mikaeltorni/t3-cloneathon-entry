@@ -118,6 +118,28 @@ export const TagSystem: React.FC<TagSystemProps> = ({
     tags
   });
 
+  /**
+   * Get thread tags with optimistic updates applied
+   */
+  const getOptimisticThreadTags = useCallback((threadId: string): ChatTag[] => {
+    const realTags = getThreadTags(threadId);
+    const realTagIds = realTags.map(tag => tag.id);
+    
+    const threadOptimisticAssigned = optimisticAssigned.get(threadId) || new Set();
+    const threadOptimisticRemoved = optimisticRemoved.get(threadId) || new Set();
+    
+    // Start with real tags, remove optimistically removed ones
+    const filteredTags = realTags.filter(tag => !threadOptimisticRemoved.has(tag.id));
+    
+    // Add optimistically assigned tags
+    const assignedTags = Array.from(threadOptimisticAssigned)
+      .filter(tagId => !realTagIds.includes(tagId)) // Don't duplicate real tags
+      .map(tagId => tags.find(tag => tag.id === tagId))
+      .filter(Boolean) as ChatTag[];
+    
+    return [...filteredTags, ...assignedTags];
+  }, [getThreadTags, optimisticAssigned, optimisticRemoved, tags]);
+
   // Create wrapper functions for tag operations that use the API directly
   const addTagToThread = useCallback(async (threadId: string, tagId: string) => {
     const operationId = `ADD-${threadId}-${tagId}-${Date.now()}`;
@@ -129,11 +151,14 @@ export const TagSystem: React.FC<TagSystemProps> = ({
       return;
     }
 
-    const currentTags = thread.tags || [];
-    console.log(`🏷️ [TagSystem-${operationId}] Current tags:`, currentTags);
+    // ✨ Use optimistic thread tags instead of raw thread tags to account for pending operations
+    const optimisticTags = getOptimisticThreadTags(threadId);
+    const currentTags = optimisticTags.map(tag => tag.id);
+    console.log(`🏷️ [TagSystem-${operationId}] Current tags (with optimistic):`, currentTags);
+    console.log(`🏷️ [TagSystem-${operationId}] Original thread tags:`, thread.tags || []);
     
     if (currentTags.includes(tagId)) {
-      console.log(`⚠️ [TagSystem-${operationId}] Tag ${tagId} already exists, skipping`);
+      console.log(`⚠️ [TagSystem-${operationId}] Tag ${tagId} already exists in optimistic state, skipping`);
       return;
     }
 
@@ -147,7 +172,7 @@ export const TagSystem: React.FC<TagSystemProps> = ({
       console.error(`❌ [TagSystem-${operationId}] Failed to update thread:`, error);
       throw error;
     }
-  }, [threads, onThreadUpdate]);
+  }, [threads, onThreadUpdate, getOptimisticThreadTags]);
 
   const removeTagFromThread = useCallback(async (threadId: string, tagId: string) => {
     const operationId = `REMOVE-${threadId}-${tagId}-${Date.now()}`;
@@ -159,8 +184,11 @@ export const TagSystem: React.FC<TagSystemProps> = ({
       return;
     }
 
-    const currentTags = thread.tags || [];
-    console.log(`🏷️ [TagSystem-${operationId}] Current tags:`, currentTags);
+    // ✨ Use optimistic thread tags instead of raw thread tags to account for pending operations
+    const optimisticTags = getOptimisticThreadTags(threadId);
+    const currentTags = optimisticTags.map(tag => tag.id);
+    console.log(`🏷️ [TagSystem-${operationId}] Current tags (with optimistic):`, currentTags);
+    console.log(`🏷️ [TagSystem-${operationId}] Original thread tags:`, thread.tags || []);
     
     const updatedTags = currentTags.filter(id => id !== tagId);
     console.log(`🏷️ [TagSystem-${operationId}] Calling onThreadUpdate with tags:`, updatedTags);
@@ -172,7 +200,7 @@ export const TagSystem: React.FC<TagSystemProps> = ({
       console.error(`❌ [TagSystem-${operationId}] Failed to update thread:`, error);
       throw error;
     }
-  }, [threads, onThreadUpdate]);
+  }, [threads, onThreadUpdate, getOptimisticThreadTags]);
 
   // Get current thread for context menu
   const currentThread = useMemo(() => 
@@ -417,28 +445,6 @@ export const TagSystem: React.FC<TagSystemProps> = ({
   const openCreateTagModal = () => {
     setIsCreateTagModalOpen(true);
   };
-
-  /**
-   * Get thread tags with optimistic updates applied
-   */
-  const getOptimisticThreadTags = useCallback((threadId: string): ChatTag[] => {
-    const realTags = getThreadTags(threadId);
-    const realTagIds = realTags.map(tag => tag.id);
-    
-    const threadOptimisticAssigned = optimisticAssigned.get(threadId) || new Set();
-    const threadOptimisticRemoved = optimisticRemoved.get(threadId) || new Set();
-    
-    // Start with real tags, remove optimistically removed ones
-    const filteredTags = realTags.filter(tag => !threadOptimisticRemoved.has(tag.id));
-    
-    // Add optimistically assigned tags
-    const assignedTags = Array.from(threadOptimisticAssigned)
-      .filter(tagId => !realTagIds.includes(tagId)) // Don't duplicate real tags
-      .map(tagId => tags.find(tag => tag.id === tagId))
-      .filter(Boolean) as ChatTag[];
-    
-    return [...filteredTags, ...assignedTags];
-  }, [getThreadTags, optimisticAssigned, optimisticRemoved, tags]);
 
   /**
    * Set optimistic assigned state
