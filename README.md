@@ -1261,7 +1261,7 @@ interface ChatThread {
 - **Frontend:** React 18+ with TypeScript
 - **Styling:** Tailwind CSS 3+ with responsive design
 - **Build Tool:** Vite for fast development and optimized builds
-- **Database:** Firebase Firestore with real-time sync
+- **Database:** Firebase Firestore for real-time sync
 - **Authentication:** Firebase Auth
 - **State Management:** Custom hooks with local state
 - **HTTP Client:** Fetch API with error handling
