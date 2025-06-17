@@ -270,6 +270,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         onNewChat={handleNewChat}
         onDeleteThread={chat.handleDeleteThread}
         onTogglePinThread={chat.handleTogglePinThread}
+        onEditThread={chat.handleEditThreadTitle}
         onRefreshThreads={handleRefreshThreads}
         loading={chat.threadsLoading}
         isOpen={sidebar.isOpen}
@@ -278,7 +279,6 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         availableModels={models.availableModels}
         onModelChange={handleModelChange}
         currentModel={currentModel}
-        
         getThreadTags={getThreadTags}
       />
 

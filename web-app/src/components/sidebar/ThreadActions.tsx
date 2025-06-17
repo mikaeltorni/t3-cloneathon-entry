@@ -48,6 +48,7 @@ interface ThreadActionsProps {
  * @param isConfirmingDelete - Whether delete confirmation is active
  * @param onPin - Callback for pin/unpin action
  * @param onDelete - Callback for delete action
+
  * @param getThreadTags - Function to get tags for this thread
  * @param className - Additional CSS classes
  * @returns JSX element containing the action buttons

@@ -147,7 +147,7 @@ export class ChatApiService {
 
     logger.info(`Updating thread title: ${threadId} -> "${title}"`);
     
-    const updatedThread = await this.httpClient.patch<ChatThread>(`/chats/${threadId}`, {
+    const updatedThread = await this.httpClient.put<ChatThread>(`/chats/${threadId}/title`, {
       title: title.trim()
     });
     

@@ -11,6 +11,7 @@
 
 import React, { useCallback } from 'react';
 import { Button } from '../ui/Button';
+import { InlineEdit } from '../ui/InlineEdit';
 import { ModelIndicator } from './ModelIndicator';
 import { ThreadActions } from './ThreadActions';
 import { ThreadMeta } from './ThreadMeta';
@@ -42,6 +43,8 @@ interface ThreadItemProps {
   onDelete: (threadId: string) => void;
   /** Callback for pin/unpin action */
   onPin: (threadId: string, currentPinStatus: boolean) => void;
+  /** Callback for editing thread title */
+  onEdit?: (threadId: string, newTitle: string) => Promise<ChatThread>;
   /** Callback for canceling delete confirmation */
   onCancelDelete: () => void;
 
@@ -77,6 +80,7 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
   onSelect,
   onDelete,
   onPin,
+  onEdit,
   onCancelDelete,
   getThreadTags,
   className
@@ -113,6 +117,15 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
   }, [thread.id, isConfirmingDelete, onSelect]);
 
   /**
+   * Handle thread title edit
+   */
+  const handleTitleSave = useCallback(async (newTitle: string): Promise<void> => {
+    if (onEdit) {
+      await onEdit(thread.id, newTitle);
+    }
+  }, [onEdit, thread.id]);
+
+  /**
    * Handle right-click for context menu
    */
   const handleRightClick = useCallback((event: React.MouseEvent) => {
@@ -147,12 +160,25 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
     >
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className={cn(
-            'font-semibold truncate pr-2 text-base leading-tight',
-            isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-slate-100'
-          )}>
-            {truncateText(thread.title, 45)}
-          </h3>
+          {/* Editable thread title */}
+          <InlineEdit
+            value={thread.title}
+            onSave={handleTitleSave}
+            disabled={!onEdit}
+            validate={(value: string) => {
+              const trimmed = value.trim();
+              if (trimmed.length < 2) {
+                return 'Title must be at least 2 characters';
+              }
+              return null;
+            }}
+            textClassName={cn(
+              'font-semibold text-base leading-tight cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 rounded px-1 py-0.5 truncate max-w-[200px]',
+              isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-slate-100'
+            )}
+            inputClassName="font-semibold text-base leading-tight bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded px-1 py-0.5"
+            maxLength={100}
+          />
           
           {/* Model indicator - Always visible */}
           {displayModel && (

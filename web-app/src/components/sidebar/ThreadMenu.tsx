@@ -119,8 +119,6 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
     onClose?.();
   };
 
-
-
   /**
    * Handle opening create tag modal
    */
@@ -234,6 +232,7 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
 
           {/* Action buttons */}
           <div className="p-2">
+            {/* Delete button */}
             <button
               onClick={handleDelete}
               disabled={isDeleting}

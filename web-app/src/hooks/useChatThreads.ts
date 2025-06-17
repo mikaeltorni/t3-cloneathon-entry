@@ -27,6 +27,7 @@ interface ChatApiService {
   getChat: (threadId: string) => Promise<ChatThread>;
   deleteChat: (threadId: string) => Promise<void>;
   toggleThreadPin: (threadId: string, isPinned: boolean) => Promise<ChatThread>;
+  updateThreadTitle: (threadId: string, title: string) => Promise<ChatThread>;
   cancelActiveStream?: () => void;
 }
 
@@ -252,6 +253,66 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
     }
   }, [threads, currentThread, apiService, setThreads, setCurrentThread, handleError]);
 
+  /**
+   * Edit thread title
+   */
+  const editThreadTitle = useCallback(async (threadId: string, newTitle: string) => {
+    try {
+      const thread = threads.find(t => t.id === threadId);
+      if (!thread) {
+        throw new Error('Thread not found');
+      }
+
+      if (!newTitle?.trim()) {
+        throw new Error('Thread title cannot be empty');
+      }
+
+      const trimmedTitle = newTitle.trim();
+      logger.info(`Editing thread title: ${threadId} -> "${trimmedTitle}"`);
+
+      // Optimistic update
+      setThreads((prevThreads: ChatThread[]) => prevThreads.map(t =>
+        t.id === threadId ? { ...t, title: trimmedTitle } : t
+      ));
+
+      if (currentThread?.id === threadId) {
+        setCurrentThread((prev: ChatThread | null) => prev ? { ...prev, title: trimmedTitle } : null);
+      }
+
+      // API call - returns the updated thread from server
+      const updatedThread = await apiService.updateThreadTitle(threadId, trimmedTitle);
+      
+      // Update with server response (this ensures consistency with server state)
+      setThreads((prevThreads: ChatThread[]) => prevThreads.map(t =>
+        t.id === threadId ? updatedThread : t
+      ));
+
+      if (currentThread?.id === threadId) {
+        setCurrentThread(updatedThread);
+      }
+
+      logger.info(`Successfully updated thread title: ${threadId} -> "${updatedThread.title}"`);
+      return updatedThread;
+    } catch (error) {
+      // Revert optimistic update on error
+      const thread = threads.find(t => t.id === threadId);
+      if (thread) {
+        const originalTitle = thread.title;
+        setThreads((prevThreads: ChatThread[]) => prevThreads.map(t =>
+          t.id === threadId ? { ...t, title: originalTitle } : t
+        ));
+
+        if (currentThread?.id === threadId) {
+          setCurrentThread((prev: ChatThread | null) => prev ? { ...prev, title: originalTitle } : null);
+        }
+      }
+
+      logger.error(`Failed to edit thread title for thread ${threadId}:`, error as Error);
+      handleError(error as Error, 'Thread Title Edit');
+      throw error;
+    }
+  }, [threads, currentThread, apiService, setThreads, setCurrentThread, handleError]);
+
   return {
     // State
     threads,
@@ -266,6 +327,7 @@ export function useChatThreads(chatState: ChatState, apiService: ChatApiService)
     deleteThread,
     updateThreadInList,
     addThreadToList,
-    togglePin
+    togglePin,
+    editThreadTitle
   };
 } 
