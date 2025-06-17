@@ -156,13 +156,14 @@ export const TagSystem: React.FC<TagSystemProps> = ({
     const currentTags = optimisticTags.map(tag => tag.id);
     console.log(`🏷️ [TagSystem-${operationId}] Current tags (with optimistic):`, currentTags);
     console.log(`🏷️ [TagSystem-${operationId}] Original thread tags:`, thread.tags || []);
+    console.log(`🏷️ [TagSystem-${operationId}] Adding tag: ${tagId}`);
     
-    if (currentTags.includes(tagId)) {
-      console.log(`⚠️ [TagSystem-${operationId}] Tag ${tagId} already exists in optimistic state, skipping`);
-      return;
-    }
-
-    const updatedTags = [...currentTags, tagId];
+    // Always add the tag if it's not already there - build correct final state
+    const updatedTags = currentTags.includes(tagId) 
+      ? currentTags 
+      : [...currentTags, tagId];
+    
+    console.log(`🏷️ [TagSystem-${operationId}] Final tags:`, updatedTags);
     console.log(`🏷️ [TagSystem-${operationId}] Calling onThreadUpdate with tags:`, updatedTags);
     
     try {
@@ -189,8 +190,12 @@ export const TagSystem: React.FC<TagSystemProps> = ({
     const currentTags = optimisticTags.map(tag => tag.id);
     console.log(`🏷️ [TagSystem-${operationId}] Current tags (with optimistic):`, currentTags);
     console.log(`🏷️ [TagSystem-${operationId}] Original thread tags:`, thread.tags || []);
+    console.log(`🏷️ [TagSystem-${operationId}] Removing tag: ${tagId}`);
     
+    // Always remove the tag - build correct final state
     const updatedTags = currentTags.filter(id => id !== tagId);
+    
+    console.log(`🏷️ [TagSystem-${operationId}] Final tags:`, updatedTags);
     console.log(`🏷️ [TagSystem-${operationId}] Calling onThreadUpdate with tags:`, updatedTags);
     
     try {
