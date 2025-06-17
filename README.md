@@ -103,7 +103,9 @@ The chat interface features smart mobile optimization that automatically adapts 
 #### **Behavior Logic**
 - **Desktop**: All controls always visible (normal behavior)
 - **Mobile + Input Focused**: All controls visible for full functionality when typing
-- **Mobile + Input Not Focused**: Only essential input controls visible to maximize chat space
+- **Mobile + Control Interaction**: All controls visible when user interacts with any control element
+- **Mobile + Model Sidebar Open**: All controls visible when model selection is active
+- **Mobile + No Interaction**: Only essential input controls visible to maximize chat space
 
 #### **Hidden Elements When Input Not Focused**
 - Token metrics and context window display

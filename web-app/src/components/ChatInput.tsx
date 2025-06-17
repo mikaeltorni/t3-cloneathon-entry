@@ -54,6 +54,7 @@ interface ChatInputProps {
   selectedModel?: string;
   onModelChange?: (modelId: string) => void;
   onModelSelectorClick?: () => void; // Callback to open model selector
+  mobileScrollState?: ReturnType<typeof useMobileScrollState>;
 }
 
 /**
@@ -85,13 +86,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   currentMessages = [],
   selectedModel: externalSelectedModel,
   onModelChange,
-  onModelSelectorClick
+  onModelSelectorClick,
+  mobileScrollState: externalMobileScrollState
 }) => {
   const inputBarRef = useRef<HTMLDivElement>(null);
   const { debug } = useLogger('ChatInput');
   
-  // Mobile scroll state management
-  const mobileScrollState = useMobileScrollState();
+  // Mobile scroll state management - use external state or create default
+  const mobileScrollState = externalMobileScrollState || useMobileScrollState();
   
   // State for context window usage
   const [contextWindowUsage, setContextWindowUsage] = useState<{
@@ -217,13 +219,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   /**
    * Enhanced focus and blur handlers for mobile scroll state
+   * Track focus on the entire container instead of individual elements
    */
-  const handleInputFocus = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
-    mobileScrollState.handleInputFocus();
+  const handleContainerFocus = useCallback(() => {
+    mobileScrollState.handleContainerFocus();
   }, [mobileScrollState]);
 
-  const handleInputBlur = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
-    mobileScrollState.handleInputBlur();
+  const handleContainerBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
+    // Only blur if focus is moving outside the container entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      mobileScrollState.handleContainerBlur();
+    }
   }, [mobileScrollState]);
 
   // Update input bar height when content changes
@@ -247,6 +253,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         sidebarOpen ? 'left-80' : 'left-0',
         modelSidebarOpen ? 'right-80' : 'right-0'
       )}
+      onFocus={handleContainerFocus}
+      onBlur={handleContainerBlur}
+      tabIndex={-1} // Make container focusable for event delegation
     >
       <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4">
         {/* Image Attachments */}
@@ -323,8 +332,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onDocumentsChange={onDocumentsChange}
           maxImages={5}
           maxDocuments={5}
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
         />
       </div>
     </div>

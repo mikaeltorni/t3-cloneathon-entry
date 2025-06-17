@@ -67,7 +67,9 @@ export const SearchControls: React.FC<SearchControlsProps> = ({
   };
 
   return (
-    <div className="flex items-center flex-wrap gap-3 mb-3">
+    <div 
+      className="flex items-center flex-wrap gap-3 mb-3"
+    >
       {/* Web Search Toggle */}
       <SearchToggle
         enabled={useWebSearch}

@@ -118,7 +118,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   /**
    * Mobile scroll state management hook
    */
-  const mobileScrollState = useMobileScrollState();
+  const mobileScrollState = useMobileScrollState({ modelSidebarOpen });
 
   return (
     <ChatLayout 
@@ -154,6 +154,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         selectedModel={selectedModel}
         onModelChange={onModelChange}
         onModelSelectorClick={onModelSelectorClick}
+        mobileScrollState={mobileScrollState}
       />
     </ChatLayout>
   );

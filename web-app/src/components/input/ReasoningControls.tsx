@@ -70,7 +70,9 @@ export const ReasoningControls: React.FC<ReasoningControlsProps> = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div 
+      className="space-y-3"
+    >
       <div className="flex items-center flex-wrap gap-3">
         {/* Reasoning Toggle for Models with Optional Reasoning */}
         {model?.reasoningMode === 'optional' && (

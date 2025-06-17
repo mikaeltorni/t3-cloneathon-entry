@@ -18,15 +18,20 @@ import { useState, useCallback, useEffect } from 'react';
 import { isMobileScreen } from '../utils/deviceUtils';
 import { useLogger } from './useLogger';
 
+interface UseMobileScrollStateOptions {
+  /** Whether the model sidebar is open */
+  modelSidebarOpen?: boolean;
+}
+
 interface UseMobileScrollStateReturn {
   /** Whether to show additional controls (reasoning, search, etc.) */
   shouldShowControls: boolean;
-  /** Handler for input focus events */
-  handleInputFocus: () => void;
-  /** Handler for input blur events */
-  handleInputBlur: () => void;
-  /** Whether user is currently focused on input */
-  isInputFocused: boolean;
+  /** Handler for container focus events (any element within input area) */
+  handleContainerFocus: () => void;
+  /** Handler for container blur events (user clicked outside input area) */
+  handleContainerBlur: () => void;
+  /** Whether user is currently focused within the input container */
+  isContainerFocused: boolean;
   /** Whether this is a mobile device */
   isMobile: boolean;
 }
@@ -41,14 +46,15 @@ interface UseMobileScrollStateReturn {
  * 
  * @returns Object containing state and handlers for mobile focus management
  */
-export function useMobileScrollState(): UseMobileScrollStateReturn {
+export function useMobileScrollState(options: UseMobileScrollStateOptions = {}): UseMobileScrollStateReturn {
   const { debug } = useLogger('useMobileScrollState');
+  const { modelSidebarOpen = false } = options;
   
   // Track mobile device state
   const [isMobile, setIsMobile] = useState(() => isMobileScreen());
   
-  // Track input focus state
-  const [isInputFocused, setIsInputFocused] = useState(false);
+  // Track focus state for the entire input container
+  const [isContainerFocused, setIsContainerFocused] = useState(false);
 
   /**
    * Handle window resize to update mobile state
@@ -67,19 +73,19 @@ export function useMobileScrollState(): UseMobileScrollStateReturn {
   }, [isMobile, debug]);
 
   /**
-   * Handle input focus - user is actively interacting with input
+   * Handle container focus - user is interacting with any element in the input area
    */
-  const handleInputFocus = useCallback(() => {
-    setIsInputFocused(true);
-    debug('User focused on input');
+  const handleContainerFocus = useCallback(() => {
+    setIsContainerFocused(true);
+    debug('User focused within input container');
   }, [debug]);
 
   /**
-   * Handle input blur - user stopped interacting with input
+   * Handle container blur - user clicked outside the input area
    */
-  const handleInputBlur = useCallback(() => {
-    setIsInputFocused(false);
-    debug('User blurred input');
+  const handleContainerBlur = useCallback(() => {
+    setIsContainerFocused(false);
+    debug('User blurred input container');
   }, [debug]);
 
   /**
@@ -87,22 +93,24 @@ export function useMobileScrollState(): UseMobileScrollStateReturn {
    * 
    * Logic:
    * - Desktop: Always show controls
-   * - Mobile + Input Focused: Show controls
-   * - Mobile + Input Not Focused: Hide controls
+   * - Mobile + Container Focused: Show controls
+   * - Mobile + Model Sidebar Open: Show controls
+   * - Mobile + Nothing Focused: Hide controls
    */
-  const shouldShowControls = !isMobile || isInputFocused;
+  const shouldShowControls = !isMobile || isContainerFocused || modelSidebarOpen;
 
   debug('Mobile focus state:', {
     isMobile,
-    isInputFocused,
+    isContainerFocused,
+    modelSidebarOpen,
     shouldShowControls
   });
 
   return {
     shouldShowControls,
-    handleInputFocus,
-    handleInputBlur,
-    isInputFocused,
+    handleContainerFocus,
+    handleContainerBlur,
+    isContainerFocused,
     isMobile
   };
 } 
