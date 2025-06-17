@@ -22,7 +22,7 @@ import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { ModelSidebar } from './components/ModelSidebar';
 import { ModelSidebarToggle } from './components/ui/ModelSidebarToggle';
-import { TagSystem, useTagSystemContext } from './components/TagSystem';
+import { TagSystem } from './components/TagSystem';
 import { SidebarToggle } from './components/ui/SidebarToggle';
 import { SignInForm } from './components/auth/SignInForm';
 import { ConnectionError } from './components/error/ConnectionError';
@@ -37,6 +37,8 @@ import { useSidebarToggle } from './hooks/useSidebarToggle';
 import { clearAllCaches } from './utils/sessionCache';
 import { isMobileScreen } from './utils/deviceUtils';
 import type { ChatThread } from '../../src/shared/types';
+import { DEFAULT_MODEL } from '../../src/shared/modelConfig';
+import { useTagSystemContext } from './components/TagSystem';
 
 /**
  * Inner app content that has access to TagSystem context
@@ -54,7 +56,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   const { filteredThreads, getThreadTags } = useTagSystemContext();
 
   // Track current model selection (for sidebar display)
-  const [currentModel, setCurrentModel] = useState<string>('google/gemini-2.5-flash-preview');
+  const [currentModel, setCurrentModel] = useState<string>(DEFAULT_MODEL);
 
   // Sync currentModel when thread changes - but ONLY when switching threads, not during message generation
   useEffect(() => {
@@ -62,23 +64,21 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
       // Use the thread's current model, or last used model, or fall back to default
       const threadModel = chat.currentThread.currentModel || 
                           chat.currentThread.lastUsedModel || 
-                          'google/gemini-2.5-flash-preview';
+                          DEFAULT_MODEL;
       
       // CRITICAL: Only sync model when thread ID actually changes (switching threads)
       // Do NOT sync during message generation (when only messages change)
       
       // Only update if this is a genuine thread switch AND the model is different
       if (threadModel !== currentModel) {
-        debug(`🔄 Thread model sync: would change from ${currentModel} to ${threadModel} for thread ${chat.currentThread.id}`);
-        
-        // Disabled automatic sync to preserve user model selection during message generation
-        // setCurrentModel(threadModel);
-        debug(`⚠️ Thread model sync DISABLED to preserve user model selection`);
+        debug(`🔄 Thread model sync: changing from ${currentModel} to ${threadModel} for thread ${chat.currentThread.id}`);
+        setCurrentModel(threadModel);
+        debug(`✅ Thread model synced to: ${threadModel}`);
       } else {
         debug(`✅ Thread model sync: keeping current model ${currentModel} for thread ${chat.currentThread.id}`);
       }
     }
-  }, [chat.currentThread?.id, chat.currentThread, currentModel, debug]); // Include all dependencies
+  }, [chat.currentThread?.id, chat.currentThread?.currentModel, chat.currentThread?.lastUsedModel, currentModel, debug]);
 
   /**
    * Handle manual refresh of threads from server
@@ -126,16 +126,30 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   };
 
   /**
-   * Handle model change for a specific thread
+   * Handle model change for a specific thread with Firebase persistence
    */
   const handleModelChange = async (threadId: string, modelId: string) => {
     debug(`Model changed for thread ${threadId}: ${modelId}`);
-    // Update current model if it's for the active thread
-    if (threadId === chat.currentThread?.id) {
-      setCurrentModel(modelId);
+    
+    try {
+      // Update current model if it's for the active thread
+      if (threadId === chat.currentThread?.id) {
+        setCurrentModel(modelId);
+      }
+      
+      // Update the thread's current model in Firebase
+      await chat.handleThreadUpdate(threadId, { currentModel: modelId });
+      debug(`✅ Successfully updated thread model in Firebase: ${threadId} -> ${modelId}`);
+    } catch (error) {
+      debug(`❌ Failed to update thread model in Firebase: ${error}`);
+      // Revert the local change if Firebase update failed
+      if (threadId === chat.currentThread?.id) {
+        const fallbackModel = chat.currentThread?.currentModel || 
+                             chat.currentThread?.lastUsedModel || 
+                             DEFAULT_MODEL;
+        setCurrentModel(fallbackModel);
+      }
     }
-    // TODO: Implement thread-specific model persistence
-    // This would update the thread's currentModel field in the backend
   };
 
   /**

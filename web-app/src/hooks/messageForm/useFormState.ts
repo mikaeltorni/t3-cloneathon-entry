@@ -5,10 +5,11 @@
  */
 import { useState, useCallback, useEffect } from 'react';
 import { useLogger } from '../useLogger';
+import { DEFAULT_MODEL } from '../../../../src/shared/modelConfig';
 
 export interface FormStateConfig {
-  selectedModel?: string;
-  onModelChange?: (modelId: string) => void;
+  selectedModel?: string | null;
+  onModelChange?: (model: string) => void;
   defaultModel?: string;
 }
 
@@ -18,18 +19,18 @@ export interface UseFormStateReturn {
   selectedModel: string;
   setSelectedModel: (model: string) => void;
   useReasoning: boolean;
-  setUseReasoning: (use: boolean) => void;
+  setUseReasoning: (useReasoning: boolean) => void;
   reasoningEffort: 'low' | 'medium' | 'high';
   setReasoningEffort: (effort: 'low' | 'medium' | 'high') => void;
   useWebSearch: boolean;
-  setUseWebSearch: (use: boolean) => void;
+  setUseWebSearch: (useWebSearch: boolean) => void;
   webSearchEffort: 'low' | 'medium' | 'high';
   setWebSearchEffort: (effort: 'low' | 'medium' | 'high') => void;
   resetMessage: () => void;
 }
 
 export function useFormState(config: FormStateConfig = {}): UseFormStateReturn {
-  const { selectedModel: externalSelectedModel, onModelChange, defaultModel = 'google/gemini-2.5-flash-preview' } = config;
+  const { selectedModel: externalSelectedModel, onModelChange, defaultModel = DEFAULT_MODEL } = config;
   const { debug } = useLogger('useFormState');
 
   const [message, setMessage] = useState('');

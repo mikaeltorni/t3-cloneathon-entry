@@ -152,6 +152,19 @@ export function useChat(): UseChatReturn {
       }
     }
 
+    // If currentModel is being updated, call the server API
+    if (updates.currentModel !== undefined) {
+      try {
+        const updatedThread = await chatApiService.updateThreadModel(threadId, updates.currentModel);
+        // Update the thread in the list with server response
+        threadOps.updateThreadInList(updatedThread);
+        return;
+      } catch (error) {
+        console.error('Failed to update thread model on server:', error);
+        throw error;
+      }
+    }
+
     // For other updates, just update locally for now
     const updatedThread: ChatThread = {
       ...thread,

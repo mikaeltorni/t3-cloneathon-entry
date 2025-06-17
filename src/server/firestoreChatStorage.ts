@@ -20,6 +20,7 @@
 import { randomUUID } from 'crypto';
 import { db } from './config/firebase-admin';
 import type { ChatThread, ChatMessage } from '../shared/types';
+import { DEFAULT_MODEL } from '../shared/modelConfig';
 
 /**
  * Firestore chat storage error class
@@ -56,6 +57,7 @@ interface ChatStorageService {
   updateThreadTags(userId: string, threadId: string, tags: string[]): Promise<ChatThread | null>;
   createMessage(content: string, role: 'user' | 'assistant', imageUrl?: string, modelId?: string): ChatMessage;
   addMessageToThread(userId: string, threadId: string, message: ChatMessage): Promise<void>;
+  updateThreadModel(userId: string, threadId: string, currentModel: string): Promise<ChatThread | null>;
 }
 
 /**
@@ -443,31 +445,32 @@ class FirestoreChatStorageService implements ChatStorageService {
       const threadId = randomUUID();
       const now = new Date();
 
+      // Use default model if none provided
+      const defaultModel = DEFAULT_MODEL;
+      const modelToUse = currentModel?.trim() || defaultModel;
+
       const thread: ChatThread = {
         id: threadId,
         title: title.trim(),
         messages: [],
         createdAt: now,
         updatedAt: now,
-        currentModel: currentModel,
+        currentModel: modelToUse,
       };
 
-      console.log(`[Firestore] Creating new thread: ${thread.title} (${threadId}) for user: ${userId}${currentModel ? ` with model: ${currentModel}` : ''}`);
+      console.log(`[Firestore] Creating new thread: ${thread.title} (${threadId}) for user: ${userId} with model: ${modelToUse}`);
 
       // Create thread document with model information
       const threadData: any = {
         title: thread.title,
         createdAt: now,
         updatedAt: now,
+        currentModel: modelToUse,
       };
-
-      if (currentModel) {
-        threadData.currentModel = currentModel;
-      }
 
       await this.getUserChatsCollection(userId).doc(threadId).set(threadData);
 
-      console.log(`[Firestore] Created new thread: ${thread.title} (${threadId})`);
+      console.log(`[Firestore] Created new thread: ${thread.title} (${threadId}) with model: ${modelToUse}`);
       return thread;
     } catch (error) {
       console.error(`[Firestore] Error creating thread for user ${userId}:`, error);
@@ -736,6 +739,62 @@ class FirestoreChatStorageService implements ChatStorageService {
       throw new FirestoreChatStorageError(
         `Failed to add message to thread: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'addMessageToThread',
+        error
+      );
+    }
+  }
+
+  /**
+   * Update thread model
+   * 
+   * @param userId - User ID
+   * @param threadId - ID of the thread to update
+   * @param currentModel - New current model
+   * @returns Updated thread data or null if not found
+   */
+  async updateThreadModel(userId: string, threadId: string, currentModel: string): Promise<ChatThread | null> {
+    try {
+      if (!userId?.trim()) {
+        throw new Error('User ID is required');
+      }
+
+      if (!threadId?.trim()) {
+        throw new Error('Thread ID is required');
+      }
+
+      if (!currentModel?.trim()) {
+        throw new Error('Current model is required');
+      }
+
+      console.log(`[Firestore] Updating model for thread ${threadId} for user: ${userId} -> ${currentModel}`);
+
+      const threadRef = this.getUserChatsCollection(userId).doc(threadId);
+      const threadDoc = await threadRef.get();
+
+      if (!threadDoc.exists) {
+        console.log(`[Firestore] Thread not found for model update: ${threadId}`);
+        return null;
+      }
+
+      const now = new Date();
+      await threadRef.update({
+        currentModel: currentModel.trim(),
+        updatedAt: now,
+      });
+
+      // Get the updated thread with messages
+      const updatedThread = await this.getThread(userId, threadId);
+
+      if (updatedThread) {
+        console.log(`[Firestore] Updated thread model: "${currentModel}"`);
+      }
+
+      return updatedThread;
+    } catch (error) {
+      console.error(`[Firestore] Error updating thread model for ${threadId}:`, error);
+      throw new FirestoreChatStorageError(
+        `Failed to update thread model: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'updateThreadModel',
         error
       );
     }

@@ -189,6 +189,25 @@ export class ChatApiService {
     return updatedThread;
   }
 
+  async updateThreadModel(threadId: string, currentModel: string): Promise<ChatThread> {
+    if (!threadId?.trim()) {
+      throw new Error('Thread ID is required');
+    }
+
+    if (!currentModel?.trim()) {
+      throw new Error('Current model is required');
+    }
+
+    logger.info(`Updating thread model: ${threadId} -> ${currentModel}`);
+    
+    const updatedThread = await this.httpClient.patch<ChatThread>(`/chats/${threadId}/model`, {
+      currentModel: currentModel.trim()
+    });
+    
+    logger.info(`Successfully updated thread model: ${threadId}`);
+    return updatedThread;
+  }
+
   // Message Operations (delegating to MessageService)
   async sendMessage(request: CreateMessageRequest): Promise<CreateMessageResponse> {
     return this.messageService.sendMessage(request);

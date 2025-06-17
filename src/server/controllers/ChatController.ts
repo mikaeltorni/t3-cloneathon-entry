@@ -206,7 +206,7 @@ export class ChatController {
       } else {
         // Create new thread with the message content as title (truncated)
         const title = content.length > 50 ? content.substring(0, 50) + '...' : content;
-        currentThread = await firestoreChatStorage.createThread(req.user.uid, title);
+        currentThread = await firestoreChatStorage.createThread(req.user.uid, title, modelId);
         console.log(`[ChatController] Created new thread: ${currentThread.id}`);
       }
 
@@ -426,7 +426,7 @@ export class ChatController {
       } else {
         // Create new thread with the message content as title (truncated)
         const title = content?.length > 50 ? content.substring(0, 50) + '...' : content || (documents?.length > 0 ? 'Document Analysis' : 'Image Analysis');
-        currentThread = await firestoreChatStorage.createThread(req.user.uid, title);
+        currentThread = await firestoreChatStorage.createThread(req.user.uid, title, modelId);
         console.log(`[ChatController] Created new thread for streaming: ${currentThread.id}`);
       }
 
@@ -877,6 +877,63 @@ export class ChatController {
   };
 
   /**
+   * Update thread model
+   * 
+   * @route PATCH /api/chats/:threadId/model
+   */
+  updateThreadModel = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const { threadId } = req.params;
+      const { currentModel } = req.body;
+      
+      if (!threadId?.trim()) {
+        res.status(400).json({ 
+          error: 'Thread ID is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      if (!currentModel?.trim()) {
+        res.status(400).json({ 
+          error: 'Current model is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      
+      console.log(`[ChatController] Updating model for thread: ${threadId} for user: ${req.user.uid} -> ${currentModel}`);
+      
+      // Check if thread exists first
+      const existingThread = await firestoreChatStorage.getThread(req.user.uid, threadId);
+      if (!existingThread) {
+        res.status(404).json({ 
+          error: 'Thread not found',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      
+      // Update the model
+      const updatedThread = await firestoreChatStorage.updateThreadModel(req.user.uid, threadId, currentModel.trim());
+      
+      console.log(`[ChatController] Successfully updated model for thread: ${threadId}`);
+      res.json(updatedThread);
+    } catch (error) {
+      console.error('[ChatController] Error updating thread model:', error);
+      next(error);
+    }
+  };
+
+  /**
    * Get messages for multiple threads in batch
    * 
    * @route POST /api/chats/messages/batch
@@ -973,6 +1030,7 @@ export class ChatController {
     router.put('/:threadId/title', this.updateThreadTitle);
     router.patch('/:threadId/pin', this.toggleThreadPin);
     router.patch('/:threadId/tags', this.updateThreadTags);
+    router.patch('/:threadId/model', this.updateThreadModel);
 
     return router;
   }

@@ -105,6 +105,17 @@ export class ThreadService {
     return this.crudService.updateThreadTags(threadId, tags);
   }
 
+  /**
+   * Update thread model
+   * 
+   * @param threadId - Thread ID to update
+   * @param currentModel - Model ID to set as current for the thread
+   * @returns Promise with updated chat thread
+   */
+  async updateThreadModel(threadId: string, currentModel: string): Promise<ChatThread> {
+    return this.crudService.updateThreadModel(threadId, currentModel);
+  }
+
   // Batch Operations (delegated to ThreadBatchService)
 
   /**

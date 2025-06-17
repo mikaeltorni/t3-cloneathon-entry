@@ -199,6 +199,58 @@ export class ChatApiComposed {
     return updatedThread;
   }
 
+  /**
+   * Update thread tags
+   * 
+   * @param threadId - Thread ID to update
+   * @param tags - Array of tag IDs to assign to the thread
+   * @returns Promise with updated chat thread
+   */
+  async updateThreadTags(threadId: string, tags: string[]): Promise<ChatThread> {
+    if (!threadId?.trim()) {
+      throw new Error('Thread ID is required');
+    }
+
+    if (!Array.isArray(tags)) {
+      throw new Error('Tags must be an array');
+    }
+
+    logger.info(`Updating thread tags: ${threadId} -> [${tags.join(', ')}]`);
+    
+    const updatedThread = await this.httpClient.patch<ChatThread>(`/chats/${threadId}/tags`, {
+      tags
+    });
+    
+    logger.info(`Successfully updated thread tags: ${threadId}`);
+    return updatedThread;
+  }
+
+  /**
+   * Update thread model
+   * 
+   * @param threadId - Thread ID to update
+   * @param currentModel - Model ID to set as current for the thread
+   * @returns Promise with updated chat thread
+   */
+  async updateThreadModel(threadId: string, currentModel: string): Promise<ChatThread> {
+    if (!threadId?.trim()) {
+      throw new Error('Thread ID is required');
+    }
+
+    if (!currentModel?.trim()) {
+      throw new Error('Current model is required');
+    }
+
+    logger.info(`Updating thread model: ${threadId} -> ${currentModel}`);
+    
+    const updatedThread = await this.httpClient.patch<ChatThread>(`/chats/${threadId}/model`, {
+      currentModel: currentModel.trim()
+    });
+    
+    logger.info(`Successfully updated thread model: ${threadId}`);
+    return updatedThread;
+  }
+
   // Message Operations (delegating to MessageService)
 
   /**

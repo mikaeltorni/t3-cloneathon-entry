@@ -145,7 +145,7 @@ export class ThreadCrudService {
    * @returns Promise with updated chat thread
    */
   async updateThreadTags(threadId: string, tags: string[]): Promise<ChatThread> {
-    if (!threadId?.trim()) {
+    if (!threadId.trim()) {
       throw new Error('Thread ID is required');
     }
 
@@ -154,17 +154,48 @@ export class ThreadCrudService {
     }
 
     try {
-      logger.info(`Updating thread tags: ${threadId} -> [${tags.join(', ')}]`);
+      logger.info(`Updating tags for thread: ${threadId} -> [${tags.join(', ')}]`);
       
-      const updatedThread = await this.httpClient.patch<ChatThread>(`/chats/${threadId}/tags`, {
+      const response = await this.httpClient.patch<ChatThread>(`/chats/${threadId}/tags`, {
         tags
       });
       
-      logger.info(`Successfully updated thread tags: ${threadId}`);
-      return updatedThread;
+      logger.info(`Successfully updated tags for thread: ${threadId}`);
+      return response;
     } catch (error) {
-      logger.error(`Failed to update thread tags: ${threadId}`, error as Error);
-      throw new Error('Failed to update chat tags. Please try again.');
+      logger.error(`Failed to update tags for thread ${threadId}:`, error as Error);
+      throw new Error('Failed to update thread tags. Please try again.');
+    }
+  }
+
+  /**
+   * Update thread model
+   * 
+   * @param threadId - Thread ID to update
+   * @param currentModel - Model ID to set as current for the thread
+   * @returns Promise with updated chat thread
+   */
+  async updateThreadModel(threadId: string, currentModel: string): Promise<ChatThread> {
+    if (!threadId.trim()) {
+      throw new Error('Thread ID is required');
+    }
+
+    if (!currentModel.trim()) {
+      throw new Error('Current model is required');
+    }
+
+    try {
+      logger.info(`Updating model for thread: ${threadId} -> ${currentModel}`);
+      
+      const response = await this.httpClient.patch<ChatThread>(`/chats/${threadId}/model`, {
+        currentModel: currentModel.trim()
+      });
+      
+      logger.info(`Successfully updated model for thread: ${threadId}`);
+      return response;
+    } catch (error) {
+      logger.error(`Failed to update model for thread ${threadId}:`, error as Error);
+      throw new Error('Failed to update thread model. Please try again.');
     }
   }
 
