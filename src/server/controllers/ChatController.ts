@@ -832,8 +832,19 @@ export class ChatController {
    * @route PATCH /api/chats/:threadId/tags
    */
   updateThreadTags = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    const requestId = `TAG-REQ-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    const startTime = Date.now();
+    
     try {
+      console.log(`🏷️ [Server-${requestId}] ========== TAG UPDATE REQUEST STARTED ==========`);
+      console.log(`🏷️ [Server-${requestId}] Request headers:`, {
+        'content-type': req.headers['content-type'],
+        'user-agent': req.headers['user-agent']?.substring(0, 50),
+        'origin': req.headers.origin
+      });
+      
       if (!req.user?.uid) {
+        console.log(`❌ [Server-${requestId}] Authentication failed - no user ID`);
         res.status(401).json({ 
           error: 'Authentication required',
           timestamp: new Date().toISOString()
@@ -844,7 +855,17 @@ export class ChatController {
       const { threadId } = req.params;
       const { tags } = req.body;
       
+      console.log(`🏷️ [Server-${requestId}] Request details:`, {
+        userId: req.user.uid,
+        threadId: threadId,
+        requestBody: req.body,
+        tagsType: typeof tags,
+        tagsArray: Array.isArray(tags),
+        tagsValue: tags
+      });
+      
       if (!threadId?.trim()) {
+        console.log(`❌ [Server-${requestId}] Validation failed - no thread ID`);
         res.status(400).json({ 
           error: 'Thread ID is required',
           timestamp: new Date().toISOString()
@@ -853,6 +874,7 @@ export class ChatController {
       }
 
       if (!Array.isArray(tags)) {
+        console.log(`❌ [Server-${requestId}] Validation failed - tags not array: ${typeof tags}`);
         res.status(400).json({ 
           error: 'Tags must be an array',
           timestamp: new Date().toISOString()
@@ -860,11 +882,14 @@ export class ChatController {
         return;
       }
       
-      console.log(`[ChatController] Updating tags for thread: ${threadId} for user: ${req.user.uid} -> [${tags.join(', ')}]`);
+      console.log(`🏷️ [Server-${requestId}] Validation passed - updating tags for thread: ${threadId} for user: ${req.user.uid}`);
+      console.log(`🏷️ [Server-${requestId}] Tags to set: [${tags.join(', ')}] (${tags.length} total)`);
       
       // Check if thread exists first
+      console.log(`🔍 [Server-${requestId}] Checking if thread exists...`);
       const existingThread = await firestoreChatStorage.getThread(req.user.uid, threadId);
       if (!existingThread) {
+        console.log(`❌ [Server-${requestId}] Thread not found: ${threadId}`);
         res.status(404).json({ 
           error: 'Thread not found',
           timestamp: new Date().toISOString()
@@ -872,13 +897,37 @@ export class ChatController {
         return;
       }
       
-      // Update the tags
-      const updatedThread = await firestoreChatStorage.updateThreadTags(req.user.uid, threadId, tags);
+      console.log(`✅ [Server-${requestId}] Thread exists - current tags: [${(existingThread.tags || []).join(', ')}]`);
+      console.log(`🔄 [Server-${requestId}] Calling firestoreChatStorage.updateThreadTags...`);
       
-      console.log(`[ChatController] Successfully updated tags for thread: ${threadId}`);
+      // Update the tags
+      const updateStartTime = Date.now();
+      const updatedThread = await firestoreChatStorage.updateThreadTags(req.user.uid, threadId, tags);
+      const updateDuration = Date.now() - updateStartTime;
+      
+      console.log(`✅ [Server-${requestId}] Firestore update completed in ${updateDuration}ms`);
+      
+      if (!updatedThread) {
+        console.log(`❌ [Server-${requestId}] Updated thread is null - this should not happen`);
+        res.status(500).json({ 
+          error: 'Failed to update thread tags',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      
+      console.log(`✅ [Server-${requestId}] Updated thread tags: [${(updatedThread.tags || []).join(', ')}]`);
+      
+      const totalDuration = Date.now() - startTime;
+      console.log(`🎉 [Server-${requestId}] REQUEST COMPLETED SUCCESSFULLY in ${totalDuration}ms`);
+      console.log(`🏷️ [Server-${requestId}] ========== TAG UPDATE REQUEST FINISHED ==========`);
+      
       res.json(updatedThread);
     } catch (error) {
-      console.error('[ChatController] Error updating thread tags:', error);
+      const totalDuration = Date.now() - startTime;
+      console.error(`❌ [Server-${requestId}] REQUEST FAILED after ${totalDuration}ms:`, error);
+      console.error(`❌ [Server-${requestId}] Error stack:`, (error as Error).stack);
+      console.log(`🏷️ [Server-${requestId}] ========== TAG UPDATE REQUEST FAILED ==========`);
       next(error);
     }
   };

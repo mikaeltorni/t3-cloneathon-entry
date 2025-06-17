@@ -809,45 +809,106 @@ class FirestoreChatStorageService implements ChatStorageService {
    * @returns Updated thread data or null if not found
    */
   async updateThreadTags(userId: string, threadId: string, tags: string[]): Promise<ChatThread | null> {
+    const operationId = `FS-UPDATE-${threadId}-${Date.now()}`;
+    const startTime = Date.now();
+    
     try {
+      console.log(`🔥 [Firestore-${operationId}] ========== FIRESTORE TAG UPDATE STARTED ==========`);
+      console.log(`🔥 [Firestore-${operationId}] Input parameters:`, {
+        userId: userId,
+        threadId: threadId,
+        tags: tags,
+        tagsLength: tags?.length,
+        tagsType: typeof tags
+      });
+      
       if (!userId?.trim()) {
+        console.log(`❌ [Firestore-${operationId}] Validation failed - User ID is required`);
         throw new Error('User ID is required');
       }
 
       if (!threadId?.trim()) {
+        console.log(`❌ [Firestore-${operationId}] Validation failed - Thread ID is required`);
         throw new Error('Thread ID is required');
       }
 
       if (!Array.isArray(tags)) {
+        console.log(`❌ [Firestore-${operationId}] Validation failed - Tags must be an array, got: ${typeof tags}`);
         throw new Error('Tags must be an array');
       }
 
-      console.log(`[Firestore] Updating tags for thread ${threadId} for user: ${userId} -> [${tags.join(', ')}]`);
+      console.log(`🔥 [Firestore-${operationId}] Validation passed - updating tags for thread ${threadId} for user: ${userId}`);
+      console.log(`🔥 [Firestore-${operationId}] Tags to set: [${tags.join(', ')}] (${tags.length} items)`);
 
       const threadRef = this.getUserChatsCollection(userId).doc(threadId);
+      console.log(`🔥 [Firestore-${operationId}] Getting thread document reference...`);
+      
+      const checkStartTime = Date.now();
       const threadDoc = await threadRef.get();
+      const checkDuration = Date.now() - checkStartTime;
+      
+      console.log(`🔥 [Firestore-${operationId}] Thread document retrieved in ${checkDuration}ms, exists: ${threadDoc.exists}`);
 
       if (!threadDoc.exists) {
-        console.log(`[Firestore] Thread not found for tag update: ${threadId}`);
+        console.log(`❌ [Firestore-${operationId}] Thread not found for tag update: ${threadId}`);
         return null;
       }
 
+      const existingData = threadDoc.data();
+      console.log(`🔥 [Firestore-${operationId}] Current thread data:`, {
+        title: existingData?.title,
+        currentTags: existingData?.tags || [],
+        updatedAt: existingData?.updatedAt?.toDate()
+      });
+
       const now = new Date();
+      console.log(`🔥 [Firestore-${operationId}] Performing Firestore update...`);
+      
+      const updateStartTime = Date.now();
       await threadRef.update({
         tags,
         updatedAt: now,
       });
+      const updateDuration = Date.now() - updateStartTime;
+      
+      console.log(`✅ [Firestore-${operationId}] Firestore document updated in ${updateDuration}ms`);
+      console.log(`🔥 [Firestore-${operationId}] Fetching updated thread with messages...`);
 
       // Get the updated thread with messages
+      const getThreadStartTime = Date.now();
       const updatedThread = await this.getThread(userId, threadId);
+      const getThreadDuration = Date.now() - getThreadStartTime;
+      
+      console.log(`🔥 [Firestore-${operationId}] Thread retrieval completed in ${getThreadDuration}ms`);
 
       if (updatedThread) {
-        console.log(`[Firestore] Updated thread tags: [${tags.join(', ')}]`);
+        console.log(`✅ [Firestore-${operationId}] Successfully updated thread tags: [${updatedThread.tags?.join(', ') || 'none'}]`);
+        console.log(`🔥 [Firestore-${operationId}] Updated thread data:`, {
+          id: updatedThread.id,
+          title: updatedThread.title,
+          tags: updatedThread.tags,
+          updatedAt: updatedThread.updatedAt,
+          messageCount: updatedThread.messages?.length || 0
+        });
+      } else {
+        console.log(`⚠️ [Firestore-${operationId}] Updated thread is null - this should not happen after successful update`);
       }
+
+      const totalDuration = Date.now() - startTime;
+      console.log(`🎉 [Firestore-${operationId}] FIRESTORE OPERATION COMPLETED SUCCESSFULLY in ${totalDuration}ms`);
+      console.log(`🔥 [Firestore-${operationId}] ========== FIRESTORE TAG UPDATE FINISHED ==========`);
 
       return updatedThread;
     } catch (error) {
-      console.error(`[Firestore] Error updating thread tags for ${threadId}:`, error);
+      const totalDuration = Date.now() - startTime;
+      console.error(`❌ [Firestore-${operationId}] FIRESTORE OPERATION FAILED after ${totalDuration}ms:`, error);
+      console.error(`❌ [Firestore-${operationId}] Error details:`, {
+        name: (error as Error).name,
+        message: (error as Error).message,
+        stack: (error as Error).stack
+      });
+      console.log(`🔥 [Firestore-${operationId}] ========== FIRESTORE TAG UPDATE FAILED ==========`);
+      
       throw new FirestoreChatStorageError(
         `Failed to update thread tags: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'updateThreadTags',

@@ -89,57 +89,77 @@ export const ThreadTagForMenu: React.FC<ThreadTagForMenuProps> = ({
    * Perform the actual API operation using TagSystem methods
    */
   const performOperation = useCallback(async (shouldAssign: boolean) => {
+    const operationId = `${shouldAssign ? 'ADD' : 'REMOVE'}-${threadId}-${tag.id}-${Date.now()}`;
+    
     try {
       setIsLoading(true);
       
+      debug(`🚀 [${operationId}] Starting operation: ${shouldAssign ? 'ADD' : 'REMOVE'} tag ${tag.id} to/from thread ${threadId}`);
+      debug(`🚀 [${operationId}] Current effective state: ${effectivelyAssigned ? 'ASSIGNED' : 'UNASSIGNED'}`);
+      
       if (shouldAssign) {
-        debug(`Adding tag ${tag.id} to thread ${threadId}`);
+        debug(`➕ [${operationId}] Calling tagSystem.addTagToThread(${threadId}, ${tag.id})`);
         await tagSystem.addTagToThread(threadId, tag.id);
+        debug(`✅ [${operationId}] Successfully called addTagToThread`);
       } else {
-        debug(`Removing tag ${tag.id} from thread ${threadId}`);
+        debug(`➖ [${operationId}] Calling tagSystem.removeTagFromThread(${threadId}, ${tag.id})`);
         await tagSystem.removeTagFromThread(threadId, tag.id);
+        debug(`✅ [${operationId}] Successfully called removeTagFromThread`);
       }
       
-      log(`Successfully ${shouldAssign ? 'added' : 'removed'} tag ${tag.id} ${shouldAssign ? 'to' : 'from'} thread ${threadId}`);
+      log(`🎉 [${operationId}] Operation completed: ${shouldAssign ? 'added' : 'removed'} tag ${tag.id} ${shouldAssign ? 'to' : 'from'} thread ${threadId}`);
       
     } catch (error) {
-      logError(`Failed to ${shouldAssign ? 'add' : 'remove'} tag:`, error as Error);
+      logError(`❌ [${operationId}] Operation failed:`, error as Error);
       throw error;
     } finally {
       setIsLoading(false);
+      debug(`🏁 [${operationId}] Operation finished, loading set to false`);
     }
-  }, [threadId, tag.id, tagSystem, debug, log, logError]);
+  }, [threadId, tag.id, tagSystem, debug, log, logError, effectivelyAssigned]);
 
   /**
    * Handle tag toggle with debouncing and optimistic updates
    */
   const handleToggle = useCallback(async () => {
     const targetState = !effectivelyAssigned;
+    const toggleId = `TOGGLE-${threadId}-${tag.id}-${Date.now()}`;
+    
+    debug(`🎯 [${toggleId}] Toggle initiated: current=${effectivelyAssigned ? 'ASSIGNED' : 'UNASSIGNED'} → target=${targetState ? 'ASSIGNED' : 'UNASSIGNED'}`);
+    debug(`🎯 [${toggleId}] Has pending timeout: ${timeoutRef.current !== null}`);
     
     // Set optimistic state immediately for instant feedback using TagSystem
     if (targetState) {
+      debug(`🔵 [${toggleId}] Setting optimistic ASSIGNED state`);
       tagSystem.setOptimisticAssigned(threadId, tag.id);
     } else {
+      debug(`🔴 [${toggleId}] Setting optimistic REMOVED state`);
       tagSystem.setOptimisticRemoved(threadId, tag.id);
     }
     
-    debug(`Setting optimistic state: ${targetState ? 'assigned' : 'removed'}`);
-    
     // Clear any existing timeout
-    clearPendingTimeout();
+    if (timeoutRef.current) {
+      debug(`⏹️ [${toggleId}] Clearing existing timeout`);
+      clearPendingTimeout();
+    } else {
+      debug(`✨ [${toggleId}] No existing timeout to clear`);
+    }
     
     // Schedule the actual operation
+    debug(`⏰ [${toggleId}] Scheduling operation with ${debounceDelay}ms delay`);
     timeoutRef.current = setTimeout(async () => {
+      debug(`🎬 [${toggleId}] Timeout fired, executing operation`);
       try {
         await performOperation(targetState);
         
-        // Clear optimistic state after successful operation
+        debug(`🧹 [${toggleId}] Clearing optimistic state after successful operation`);
         tagSystem.clearOptimistic(threadId, tag.id);
       } catch (error) {
-        // Revert optimistic state on error
+        debug(`🚨 [${toggleId}] Operation failed, reverting optimistic state`);
         tagSystem.clearOptimistic(threadId, tag.id);
       } finally {
         timeoutRef.current = null;
+        debug(`🎬 [${toggleId}] Timeout completed, ref cleared`);
       }
     }, debounceDelay);
     

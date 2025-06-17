@@ -171,22 +171,64 @@ export class ChatApiService {
   }
 
   async updateThreadTags(threadId: string, tags: string[]): Promise<ChatThread> {
+    const apiCallId = `API-${threadId}-${Date.now()}`;
+    const startTime = Date.now();
+    
+    console.log(`🌐 [API-${apiCallId}] ========== API TAG UPDATE CALL STARTED ==========`);
+    console.log(`🌐 [API-${apiCallId}] Call parameters:`, {
+      threadId: threadId,
+      tags: tags,
+      tagsLength: tags?.length,
+      tagsType: typeof tags
+    });
+    
     if (!threadId?.trim()) {
+      console.log(`❌ [API-${apiCallId}] Validation failed - Thread ID is required`);
       throw new Error('Thread ID is required');
     }
 
     if (!Array.isArray(tags)) {
+      console.log(`❌ [API-${apiCallId}] Validation failed - Tags must be an array, got: ${typeof tags}`);
       throw new Error('Tags must be an array');
     }
 
+    console.log(`🌐 [API-${apiCallId}] Validation passed - making HTTP PATCH request`);
     logger.info(`Updating thread tags: ${threadId} -> [${tags.join(', ')}]`);
     
-    const updatedThread = await this.httpClient.patch<ChatThread>(`/chats/${threadId}/tags`, {
-      tags
-    });
-    
-    logger.info(`Successfully updated thread tags: ${threadId}`);
-    return updatedThread;
+    try {
+      const patchStartTime = Date.now();
+      const updatedThread = await this.httpClient.patch<ChatThread>(`/chats/${threadId}/tags`, {
+        tags
+      });
+      const patchDuration = Date.now() - patchStartTime;
+      
+      console.log(`✅ [API-${apiCallId}] HTTP PATCH completed in ${patchDuration}ms`);
+      console.log(`🌐 [API-${apiCallId}] Response received:`, {
+        threadId: updatedThread.id,
+        title: updatedThread.title,
+        tags: updatedThread.tags,
+        updatedAt: updatedThread.updatedAt,
+        messageCount: updatedThread.messages?.length || 0
+      });
+      
+      const totalDuration = Date.now() - startTime;
+      console.log(`🎉 [API-${apiCallId}] API CALL COMPLETED SUCCESSFULLY in ${totalDuration}ms`);
+      console.log(`🌐 [API-${apiCallId}] ========== API TAG UPDATE CALL FINISHED ==========`);
+      
+      logger.info(`Successfully updated thread tags: ${threadId}`);
+      return updatedThread;
+    } catch (error) {
+      const totalDuration = Date.now() - startTime;
+      console.error(`❌ [API-${apiCallId}] API CALL FAILED after ${totalDuration}ms:`, error);
+      console.error(`❌ [API-${apiCallId}] Error details:`, {
+        name: (error as Error).name,
+        message: (error as Error).message,
+        response: (error as any).response?.data,
+        status: (error as any).response?.status
+      });
+      console.log(`🌐 [API-${apiCallId}] ========== API TAG UPDATE CALL FAILED ==========`);
+      throw error;
+    }
   }
 
   async updateThreadModel(threadId: string, currentModel: string): Promise<ChatThread> {
