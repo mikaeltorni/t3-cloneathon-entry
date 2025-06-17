@@ -76,11 +76,6 @@ export const ModelIndicator: React.FC<ModelIndicatorProps> = ({
           <span className="text-sm font-medium text-gray-700 truncate">
             Current Model: {model.name}
           </span>
-          
-          {/* Robot emoji icon */}
-          <span className="text-lg ml-1" role="img" aria-label="AI Model">
-            🤖
-          </span>
         </div>
         
         {/* Dropdown arrow and click hint */}
