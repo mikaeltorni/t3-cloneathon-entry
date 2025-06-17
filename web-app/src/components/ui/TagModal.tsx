@@ -102,9 +102,9 @@ export const TagModal: React.FC<TagModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Normal Backdrop */}
+      {/* Very Light Backdrop */}
       <div 
-        className="absolute inset-0 bg-black bg-opacity-50" 
+        className="absolute inset-0 bg-black bg-opacity-20" 
         onClick={handleClose}
       />
       
