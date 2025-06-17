@@ -2,6 +2,7 @@
  * SearchEffortSelector.tsx
  * 
  * Web search effort level selector component for AI models that support search effort control
+ * Enhanced with comprehensive dark mode support
  * 
  * Components:
  *   SearchEffortSelector
@@ -13,6 +14,7 @@
  *   - Accessible keyboard navigation
  *   - Performance indicators for each effort level
  *   - Pricing tier awareness (Perplexity vs OpenAI vs standard)
+ *   - Complete dark mode support
  * 
  * Usage: <SearchEffortSelector value="high" onChange={setEffort} modelName="Sonar Reasoning" webSearchPricing="perplexity" />
  */
@@ -32,6 +34,7 @@ interface SearchEffortSelectorProps {
 
 /**
  * Get search effort options with pricing-aware descriptions and performance indicators
+ * Enhanced with dark mode compatible colors
  */
 const getSearchEffortOptions = (pricingTier: 'standard' | 'perplexity' | 'openai'): BaseSelectorOption<SearchEffort>[] => {
   const basePricing = {
@@ -48,7 +51,7 @@ const getSearchEffortOptions = (pricingTier: 'standard' | 'perplexity' | 'openai
       label: 'Low Context',
       description: `Minimal search context, suitable for basic queries (${pricing.low} requests)`,
       icon: '⚡',
-      color: 'text-green-600',
+      color: 'text-green-600 dark:text-green-400',
       performance: 'Fastest & Cheapest'
     },
     {
@@ -56,7 +59,7 @@ const getSearchEffortOptions = (pricingTier: 'standard' | 'perplexity' | 'openai
       label: 'Medium Context',
       description: `Moderate search context, good for general queries (${pricing.medium} requests)`,
       icon: '⚖️',
-      color: 'text-yellow-600',
+      color: 'text-yellow-600 dark:text-yellow-400',
       performance: 'Balanced'
     },
     {
@@ -64,7 +67,7 @@ const getSearchEffortOptions = (pricingTier: 'standard' | 'perplexity' | 'openai
       label: 'High Context',
       description: `Extensive search context, ideal for detailed research (${pricing.high} requests)`,
       icon: '🔍',
-      color: 'text-blue-600',
+      color: 'text-blue-600 dark:text-blue-400',
       performance: 'Most comprehensive'
     }
   ];
@@ -72,6 +75,7 @@ const getSearchEffortOptions = (pricingTier: 'standard' | 'perplexity' | 'openai
 
 /**
  * Web search effort level selector component
+ * Enhanced with comprehensive dark mode support
  * 
  * Provides a dropdown interface for selecting web search effort levels
  * with clear descriptions, pricing information, and visual indicators for each option.

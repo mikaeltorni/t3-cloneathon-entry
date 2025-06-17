@@ -2,6 +2,7 @@
  * ReasoningEffortSelector.tsx
  * 
  * Reasoning effort level selector component for AI models that support reasoning effort control
+ * Enhanced with comprehensive dark mode support
  * 
  * Components:
  *   ReasoningEffortSelector
@@ -12,6 +13,7 @@
  *   - Beautiful UI with effort descriptions
  *   - Accessible keyboard navigation
  *   - Performance indicators for each effort level
+ *   - Complete dark mode support
  * 
  * Usage: <ReasoningEffortSelector value="high" onChange={setEffort} modelName="Claude 3.7" />
  */
@@ -34,7 +36,7 @@ const REASONING_EFFORT_OPTIONS: BaseSelectorOption<ReasoningEffort>[] = [
     label: 'Low Effort',
     description: 'Fast responses with basic reasoning',
     icon: '⚡',
-    color: 'text-green-600',
+    color: 'text-green-600 dark:text-green-400',
     performance: 'Fastest'
   },
   {
@@ -42,7 +44,7 @@ const REASONING_EFFORT_OPTIONS: BaseSelectorOption<ReasoningEffort>[] = [
     label: 'Medium Effort',
     description: 'Balanced reasoning and response time',
     icon: '⚖️',
-    color: 'text-yellow-600',
+    color: 'text-yellow-600 dark:text-yellow-400',
     performance: 'Balanced'
   },
   {
@@ -50,13 +52,14 @@ const REASONING_EFFORT_OPTIONS: BaseSelectorOption<ReasoningEffort>[] = [
     label: 'High Effort',
     description: 'Deep reasoning with thorough analysis',
     icon: '🧠',
-    color: 'text-blue-600',
+    color: 'text-blue-600 dark:text-blue-400',
     performance: 'Most thorough'
   }
 ];
 
 /**
  * Reasoning effort level selector component
+ * Enhanced with comprehensive dark mode support
  * 
  * Provides a dropdown interface for selecting reasoning effort levels
  * with clear descriptions and visual indicators for each option.

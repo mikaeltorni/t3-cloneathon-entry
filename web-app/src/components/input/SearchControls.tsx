@@ -2,6 +2,7 @@
  * SearchControls.tsx
  * 
  * Component for managing web search options and effort levels
+ * Enhanced with comprehensive dark mode support and improved scaling
  * 
  * Components:
  *   SearchControls
@@ -25,6 +26,7 @@ interface SearchControlsProps {
 
 /**
  * Web search controls for models that support search
+ * Enhanced with comprehensive dark mode support and improved scaling
  * 
  * @param selectedModel - Currently selected model ID
  * @param availableModels - Available model configurations
@@ -67,71 +69,78 @@ export const SearchControls: React.FC<SearchControlsProps> = ({
   };
 
   return (
-    <div 
-      className="flex items-center flex-wrap gap-3 mb-3"
-    >
-      {/* Web Search Toggle */}
-      <SearchToggle
-        enabled={useWebSearch}
-        onChange={onUseWebSearchChange}
-        webSearchMode={
-          model.webSearchMode === 'none' 
-            ? 'optional' 
-            : model.webSearchMode as 'forced' | 'optional'
-        }
-        webSearchPricing={model?.webSearchPricing}
-        modelName={model?.name}
-      />
+    <div className="flex items-center justify-start flex-wrap gap-3 mb-3">
+      {/* Web Search Toggle - Enhanced with better sizing */}
+      <div className="flex-shrink-0">
+        <SearchToggle
+          enabled={useWebSearch}
+          onChange={onUseWebSearchChange}
+          webSearchMode={
+            model.webSearchMode === 'none' 
+              ? 'optional' 
+              : model.webSearchMode as 'forced' | 'optional'
+          }
+          webSearchPricing={model?.webSearchPricing}
+          modelName={model?.name}
+        />
+      </div>
 
-      {/* Inline Web Search Effort Level Display */}
+      {/* Inline Web Search Effort Level Display - Enhanced with dark mode */}
       {supportsWebEffortControl() && (
         <div className={cn(
-          'flex items-center space-x-2 px-2 py-1 rounded-md text-sm transition-all duration-200',
+          'flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 flex-shrink-0',
+          'border shadow-sm',
           useWebSearch 
-            ? 'opacity-100 bg-green-50 border border-green-200' 
-            : 'opacity-30 bg-gray-50 border border-gray-200'
+            ? 'opacity-100 bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-600' 
+            : 'opacity-40 bg-gray-50 border-gray-200 dark:bg-slate-700 dark:border-slate-600'
         )}>
-          <span className="text-xs font-medium text-gray-600">search:</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-slate-300">
+            search:
+          </span>
           <div className="flex items-center space-x-1">
             <span className="text-base">
               {webSearchEffort === 'low' ? '⚡' : webSearchEffort === 'medium' ? '⚖️' : '🔍'}
             </span>
             <span className={cn(
               'text-xs font-medium',
-              webSearchEffort === 'low' && 'text-green-600',
-              webSearchEffort === 'medium' && 'text-yellow-600',
-              webSearchEffort === 'high' && 'text-blue-600'
+              webSearchEffort === 'low' && 'text-green-600 dark:text-green-400',
+              webSearchEffort === 'medium' && 'text-yellow-600 dark:text-yellow-400',
+              webSearchEffort === 'high' && 'text-blue-600 dark:text-blue-400'
             )}>
               {webSearchEffort}
             </span>
           </div>
           
-          {/* Left/Right arrows to adjust effort level */}
-          {useWebSearch && (
-            <div className="flex items-center space-x-0.5 ml-1">
-              <button
-                type="button"
-                onClick={handleEffortDecrease}
-                className="text-gray-400 hover:text-gray-600 transition-colors duration-150 p-0.5"
-                title="Decrease search context size"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              
-              <button
-                type="button"
-                onClick={handleEffortIncrease}
-                className="text-gray-400 hover:text-gray-600 transition-colors duration-150 p-0.5"
-                title="Increase search context size"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          )}
+          {/* Left/Right arrows to adjust effort level - Enhanced with dark mode */}
+          <div className="flex items-center space-x-0.5 ml-1">
+            <button
+              type="button"
+              onClick={handleEffortDecrease}
+              className={cn(
+                'text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200',
+                'transition-colors duration-150 p-0.5 rounded hover:bg-gray-100 dark:hover:bg-slate-600'
+              )}
+              title="Decrease search context size"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            
+            <button
+              type="button"
+              onClick={handleEffortIncrease}
+              className={cn(
+                'text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200',
+                'transition-colors duration-150 p-0.5 rounded hover:bg-gray-100 dark:hover:bg-slate-600'
+              )}
+              title="Increase search context size"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
     </div>
