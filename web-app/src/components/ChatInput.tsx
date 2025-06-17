@@ -249,7 +249,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     <div 
       ref={inputBarRef}
       className={cn(
-        'fixed bottom-0 bg-white border-t border-gray-200 shadow-lg z-40 transition-all duration-300',
+        'fixed bottom-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 shadow-lg z-40 transition-all duration-300',
         'p-3 sm:p-4', // Responsive padding - smaller on mobile
         sidebarOpen ? 'left-80' : 'left-0',
         modelSidebarOpen ? 'right-80' : 'right-0'

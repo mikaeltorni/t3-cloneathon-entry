@@ -253,7 +253,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   }
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-slate-900">
+    <div className="h-screen bg-gray-50 dark:bg-slate-950">
       {/* Floating Toggle Button - Only visible when sidebar is closed */}
       {!sidebar.isOpen && (
         <SidebarToggle 

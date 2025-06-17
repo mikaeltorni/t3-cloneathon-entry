@@ -42,7 +42,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = React.memo(({
   return (
     <div 
       className={`flex flex-col h-full transition-colors duration-200 ${
-        isDragOver ? 'bg-blue-50' : 'bg-gray-50'
+        isDragOver ? 'bg-blue-50 dark:bg-blue-950' : 'bg-gray-50 dark:bg-slate-950'
       }`}
       {...dropHandlers}
     >
