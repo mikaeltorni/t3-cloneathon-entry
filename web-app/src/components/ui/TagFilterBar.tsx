@@ -1,57 +1,123 @@
 /**
  * TagFilterBar.tsx
  * 
- * Tag filter bar component for filtering chats by tags
+ * Filter bar component for filtering by tags
+ * Enhanced with comprehensive dark mode support and vibrant colors
  * 
  * Components:
- *   TagFilterBar - Filter bar with tag selection and ALL button
+ *   TagFilterBar
  * 
- * Usage: <TagFilterBar tags={tags} selectedTags={selectedTags} onTagToggle={onTagToggle} onClearAll={onClearAll} />
+ * Usage: <TagFilterBar selectedTags={selectedTags} onTagToggle={onTagToggle} />
  */
 import React from 'react';
-import { Tag } from './Tag';
 import { cn } from '../../utils/cn';
-import type { ChatTag } from '../../../../src/shared/types';
+// Use shared types for consistency
+interface TagType {
+  id: string;
+  name: string;
+  color: { r: number; g: number; b: number };
+}
 
 interface TagFilterBarProps {
-  tags: ChatTag[];
-  selectedTags: string[];
+  availableTags?: TagType[];
+  selectedTags?: Set<string>;
   onTagToggle: (tagId: string) => void;
-  onClearAll: () => void;
-  onTagRightClick?: (e: React.MouseEvent, tag: ChatTag) => void;
   className?: string;
 }
 
 /**
- * Tag filter bar for filtering chats by tags
+ * Enhance colors for dark mode by boosting brightness and saturation
+ */
+const enhanceColorForDarkMode = (r: number, g: number, b: number) => {
+  // Convert RGB to HSL for easier manipulation
+  const max = Math.max(r, g, b) / 255;
+  const min = Math.min(r, g, b) / 255;
+  const diff = max - min;
+  
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+  
+  if (diff !== 0) {
+    s = l > 0.5 ? diff / (2 - max - min) : diff / (max + min);
+    
+    switch (max) {
+      case r / 255:
+        h = ((g / 255 - b / 255) / diff + (g < b ? 6 : 0)) / 6;
+        break;
+      case g / 255:
+        h = ((b / 255 - r / 255) / diff + 2) / 6;
+        break;
+      case b / 255:
+        h = ((r / 255 - g / 255) / diff + 4) / 6;
+        break;
+    }
+  }
+  
+  // Boost saturation and lightness for dark mode
+  const enhancedS = Math.min(1, s * 1.6); // Increase saturation by 60%
+  const enhancedL = Math.min(0.85, Math.max(0.4, l + 0.3)); // Ensure lightness is between 40-85%
+  
+  // Convert back to RGB
+  const c = (1 - Math.abs(2 * enhancedL - 1)) * enhancedS;
+  const x = c * (1 - Math.abs(((h * 6) % 2) - 1));
+  const m = enhancedL - c / 2;
+  
+  let rNew = 0, gNew = 0, bNew = 0;
+  
+  if (h >= 0 && h < 1/6) {
+    rNew = c; gNew = x; bNew = 0;
+  } else if (h >= 1/6 && h < 2/6) {
+    rNew = x; gNew = c; bNew = 0;
+  } else if (h >= 2/6 && h < 3/6) {
+    rNew = 0; gNew = c; bNew = x;
+  } else if (h >= 3/6 && h < 4/6) {
+    rNew = 0; gNew = x; bNew = c;
+  } else if (h >= 4/6 && h < 5/6) {
+    rNew = x; gNew = 0; bNew = c;
+  } else {
+    rNew = c; gNew = 0; bNew = x;
+  }
+  
+  return {
+    r: Math.round((rNew + m) * 255),
+    g: Math.round((gNew + m) * 255),
+    b: Math.round((bNew + m) * 255)
+  };
+};
+
+/**
+ * Filter bar component for tag-based filtering
+ * Enhanced with dark mode support and vibrant colors
  * 
- * @param tags - Available tags
- * @param selectedTags - Currently selected tag IDs
- * @param onTagToggle - Callback when a tag is toggled
- * @param onClearAll - Callback to clear all selected tags
- * @param onTagRightClick - Callback when a tag is right-clicked
+ * @param availableTags - Array of available tags
+ * @param selectedTags - Set of selected tag IDs
+ * @param onTagToggle - Callback when tag selection changes
  * @param className - Additional CSS classes
  * @returns React component
  */
 export const TagFilterBar: React.FC<TagFilterBarProps> = ({
-  tags,
-  selectedTags,
+  availableTags = [],
+  selectedTags = new Set(),
   onTagToggle,
-  onClearAll,
-  onTagRightClick,
   className
 }) => {
-  const hasSelectedTags = selectedTags.length > 0;
-
-  // Show helpful text when no tags exist
+  // Add null checking for safety
+  const tags = availableTags || [];
+  const selectedTagsSet = selectedTags || new Set();
+  
+  // Check if we're in dark mode
+  const isDarkMode = document.documentElement.classList.contains('dark');
+  
   if (tags.length === 0) {
     return (
       <div className={cn(
         'flex items-center justify-center p-3 bg-gray-50 border-b border-gray-200',
+        'dark:bg-slate-800 dark:border-slate-600',
         className
       )}>
-        <span className="text-sm text-gray-500">
-          💡 Right-click on any chat to add tags for better organization
+        <span className="text-sm text-gray-500 dark:text-slate-400">
+          No tags available for filtering
         </span>
       </div>
     );
@@ -60,52 +126,69 @@ export const TagFilterBar: React.FC<TagFilterBarProps> = ({
   return (
     <div className={cn(
       'p-3 bg-gray-50 border-b border-gray-200',
+      'dark:bg-slate-800 dark:border-slate-600',
       className
     )}>
-      {/* First row: ALL button and selected count */}
-      <div className="flex items-center justify-between mb-3">
-        <button
-          onClick={onClearAll}
-          className={cn(
-            'px-4 py-2 text-sm font-medium rounded-md transition-all duration-200',
-            'border border-gray-300 shadow-sm',
-            hasSelectedTags
-              ? 'bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400'
-              : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 shadow-blue-200'
-          )}
-          title="Show all chats"
-        >
-          ALL
-        </button>
-
-        {/* Selected count indicator */}
-        {hasSelectedTags && (
-          <div className="text-xs text-gray-600 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
-            <span className="font-medium">{selectedTags.length}</span> selected
-          </div>
-        )}
-      </div>
-
-      {/* Tag grid - wraps to multiple rows */}
       <div className="flex flex-wrap gap-2">
-        {tags.map((tag) => {
-          const isSelected = selectedTags.includes(tag.id);
+        {/* Clear All Button */}
+        {selectedTagsSet.size > 0 && (
+          <button
+            onClick={() => selectedTagsSet.forEach(tagId => onTagToggle(tagId))}
+            className={cn(
+              'px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200',
+              'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400',
+              'dark:text-slate-300 dark:bg-slate-700 dark:border-slate-600 dark:hover:bg-slate-600 dark:hover:border-slate-500',
+              'focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-1 dark:focus:ring-offset-slate-800'
+            )}
+          >
+            Clear All
+          </button>
+        )}
+
+        {/* Tag Buttons */}
+        {tags.map(tag => {
+          const isSelected = selectedTagsSet.has(tag.id);
+          
+          // Use enhanced colors in dark mode
+          const displayColor = isDarkMode ? enhanceColorForDarkMode(tag.color.r, tag.color.g, tag.color.b) : tag.color;
+          const backgroundColor = `rgb(${displayColor.r}, ${displayColor.g}, ${displayColor.b})`;
+          const brightness = (displayColor.r * 299 + displayColor.g * 587 + displayColor.b * 114) / 1000;
+          const textColor = brightness > 125 ? '#000000' : '#ffffff';
           
           return (
-            <Tag
+            <button
               key={tag.id}
-              tag={tag}
-              selected={isSelected}
               onClick={() => onTagToggle(tag.id)}
-              onRightClick={onTagRightClick ? (e: React.MouseEvent) => onTagRightClick(e, tag) : undefined}
-              size="sm"
               className={cn(
-                'transition-all duration-200 hover:scale-105',
-                !isSelected && 'opacity-75 hover:opacity-100'
+                'px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-200',
+                isSelected
+                  ? 'shadow-lg scale-105 border-opacity-60'
+                  : 'hover:scale-105 hover:shadow-lg',
+                'focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-1 dark:focus:ring-offset-slate-800',
+                // Enhanced shadow and glow for dark mode
+                isDarkMode && isSelected && 'shadow-xl',
               )}
-            />
+              style={{
+                backgroundColor: isSelected ? backgroundColor : 'transparent',
+                borderColor: backgroundColor,
+                color: isSelected ? textColor : backgroundColor,
+                // Add subtle glow effect in dark mode when selected
+                ...(isDarkMode && isSelected && {
+                  boxShadow: `0 0 15px ${backgroundColor}60, 0 4px 8px -1px rgba(0, 0, 0, 0.4)`
+                })
+              }}
+            >
+              {tag.name}
+            </button>
           );
         })}
+
+        {/* Active Filter Count */}
+        {selectedTagsSet.size > 0 && (
+          <div className="text-xs text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-700 px-3 py-1.5 rounded-full border border-gray-200 dark:border-slate-600 shadow-sm">
+            {selectedTagsSet.size} filter{selectedTagsSet.size !== 1 ? 's' : ''} active
+          </div>
+        )}
       </div>
     </div>
   );

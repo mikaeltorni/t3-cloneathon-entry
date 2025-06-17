@@ -91,7 +91,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({
             }
             return (
               <div className="relative group">
-                <CopyButton value={codeString} />
+                <CopyButton text={codeString} />
                 <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto mb-4">
                   <code className="text-sm font-mono">{codeString}</code>
                 </pre>

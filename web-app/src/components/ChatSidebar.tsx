@@ -212,11 +212,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
         {/* Tag Filter Bar */}
         <TagFilterBar
-          tags={tagSystem.tags}
-          selectedTags={tagSystem.selectedTags}
+          availableTags={tagSystem.tags}
+          selectedTags={new Set(tagSystem.selectedTags)}
           onTagToggle={tagSystem.onTagToggle}
-          onClearAll={tagSystem.onClearAll}
-          onTagRightClick={tagSystem.onTagRightClick}
         />
 
         {/* Thread list with enhanced scrolling */}
