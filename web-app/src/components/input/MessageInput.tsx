@@ -230,7 +230,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             onKeyDown={onKeyDown}
             placeholder={
               isGenerating 
-                ? "Assistant is responding... Type your next message..."
+                ? "Assistant is responding... Write your next message..."
                 : "Write your message... (Shift+Enter for new line)"
             }
             className={cn(
