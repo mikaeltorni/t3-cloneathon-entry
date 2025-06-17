@@ -38,6 +38,8 @@ interface ThreadListProps {
   onDeleteThread: (threadId: string) => void;
   /** Callback for pin/unpin action */
   onTogglePin: (threadId: string, currentPinStatus: boolean) => void;
+  /** Callback for editing thread title */
+  onEditThread?: (threadId: string, newTitle: string) => Promise<ChatThread>;
   /** Callback for canceling delete confirmation */
   onCancelDelete: () => void;
 
@@ -60,6 +62,7 @@ interface ThreadListProps {
  * @param onThreadSelect - Callback for thread selection
  * @param onDeleteThread - Callback for thread deletion
  * @param onTogglePin - Callback for pin/unpin action
+ * @param onEditThread - Callback for editing thread title
  * @param onCancelDelete - Callback for canceling delete confirmation
  * @param className - Additional CSS classes
  * @returns JSX element containing the thread list
@@ -75,6 +78,7 @@ export const ThreadList: React.FC<ThreadListProps> = ({
   onThreadSelect,
   onDeleteThread,
   onTogglePin,
+  onEditThread,
   onCancelDelete,
   getThreadTags,
   className
@@ -179,6 +183,7 @@ export const ThreadList: React.FC<ThreadListProps> = ({
           onSelect={onThreadSelect}
           onDelete={onDeleteThread}
           onPin={onTogglePin}
+          onEdit={onEditThread}
           onCancelDelete={onCancelDelete}
           getThreadTags={getThreadTags}
         />
