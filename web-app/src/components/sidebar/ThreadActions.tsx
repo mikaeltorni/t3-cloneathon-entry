@@ -75,8 +75,8 @@ export const ThreadActions: React.FC<ThreadActionsProps> = ({
         className={cn(
           'transition-all duration-200 p-2 rounded-lg',
           isPinned
-            ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50 opacity-100'
-            : 'opacity-0 group-hover:opacity-100 text-gray-400 hover:text-amber-600 hover:bg-amber-50'
+            ? 'text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950 opacity-100'
+            : 'opacity-0 group-hover:opacity-100 text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950'
         )}
         title={isPinned ? 'Unpin conversation' : 'Pin to top'}
         aria-label={isPinned ? 'Unpin conversation' : 'Pin conversation to top'}

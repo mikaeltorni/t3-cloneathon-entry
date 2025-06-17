@@ -47,19 +47,19 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
   className
 }) => {
   return (
-    <div className={cn('p-4 border-b border-gray-200 bg-white shadow-sm', className)}>
+    <div className={cn('p-4 border-b border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-sm', className)}>
       {/* Top row: Toggle button + Chats title */}
       <div className="flex items-center gap-3 mb-4">
         {/* Sidebar toggle button */}
         {onToggle && (
           <button
             onClick={onToggle}
-            className="p-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:shadow-sm"
+            className="p-2 rounded-xl border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 hover:shadow-sm"
             aria-label="Toggle sidebar"
             title="Toggle sidebar"
           >
             <svg
-              className="w-4 h-4 text-gray-600"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -74,7 +74,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
           </button>
         )}
         
-        <h1 className="text-xl font-bold text-gray-900 flex-1">Conversations</h1>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100 flex-1">Conversations</h1>
       </div>
       
       {/* Enhanced New Chat button */}

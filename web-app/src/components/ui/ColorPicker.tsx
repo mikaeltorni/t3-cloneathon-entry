@@ -60,14 +60,14 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
       {/* Color Preview */}
       <div className="flex items-center space-x-3">
         <div
-          className="w-16 h-16 rounded-lg border-2 border-gray-200 shadow-sm flex items-center justify-center text-sm font-medium"
+          className="w-16 h-16 rounded-lg border-2 border-gray-200 dark:border-slate-600 shadow-sm flex items-center justify-center text-sm font-medium"
           style={{ backgroundColor: previewColor, color: textColor }}
         >
           Preview
         </div>
         <div className="flex-1">
-          <div className="text-sm font-medium text-gray-700">RGB Color</div>
-          <div className="text-xs text-gray-500 font-mono">
+          <div className="text-sm font-medium text-gray-700 dark:text-slate-300">RGB Color</div>
+          <div className="text-xs text-gray-500 dark:text-slate-400 font-mono">
             rgb({localColor.r}, {localColor.g}, {localColor.b})
           </div>
         </div>
@@ -78,14 +78,14 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         {/* Red Slider */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-red-600">Red</label>
+            <label className="text-sm font-medium text-red-600 dark:text-red-400">Red</label>
             <input
               type="number"
               min="0"
               max="255"
               value={localColor.r}
               onChange={(e) => handleInputChange('r', e.target.value)}
-              className="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-slate-800 dark:text-slate-100"
             />
           </div>
           <input
@@ -156,7 +156,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
 
       {/* Preset Colors */}
       <div className="space-y-2">
-        <div className="text-sm font-medium text-gray-700">Quick Presets</div>
+        <div className="text-sm font-medium text-gray-700 dark:text-slate-300">Quick Presets</div>
         <div className="flex flex-wrap gap-2">
           {[
             { name: 'Red', color: { r: 239, g: 68, b: 68 } },
@@ -171,7 +171,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             <button
               key={preset.name}
               onClick={() => onChange(preset.color)}
-              className="w-8 h-8 rounded-md border-2 border-gray-200 hover:border-gray-400 transition-colors"
+              className="w-8 h-8 rounded-md border-2 border-gray-200 dark:border-slate-600 hover:border-gray-400 dark:hover:border-slate-400 transition-colors"
               style={{ backgroundColor: `rgb(${preset.color.r}, ${preset.color.g}, ${preset.color.b})` }}
               title={preset.name}
             />

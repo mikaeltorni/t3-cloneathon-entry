@@ -192,7 +192,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
       {/* Sidebar */}
       <div 
         className={cn(
-          'fixed left-0 top-0 w-80 bg-gradient-to-b from-gray-50 to-gray-100 border-r border-gray-200 flex-col h-full z-40 transition-transform duration-300',
+          'fixed left-0 top-0 w-80 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 border-r border-gray-200 dark:border-slate-600 flex-col h-full z-40 transition-transform duration-300',
           // Always show as flex, but use transform to hide/show
           'flex',
           // Transform based on isOpen state for all screen sizes

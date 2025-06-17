@@ -74,7 +74,7 @@ export const ModelIndicator: React.FC<ModelIndicatorProps> = ({
           classes.container,
           isSelected 
             ? 'shadow-sm' 
-            : 'bg-gray-100 text-gray-700 border-gray-200'
+            : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 border-gray-200 dark:border-slate-600'
         )}
         style={{
           backgroundColor: isSelected ? model.bgColor : undefined,

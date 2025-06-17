@@ -97,14 +97,14 @@ export const ModelItem: React.FC<ModelItemProps> = ({
           'border-2 hover:scale-[1.02] hover:shadow-md text-left',
           isSelected
             ? 'shadow-lg transform scale-[1.02]'
-            : 'hover:shadow-sm bg-white',
-          isPinned && 'ring-2 ring-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50',
+            : 'hover:shadow-sm bg-white dark:bg-slate-800',
+          isPinned && 'ring-2 ring-amber-200 dark:ring-amber-500 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950 dark:to-yellow-950',
           loading && 'opacity-50 cursor-not-allowed'
         )}
         style={{
-          backgroundColor: isSelected ? model.bgColor : (isPinned ? undefined : '#ffffff'),
-          borderColor: isSelected ? model.color : (isPinned ? '#f59e0b' : '#e5e7eb'),
-          color: isSelected ? model.textColor : '#374151',
+          backgroundColor: isSelected ? model.bgColor : (isPinned ? undefined : undefined),
+          borderColor: isSelected ? model.color : (isPinned ? '#f59e0b' : undefined),
+          color: isSelected ? model.textColor : undefined,
         }}
       >
         {/* Model Header */}
@@ -120,7 +120,7 @@ export const ModelItem: React.FC<ModelItemProps> = ({
         <ModelBadges model={model} className="mb-2" />
 
         {/* Model Description (truncated) */}
-        <p className="text-xs text-gray-600 line-clamp-2">
+        <p className="text-xs text-gray-600 dark:text-slate-300 line-clamp-2">
           {model.description}
         </p>
       </button>

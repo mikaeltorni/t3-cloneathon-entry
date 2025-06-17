@@ -2,6 +2,7 @@
  * Card.tsx
  * 
  * Compound card component with header, content, and footer
+ * Enhanced with comprehensive dark mode support
  * 
  * Components:
  *   Card, CardHeader, CardTitle, CardContent, CardFooter
@@ -34,6 +35,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       ref={ref}
       className={cn(
         'rounded-lg border bg-white text-gray-950 shadow-sm',
+        'dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700',
         className
       )}
       {...props}
@@ -73,7 +75,11 @@ const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HT
   ({ className, children, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn('text-2xl font-semibold leading-none tracking-tight', className)}
+      className={cn(
+        'text-2xl font-semibold leading-none tracking-tight',
+        'dark:text-slate-100',
+        className
+      )}
       {...props}
     >
       {children}

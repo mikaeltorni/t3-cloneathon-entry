@@ -130,7 +130,7 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
       {/* Sidebar */}
       <div 
         className={cn(
-          'fixed right-0 top-0 w-80 bg-gradient-to-b from-gray-50 to-gray-100 border-l border-gray-200 flex flex-col h-full z-40 transition-transform duration-300',
+          'fixed right-0 top-0 w-80 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 border-l border-gray-200 dark:border-slate-600 flex flex-col h-full z-40 transition-transform duration-300',
           // Transform based on isOpen state for all screen sizes
           isOpen ? 'translate-x-0' : 'translate-x-full',
           className
@@ -138,21 +138,21 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
         data-no-drop="true"
       >
         {/* Header */}
-        <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-white shadow-sm">
+        <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-sm">
           {/* Top row: Title + Close button */}
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-bold text-gray-900">AI Models</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">AI Models</h1>
             
             {/* Close button */}
             <Button
               onClick={onClose}
               variant="ghost"
               size="sm"
-              className="p-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors"
+              className="p-2 rounded-xl border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
               aria-label="Close model sidebar"
             >
               <svg
-                className="w-4 h-4 text-gray-600"
+                className="w-4 h-4 text-gray-600 dark:text-slate-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -167,10 +167,10 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
             </Button>
           </div>
           
-          <p className="text-xs text-gray-500 text-center leading-relaxed">
+          <p className="text-xs text-gray-500 dark:text-slate-400 text-center leading-relaxed">
             Choose your AI assistant • {modelCount} models available
             {pinnedCount > 0 && (
-              <span className="text-amber-600 ml-1">
+              <span className="text-amber-600 dark:text-amber-400 ml-1">
                 • {pinnedCount} pinned
               </span>
             )}
@@ -195,8 +195,8 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 p-4 border-t border-gray-100 bg-gray-50">
-          <div className="text-xs text-gray-500 text-center leading-relaxed">
+        <div className="flex-shrink-0 p-4 border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
+          <div className="text-xs text-gray-500 dark:text-slate-400 text-center leading-relaxed">
             Click a model to select it, or pin your favorites for easy access
           </div>
         </div>
@@ -213,7 +213,7 @@ const LoadingState: React.FC = () => (
     {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
       <div
         key={i}
-        className="h-16 bg-gray-200 rounded-lg animate-pulse w-full"
+        className="h-16 bg-gray-200 dark:bg-slate-700 rounded-lg animate-pulse w-full"
       />
     ))}
   </div>

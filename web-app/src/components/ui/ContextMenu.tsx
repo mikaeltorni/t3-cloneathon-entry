@@ -115,6 +115,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       ref={menuRef}
       className={cn(
         'fixed z-50 min-w-[200px] bg-white rounded-md shadow-lg border border-gray-200 py-1',
+        'dark:bg-slate-800 dark:border-slate-600',
         'animate-in slide-in-from-top-1 duration-100',
         className
       )}
@@ -128,7 +129,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           return (
             <div
               key={item.id}
-              className="h-px bg-gray-200 my-1"
+              className="h-px bg-gray-200 my-1 dark:bg-slate-600"
             />
           );
         }
@@ -141,10 +142,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             className={cn(
               'w-full text-left px-3 py-2 text-sm flex items-center space-x-2',
               'hover:bg-gray-100 focus:bg-gray-100 focus:outline-none',
+              'dark:hover:bg-slate-700 dark:focus:bg-slate-700',
               'disabled:opacity-50 disabled:cursor-not-allowed',
               item.type === 'danger' 
-                ? 'text-red-600 hover:bg-red-50 focus:bg-red-50' 
-                : 'text-gray-700'
+                ? 'text-red-600 hover:bg-red-50 focus:bg-red-50 dark:text-red-400 dark:hover:bg-red-950 dark:focus:bg-red-950' 
+                : 'text-gray-700 dark:text-slate-300'
             )}
           >
             {item.icon && (

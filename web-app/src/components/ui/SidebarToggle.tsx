@@ -43,6 +43,8 @@ export const SidebarToggle: React.FC<SidebarToggleProps> = ({
         'fixed left-4 top-4 z-50 p-2 bg-white border border-gray-300 rounded-lg shadow-lg',
         'hover:bg-gray-50 hover:border-gray-400 transition-all duration-200',
         'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+        'dark:bg-slate-800 dark:border-slate-600 dark:hover:bg-slate-700 dark:hover:border-slate-500',
+        'dark:focus:ring-blue-400',
         className
       )}
       aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
@@ -51,6 +53,7 @@ export const SidebarToggle: React.FC<SidebarToggleProps> = ({
       <svg
         className={cn(
           'w-5 h-5 text-gray-600 transition-transform duration-200',
+          'dark:text-slate-300',
           isOpen && 'transform rotate-180'
         )}
         fill="none"

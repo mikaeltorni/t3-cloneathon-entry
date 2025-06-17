@@ -43,11 +43,11 @@ export const MetricsDisplay: React.FC<MetricsDisplayProps> = ({
   }
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-lg p-1.5 mt-2">
+    <div className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg p-1.5 mt-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           {isGenerating && (
-            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full animate-pulse">
+            <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded-full animate-pulse">
               Generating...
             </span>
           )}

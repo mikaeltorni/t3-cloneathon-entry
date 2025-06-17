@@ -196,8 +196,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
               'touch-manipulation', // Better touch handling on mobile
               isImageButtonDisabled
-                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                : 'border-gray-300 text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 active:bg-blue-100'
+                ? 'border-gray-200 text-gray-300 cursor-not-allowed dark:border-slate-600 dark:text-slate-500'
+                : 'border-gray-300 text-gray-600 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 active:bg-blue-100 dark:border-slate-600 dark:text-slate-400 dark:hover:text-blue-400 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:active:bg-blue-900'
             )}
             title={`Add images (${images.length}/${maxImages})`}
           >
@@ -214,8 +214,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
               'touch-manipulation', // Better touch handling on mobile
               isDocumentButtonDisabled
-                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                : 'border-gray-300 text-gray-600 hover:text-green-600 hover:border-green-300 hover:bg-green-50 active:bg-green-100'
+                ? 'border-gray-200 text-gray-300 cursor-not-allowed dark:border-slate-600 dark:text-slate-500'
+                : 'border-gray-300 text-gray-600 hover:text-green-600 hover:border-green-300 hover:bg-green-50 active:bg-green-100 dark:border-slate-600 dark:text-slate-400 dark:hover:text-green-400 dark:hover:border-green-500 dark:hover:bg-green-950 dark:active:bg-green-900'
             )}
             title={`Add documents (${documents.length}/${maxDocuments})`}
           >
@@ -241,7 +241,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               'w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-xl resize-none transition-all duration-200',
               'focus:ring-2 focus:ring-blue-500 focus:border-transparent',
               'min-h-[44px] sm:min-h-[48px] max-h-[120px] overflow-y-auto',
-              'text-base' // Use 16px font size to prevent mobile zoom
+              'text-base', // Use 16px font size to prevent mobile zoom
+              'bg-white border-gray-300 text-gray-900 placeholder-gray-500',
+              'dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-400',
+              'dark:focus:ring-blue-400 dark:focus:border-blue-400'
               //isGenerating && !loading && 'border-blue-300 bg-blue-50/30', // Visual feedback during generation
               //isGenerating && !loading && 'border-gray-300'
             )}

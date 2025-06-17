@@ -137,9 +137,9 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
       className={cn(
         'group relative p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 mb-3',
         isSelected
-          ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 shadow-lg transform scale-[1.02]'
-          : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md',
-        isPinned && 'ring-2 ring-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50',
+          ? 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-300 dark:border-blue-500 shadow-lg transform scale-[1.02]'
+          : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 hover:border-gray-300 dark:hover:border-slate-500 hover:shadow-md',
+        isPinned && 'ring-2 ring-amber-200 dark:ring-amber-500 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950 dark:to-yellow-950',
         className
       )}
       onClick={handleSelect}
@@ -149,7 +149,7 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
         <div className="flex-1 min-w-0">
           <h3 className={cn(
             'font-semibold truncate pr-2 text-base leading-tight',
-            isSelected ? 'text-blue-900' : 'text-gray-900'
+            isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-slate-100'
           )}>
             {truncateText(thread.title, 45)}
           </h3>
@@ -181,11 +181,11 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
       {lastMessage && (
         <p className={cn(
           'text-sm mb-2 truncate leading-relaxed',
-          isSelected ? 'text-blue-700' : 'text-gray-600'
+          isSelected ? 'text-blue-700 dark:text-blue-200' : 'text-gray-600 dark:text-slate-300'
         )}>
           <span className={cn(
             'inline-block w-5 text-xs mr-1',
-            lastMessage.role === 'user' ? 'text-gray-500' : 'text-indigo-500'
+            lastMessage.role === 'user' ? 'text-gray-500 dark:text-slate-400' : 'text-indigo-500 dark:text-indigo-400'
           )}>
             {lastMessage.role === 'user' ? 'You:' : 'AI:'}
           </span>
@@ -216,8 +216,8 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
 
       {/* Delete confirmation overlay */}
       {isConfirmingDelete && (
-        <div className="absolute inset-0 bg-red-50 rounded-xl p-4 flex flex-col justify-center border-2 border-red-200">
-          <p className="text-sm text-red-800 mb-3 text-center font-medium">
+        <div className="absolute inset-0 bg-red-50 dark:bg-red-950 rounded-xl p-4 flex flex-col justify-center border-2 border-red-200 dark:border-red-500">
+          <p className="text-sm text-red-800 dark:text-red-100 mb-3 text-center font-medium">
             Delete this conversation?
           </p>
           <div className="flex space-x-2">

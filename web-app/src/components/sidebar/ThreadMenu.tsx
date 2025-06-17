@@ -172,7 +172,7 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
           ref={menuRef}
           style={getMenuStyles()}
           className={cn(
-            'bg-white rounded-lg shadow-xl border border-gray-200 z-50 min-w-64',
+            'bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-600 z-50 min-w-64',
             isContextMenu 
               ? 'fixed' 
               : 'absolute right-0 top-full mt-1'
@@ -180,12 +180,12 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Tags section */}
-          <div className="p-3 border-b border-gray-100">
+          <div className="p-3 border-b border-gray-100 dark:border-slate-700">
             <div className="space-y-2">
               {/* Assigned tags */}
               {threadTags.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-medium text-gray-600 mb-1">Assigned Tags</h4>
+                  <h4 className="text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Assigned Tags</h4>
                   <div className="flex flex-wrap gap-1">
                     {threadTags.map((tag: ChatTag) => (
                       <ThreadTagForMenu

@@ -72,14 +72,14 @@ export const ThreadMeta: React.FC<ThreadMetaProps> = ({
     <div className={cn('flex justify-between items-center text-xs', className)}>
       <span className={cn(
         'font-medium',
-        isSelected ? 'text-blue-600' : 'text-gray-500'
+        isSelected ? 'text-blue-600 dark:text-blue-300' : 'text-gray-500 dark:text-slate-400'
       )}>
         {formatDate(date)}
       </span>
       <div className="flex items-center space-x-3">
         <span className={cn(
           'flex items-center',
-          isSelected ? 'text-blue-600' : 'text-gray-500'
+          isSelected ? 'text-blue-600 dark:text-blue-300' : 'text-gray-500 dark:text-slate-400'
         )}>
           <svg 
             className="w-3 h-3 mr-1" 

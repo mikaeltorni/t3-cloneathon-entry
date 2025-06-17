@@ -31,34 +31,34 @@ export const WelcomeMessage: React.FC = React.memo(() => {
           </svg>
         </div>
         
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-4">
           Welcome to OpenRouter Chat!
         </h2>
         
-        <p className="text-gray-600 mb-6 leading-relaxed">
+        <p className="text-gray-600 dark:text-slate-300 mb-6 leading-relaxed">
           Start a conversation with any AI model. Upload images, ask questions, 
           and explore the capabilities of different language models.
         </p>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">💬 Ask Anything</h3>
-            <p className="text-blue-700">Get help with coding, writing, analysis, and more</p>
+          <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">💬 Ask Anything</h3>
+            <p className="text-blue-700 dark:text-blue-200">Get help with coding, writing, analysis, and more</p>
           </div>
           
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-purple-900 mb-2">🖼️ Upload Images</h3>
-            <p className="text-purple-700">Share images for analysis and description</p>
+          <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg">
+            <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-2">🖼️ Upload Images</h3>
+            <p className="text-purple-700 dark:text-purple-200">Share images for analysis and description</p>
           </div>
           
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-green-900 mb-2">🧠 Reasoning Models</h3>
-            <p className="text-green-700">Enable reasoning for complex problem solving</p>
+          <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+            <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2">🧠 Reasoning Models</h3>
+            <p className="text-green-700 dark:text-green-200">Enable reasoning for complex problem solving</p>
           </div>
           
-          <div className="bg-orange-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-orange-900 mb-2">⚡ Multiple Models</h3>
-            <p className="text-orange-700">Switch between different AI models</p>
+          <div className="bg-orange-50 dark:bg-orange-950 p-4 rounded-lg">
+            <h3 className="font-semibold text-orange-900 dark:text-orange-100 mb-2">⚡ Multiple Models</h3>
+            <p className="text-orange-700 dark:text-orange-200">Switch between different AI models</p>
           </div>
         </div>
       </div>

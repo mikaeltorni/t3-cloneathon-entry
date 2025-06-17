@@ -41,16 +41,16 @@ export const MessageDocumentGrid: React.FC<MessageDocumentGridProps> = ({
       : "mb-3 space-y-2";
     
     const itemClasses = isUserMessage
-      ? "flex items-center gap-3 p-3 bg-blue-500 bg-opacity-20 rounded-lg border border-blue-300 border-opacity-50 transition-colors hover:bg-opacity-30"
-      : "flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 transition-colors hover:bg-gray-100";
+      ? "flex items-center gap-3 p-3 bg-blue-500 bg-opacity-20 rounded-lg border border-blue-300 border-opacity-50 transition-colors hover:bg-opacity-30 dark:bg-blue-900 dark:bg-opacity-30 dark:border-blue-400 dark:border-opacity-50 dark:hover:bg-opacity-40"
+      : "flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-600 transition-colors hover:bg-gray-100 dark:hover:bg-slate-700";
     
     const nameClasses = isUserMessage
       ? "text-sm font-medium text-white truncate"
-      : "text-sm font-medium text-gray-900 truncate";
+      : "text-sm font-medium text-gray-900 dark:text-slate-100 truncate";
     
     const detailsClasses = isUserMessage
-      ? "text-xs text-blue-100"
-      : "text-xs text-gray-500";
+      ? "text-xs text-blue-100 dark:text-blue-200"
+      : "text-xs text-gray-500 dark:text-slate-400";
 
     return (
       <div className={containerClasses}>

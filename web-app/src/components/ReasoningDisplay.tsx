@@ -39,8 +39,12 @@ export const ReasoningDisplay: React.FC<ReasoningDisplayProps> = ({
   }
 
   return (
-    <div className={cn('mt-3 p-3 bg-gray-50 border-l-4 border-gray-300 text-sm text-gray-700', className)}>
-      <div className="font-medium text-gray-600 mb-2">Reasoning:</div>
+    <div className={cn(
+      'mt-3 p-3 bg-gray-50 border-l-4 border-gray-300 text-sm text-gray-700',
+      'dark:bg-slate-800 dark:border-slate-500 dark:text-slate-300',
+      className
+    )}>
+      <div className="font-medium text-gray-600 mb-2 dark:text-slate-400">Reasoning:</div>
       <div className="whitespace-pre-wrap font-mono leading-relaxed">
         {reasoning}
       </div>
