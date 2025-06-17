@@ -58,6 +58,8 @@ export interface UseChatReturn {
   handleDeleteThread: (threadId: string) => Promise<void>; // Alias for deleteThread
   togglePin: (threadId: string) => Promise<void>;
   handleTogglePinThread: (threadId: string, isPinned: boolean) => Promise<void>; // Alias for togglePin
+  editThreadTitle: (threadId: string, newTitle: string) => Promise<ChatThread>;
+  handleEditThreadTitle: (threadId: string, newTitle: string) => Promise<ChatThread>; // Alias for editThreadTitle
   updateThread: (updatedThread: ChatThread) => void;
   handleThreadUpdate: (threadId: string, updates: Partial<ChatThread>) => Promise<void>;
   
@@ -244,6 +246,8 @@ export function useChat(): UseChatReturn {
     handleDeleteThread,
     togglePin,
     handleTogglePinThread,
+    editThreadTitle: threadOps.editThreadTitle,
+    handleEditThreadTitle: threadOps.editThreadTitle,
     updateThread,
     handleThreadUpdate,
     

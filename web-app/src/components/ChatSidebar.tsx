@@ -55,6 +55,7 @@ interface ChatSidebarProps {
   onNewChat: () => void;
   onDeleteThread: (threadId: string) => void;
   onTogglePinThread: (threadId: string, isPinned: boolean) => void;
+  onEditThread?: (threadId: string, newTitle: string) => Promise<ChatThread>;
   onRefreshThreads?: () => Promise<void>; // Manual thread refresh callback
   loading: boolean;
   isOpen?: boolean;
@@ -89,6 +90,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onNewChat,
   onDeleteThread,
   onTogglePinThread,
+  onEditThread,
   onRefreshThreads,
   loading,
   isOpen = false,
@@ -235,6 +237,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
               onThreadSelect={handleThreadSelect}
               onDeleteThread={handleDeleteThread}
               onTogglePin={handleTogglePin}
+              onEditThread={onEditThread}
               onCancelDelete={cancelDelete}
               getThreadTags={getThreadTags}
             />
