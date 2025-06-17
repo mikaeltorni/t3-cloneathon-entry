@@ -64,11 +64,33 @@ export const ModelItem: React.FC<ModelItemProps> = ({
   onTogglePin,
   className
 }) => {
+  // Click handler with debugging
+  const handleClick = () => {
+    console.debug(`[ModelItem] Button clicked for model: ${modelId}`);
+    
+    if (loading || isPinning) {
+      console.debug(`[ModelItem] Click blocked - loading: ${loading}, pinning: ${isPinning}`);
+      return;
+    }
+    
+    if (!onSelect) {
+      console.warn(`[ModelItem] onSelect callback is missing!`);
+      return;
+    }
+    
+    try {
+      onSelect(modelId);
+      console.debug(`[ModelItem] onSelect completed for: ${modelId}`);
+    } catch (error) {
+      console.error(`[ModelItem] Error in onSelect for ${modelId}:`, error);
+    }
+  };
+
   return (
     <div className={cn('relative group', className)}>
       <button
         type="button"
-        onClick={() => onSelect(modelId)}
+        onClick={handleClick}
         disabled={loading}
         className={cn(
           'w-full flex flex-col p-3 rounded-lg font-medium transition-all duration-200',

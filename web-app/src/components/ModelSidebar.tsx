@@ -67,12 +67,32 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
   const { debug, warn } = useLogger('ModelSidebar');
 
   /**
-   * Handle model selection
+   * Handle model selection with debugging
    */
   const handleModelSelect = (modelId: string) => {
-    debug(`Model selected: ${modelId}`);
-    onChange(modelId);
-    // Don't close automatically - let user keep selecting if they want
+    debug(`🎯 Model selected: ${modelId}`);
+    
+    if (!onChange) {
+      warn('⚠️ onChange callback is not provided!');
+      return;
+    }
+    
+    if (loading) {
+      debug('⏳ Model selection blocked - component is in loading state');
+      return;
+    }
+    
+    if (!models[modelId]) {
+      warn(`❌ Model ${modelId} not found in available models!`);
+      return;
+    }
+    
+    try {
+      onChange(modelId);
+      debug(`✅ Model selection completed: ${modelId}`);
+    } catch (error) {
+      warn(`💥 Error during model selection:`, error as Error);
+    }
   };
 
   /**
@@ -83,10 +103,11 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
     
     try {
       setPinningModel(modelId);
-      debug(`Toggling pin for model: ${modelId}`);
+      debug(`📌 Toggling pin for model: ${modelId}`);
       await toggleModelPin(modelId);
+      debug(`✅ Pin toggle completed for model: ${modelId}`);
     } catch (error) {
-      warn(`Failed to toggle pin for model ${modelId}`, error as Error);
+      warn(`❌ Failed to toggle pin for model ${modelId}`, error as Error);
     } finally {
       setPinningModel(null);
     }
