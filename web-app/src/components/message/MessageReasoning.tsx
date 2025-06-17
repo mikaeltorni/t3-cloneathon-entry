@@ -2,6 +2,7 @@
  * MessageReasoning.tsx
  * 
  * Component for displaying message reasoning with toggle functionality
+ * Enhanced with comprehensive dark mode support
  * 
  * Components:
  *   MessageReasoning
@@ -19,6 +20,7 @@ interface MessageReasoningProps {
 
 /**
  * Reasoning display component for messages
+ * Enhanced with comprehensive dark mode support
  * 
  * @param reasoning - Reasoning content
  * @param messageId - Message ID for accessibility
@@ -42,7 +44,7 @@ export const MessageReasoning: React.FC<MessageReasoningProps> = ({
       <div className="mb-3">
         <button
           onClick={onToggleReasoning}
-          className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 mb-2 transition-colors duration-200"
+          className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-2 transition-colors duration-200"
           aria-expanded={showReasoning}
           aria-controls={`reasoning-${messageId}`}
         >
@@ -60,7 +62,7 @@ export const MessageReasoning: React.FC<MessageReasoningProps> = ({
         {showReasoning && (
           <div 
             id={`reasoning-${messageId}`}
-            className="bg-blue-50 p-3 rounded-md text-sm text-blue-800 whitespace-pre-wrap leading-relaxed animate-in slide-in-from-top-2 duration-200"
+            className="bg-blue-50 dark:bg-slate-700 p-3 rounded-md text-sm text-blue-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed animate-in slide-in-from-top-2 duration-200"
           >
             {reasoning}
           </div>

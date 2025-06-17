@@ -2,6 +2,7 @@
  * MessageContent.tsx
  * 
  * Component for rendering message content with markdown support
+ * Enhanced with comprehensive dark mode support
  * 
  * Components:
  *   MessageContent
@@ -22,6 +23,7 @@ interface MessageContentProps {
 
 /**
  * Message content component with markdown support
+ * Enhanced with comprehensive dark mode support
  * 
  * @param content - Message content
  * @param annotations - Message annotations for citations
@@ -65,26 +67,26 @@ export const MessageContent: React.FC<MessageContentProps> = ({
 
   const contentStyles = isUserMessage
     ? 'text-sm leading-relaxed whitespace-pre-wrap break-words'
-    : `text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words ${
-        hasReasoning ? 'mt-3 pt-3 border-t border-gray-100' : ''
+    : `text-sm text-gray-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap break-words ${
+        hasReasoning ? 'mt-3 pt-3 border-t border-gray-100 dark:border-slate-600' : ''
       }`;
 
   return (
     <div className={contentStyles}>
       <ReactMarkdown
         components={{
-          // Style markdown elements
+          // Style markdown elements with dark mode support
           p: ({ children }) => <p className="mb-2">{children}</p>,
-          h1: ({ children }) => <h1 className="text-2xl font-bold mb-4">{children}</h1>,
-          h2: ({ children }) => <h2 className="text-xl font-bold mb-3">{children}</h2>,
-          h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
-          strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+          h1: ({ children }) => <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-slate-100">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-xl font-bold mb-3 text-gray-900 dark:text-slate-100">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-slate-100">{children}</h3>,
+          strong: ({ children }) => <strong className="font-bold text-gray-900 dark:text-slate-100">{children}</strong>,
           em: ({ children }) => <em className="italic">{children}</em>,
           code: ({ children, ...props }) => {
             const codeString = Array.isArray(children) ? children.join('') : String(children);
             if ('inline' in props && props.inline) {
               return (
-                <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
+                <code className="bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-200 px-1 py-0.5 rounded text-sm font-mono">
                   {children}
                 </code>
               );
@@ -92,19 +94,19 @@ export const MessageContent: React.FC<MessageContentProps> = ({
             return (
               <div className="relative group">
                 <CopyButton text={codeString} />
-                <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto mb-4">
-                  <code className="text-sm font-mono">{codeString}</code>
+                <pre className="bg-gray-100 dark:bg-slate-700 p-3 rounded-lg overflow-x-auto mb-4">
+                  <code className="text-sm font-mono text-gray-800 dark:text-slate-200">{codeString}</code>
                 </pre>
               </div>
             );
           },
-          // Style citation links to look like simple bracketed text
+          // Style citation links to look like simple bracketed text with dark mode
           a: ({ href, children }) => (
             <a 
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 no-underline"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 no-underline"
             >
               {children}
             </a>

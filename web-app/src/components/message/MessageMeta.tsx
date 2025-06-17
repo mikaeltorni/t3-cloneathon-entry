@@ -2,6 +2,7 @@
  * MessageMeta.tsx
  * 
  * Component for displaying message metadata (timestamp, copy button)
+ * Enhanced with comprehensive dark mode support
  * 
  * Components:
  *   MessageMeta
@@ -18,6 +19,7 @@ interface MessageMetaProps {
 
 /**
  * Message metadata component (timestamp and copy functionality)
+ * Enhanced with comprehensive dark mode support
  * 
  * @param timestamp - Message timestamp as Date object, string, or number
  * @param content - Message content for copying
@@ -58,10 +60,10 @@ export const MessageMeta: React.FC<MessageMetaProps> = ({
   return (
     <div className={`flex items-center gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${justifyClass}`}>
       <div className={`flex items-center gap-2 ${orderClass}`}>
-        <span className="text-xs text-gray-500">{formattedTime}</span>
+        <span className="text-xs text-gray-500 dark:text-slate-400">{formattedTime}</span>
         <button
           onClick={handleCopyMessage}
-          className="text-xs text-gray-500 hover:text-gray-700 p-1 rounded hover:bg-gray-100 transition-colors duration-200"
+          className="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors duration-200"
           title="Copy message"
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
