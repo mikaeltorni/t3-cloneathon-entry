@@ -319,7 +319,7 @@ export const TagSystem: React.FC<TagSystemProps> = ({
           id: `add-${tag.id}`,
           label: `Add "${tag.name}"`,
           icon: '🏷️',
-          action: () => tagOperations.addTagToThread(currentThread.id, tag.id),
+          onClick: () => tagOperations.addTagToThread(currentThread.id, tag.id),
           tag
         });
       });
@@ -331,7 +331,7 @@ export const TagSystem: React.FC<TagSystemProps> = ({
         items.push({ 
           id: 'separator-1',
           label: '',
-          action: () => {},
+          onClick: () => {},
           type: 'separator' 
         });
       }
@@ -341,7 +341,7 @@ export const TagSystem: React.FC<TagSystemProps> = ({
           id: `remove-${tag.id}`,
           label: `Remove "${tag.name}"`,
           icon: '❌',
-          action: () => tagOperations.removeTagFromThread(currentThread.id, tag.id),
+          onClick: () => tagOperations.removeTagFromThread(currentThread.id, tag.id),
           type: 'danger',
           tag
         });
@@ -353,7 +353,7 @@ export const TagSystem: React.FC<TagSystemProps> = ({
       items.push({ 
         id: 'separator-2',
         label: '',
-        action: () => {},
+        onClick: () => {},
         type: 'separator' 
       });
     }
@@ -362,7 +362,7 @@ export const TagSystem: React.FC<TagSystemProps> = ({
       id: 'add-new-tag',
       label: 'Add New Tag',
       icon: '➕',
-      action: () => {
+      onClick: () => {
         setContextMenu(prev => ({ ...prev, isOpen: false }));
         setIsCreateTagModalOpen(true);
       }
@@ -381,20 +381,20 @@ export const TagSystem: React.FC<TagSystemProps> = ({
         id: `edit-${tag.id}`,
         label: `Edit "${tag.name}"`,
         icon: '✏️',
-        action: () => handleEditTag(),
+        onClick: () => handleEditTag(),
         tag
       },
       { 
         id: `separator-edit-${tag.id}`,
         label: '',
-        action: () => {},
+        onClick: () => {},
         type: 'separator' 
       },
       {
         id: `delete-${tag.id}`,
         label: `Delete "${tag.name}"`,
         icon: '🗑️',
-        action: () => handleDeleteTag(tag.id),
+        onClick: () => handleDeleteTag(tag.id),
         type: 'danger',
         tag
       }
@@ -581,7 +581,6 @@ export const TagSystem: React.FC<TagSystemProps> = ({
       {/* Thread Context Menu */}
       {contextMenu.isOpen && contextMenu.threadId && (
         <ContextMenu
-          isOpen={contextMenu.isOpen}
           position={contextMenu.position}
           items={contextMenuItems}
           onClose={closeContextMenu}
@@ -591,7 +590,6 @@ export const TagSystem: React.FC<TagSystemProps> = ({
       {/* Tag Management Context Menu */}
       {tagContextMenu.isOpen && tagContextMenu.tag && (
         <ContextMenu
-          isOpen={tagContextMenu.isOpen}
           position={tagContextMenu.position}
           items={tagContextMenuItems}
           onClose={() => setTagContextMenu(prev => ({ ...prev, isOpen: false }))}

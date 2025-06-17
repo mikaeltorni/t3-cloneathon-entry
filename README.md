@@ -1558,8 +1558,10 @@ The application features a complete dark mode implementation that's **ALWAYS ENA
 - **ModelBadges**: Dark variants for all capability badges (reasoning, vision, web search, release dates)
 - **ReasoningToggle**: Enhanced with dark blue/purple color schemes for enabled/forced states
 - **SearchToggle**: Tier-aware dark colors (green for Perplexity, amber for OpenAI, blue for standard)
-- **TagModal**: Complete dark form interface with sliders, inputs, and color picker
+- **TagModal**: Complete dark form interface with properly structured form elements, RGB sliders, and enhanced color picker
 - **TagFilterBar**: Dark tag filtering with selection states and clear buttons
+- **Enhanced Tag Colors**: Automatic color enhancement system that boosts saturation and brightness for vibrant, lighter tags in dark mode
+- **ColorPicker**: Complete dark mode support for RGB sliders and color selection interface
 - **GlobalDragOverlay**: Dark drag-and-drop overlay with backdrop blur effects
 - **CopyButton**: Enhanced copy buttons with green success states in dark mode
 
@@ -1687,6 +1689,30 @@ The application features a complete dark mode implementation that's **ALWAYS ENA
     'dark:focus:ring-blue-400'
   )}
 />
+```
+
+**Intelligent Tag Color Enhancement:**
+```tsx
+// Automatic color enhancement for dark mode
+const enhanceColorForDarkMode = (r: number, g: number, b: number) => {
+  // Convert to HSL, boost saturation by 60% and increase lightness
+  const enhancedS = Math.min(1, s * 1.6); 
+  const enhancedL = Math.min(0.85, Math.max(0.4, l + 0.3));
+  // Convert back to RGB for vibrant, lighter tags in dark mode
+};
+
+// Usage in Tag component
+const displayColor = isDarkMode 
+  ? enhanceColorForDarkMode(tag.color.r, tag.color.g, tag.color.b) 
+  : tag.color;
+
+// Add glow effects for enhanced visibility
+style={{
+  backgroundColor: `rgb(${displayColor.r}, ${displayColor.g}, ${displayColor.b})`,
+  boxShadow: isDarkMode 
+    ? `0 0 10px ${backgroundColor}40, 0 4px 6px -1px rgba(0, 0, 0, 0.3)`
+    : 'none'
+}}
 ```
 
 #### **🎯 Component Coverage Status - 100% COMPLETE**

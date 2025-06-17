@@ -94,7 +94,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             max="255"
             value={localColor.r}
             onChange={(e) => handleSliderChange('r', parseInt(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-red"
+            className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer slider-red"
             style={{
               background: `linear-gradient(to right, rgb(0, ${localColor.g}, ${localColor.b}), rgb(255, ${localColor.g}, ${localColor.b}))`
             }}
@@ -104,14 +104,14 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         {/* Green Slider */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-green-600">Green</label>
+            <label className="text-sm font-medium text-green-600 dark:text-green-400">Green</label>
             <input
               type="number"
               min="0"
               max="255"
               value={localColor.g}
               onChange={(e) => handleInputChange('g', e.target.value)}
-              className="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-slate-800 dark:text-slate-100"
             />
           </div>
           <input
@@ -120,7 +120,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             max="255"
             value={localColor.g}
             onChange={(e) => handleSliderChange('g', parseInt(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-green"
+            className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer slider-green"
             style={{
               background: `linear-gradient(to right, rgb(${localColor.r}, 0, ${localColor.b}), rgb(${localColor.r}, 255, ${localColor.b}))`
             }}
@@ -130,14 +130,14 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         {/* Blue Slider */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-blue-600">Blue</label>
+            <label className="text-sm font-medium text-blue-600 dark:text-blue-400">Blue</label>
             <input
               type="number"
               min="0"
               max="255"
               value={localColor.b}
               onChange={(e) => handleInputChange('b', e.target.value)}
-              className="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-slate-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-100"
             />
           </div>
           <input
@@ -146,7 +146,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             max="255"
             value={localColor.b}
             onChange={(e) => handleSliderChange('b', parseInt(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-blue"
+            className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer slider-blue"
             style={{
               background: `linear-gradient(to right, rgb(${localColor.r}, ${localColor.g}, 0), rgb(${localColor.r}, ${localColor.g}, 255))`
             }}
