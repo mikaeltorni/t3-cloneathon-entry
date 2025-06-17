@@ -1,9 +1,9 @@
 /**
  * useAutoScroll.ts
  * 
- * Custom hook for managing auto-scroll behavior in message lists
+ * OPTIMIZED: Custom hook for managing auto-scroll behavior in message lists
  * 
- * Hooks:
+ * Hook:
  *   useAutoScroll
  * 
  * Features:
@@ -11,11 +11,11 @@
  *   - User scroll detection
  *   - Dynamic bottom padding support
  *   - Precise content anchoring
- *   - Performance optimized
+ *   - Performance optimized with memoization
  * 
  * Usage: const { containerRef, messagesEndRef, handleScroll } = useAutoScroll(options);
  */
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useMemo } from 'react';
 
 interface UseAutoScrollOptions {
   /** Dynamic bottom padding to account for fixed input bar */
@@ -55,7 +55,7 @@ export function useAutoScroll({
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
-   * PRECISE scroll calculation to anchor content to model selector position
+   * OPTIMIZED: Memoized PRECISE scroll calculation to anchor content to model selector position
    * Mathematical approach: position messagesEnd exactly above the fixed input bar
    */
   const scrollToBottom = useCallback((force = false) => {
@@ -115,10 +115,10 @@ export function useAutoScroll({
         }
       }
     }, 150);
-  }, [dynamicBottomPadding]);
+  }, [dynamicBottomPadding]); // FIXED: Only depend on dynamicBottomPadding
 
   /**
-   * Detect if user is manually scrolling
+   * OPTIMIZED: Memoized detect if user is manually scrolling
    */
   const handleScroll = useCallback(() => {
     isUserScrolling.current = true;
@@ -135,63 +135,74 @@ export function useAutoScroll({
   }, []);
 
   /**
-   * Precise auto-scroll: new messages get precise positioning
+   * OPTIMIZED: Memoize scroll timers to prevent recreation
+   */
+  const scrollTimers = useMemo(() => ({
+    messageScrollDelay: 100,
+    preciseScrollDelay: 500,
+    streamingScrollDelay: 300,
+    paddingScrollDelay: 200,
+    reasoningScrollDelay: 300
+  }), []);
+
+  /**
+   * FIXED: Precise auto-scroll: new messages get precise positioning
    */
   useEffect(() => {
     // Gentle scroll when new messages arrive
     const timeoutId = setTimeout(() => {
       scrollToBottom(false); // Don't force during initial load
-    }, 100);
+    }, scrollTimers.messageScrollDelay);
 
     // Final precise scroll after content renders
     const secondTimeout = setTimeout(() => {
       scrollToBottom(true); // Force precise positioning
-    }, 500);
+    }, scrollTimers.preciseScrollDelay);
 
     return () => {
       clearTimeout(timeoutId);
       clearTimeout(secondTimeout);
     };
-  }, [messageCount, scrollToBottom]);
+  }, [messageCount, scrollToBottom, scrollTimers.messageScrollDelay, scrollTimers.preciseScrollDelay]);
 
   /**
-   * Gentle scroll during streaming updates (less aggressive)
+   * FIXED: Gentle scroll during streaming updates (less aggressive)
    */
   useEffect(() => {
     if (lastMessageContent) {
       // Very gentle scroll during streaming - only if user isn't scrolling
       const timeoutId = setTimeout(() => {
         scrollToBottom(false); // Never force during streaming
-      }, 300);
+      }, scrollTimers.streamingScrollDelay);
 
       return () => clearTimeout(timeoutId);
     }
-  }, [lastMessageContent, scrollToBottom]);
+  }, [lastMessageContent, scrollToBottom, scrollTimers.streamingScrollDelay]);
 
   /**
-   * Re-scroll when padding changes to maintain bottom position
+   * FIXED: Re-scroll when padding changes to maintain bottom position
    */
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       scrollToBottom();
-    }, 200);
+    }, scrollTimers.paddingScrollDelay);
 
     return () => clearTimeout(timeoutId);
-  }, [dynamicBottomPadding, scrollToBottom]);
+  }, [dynamicBottomPadding, scrollToBottom, scrollTimers.paddingScrollDelay]);
 
   /**
-   * Re-scroll when reasoning is toggled (changes content height)
+   * FIXED: Re-scroll when reasoning is toggled (changes content height)
    */
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       scrollToBottom();
-    }, 300); // Longer delay for animation completion
+    }, scrollTimers.reasoningScrollDelay); // Longer delay for animation completion
 
     return () => clearTimeout(timeoutId);
-  }, [expandedReasoningCount, scrollToBottom]);
+  }, [expandedReasoningCount, scrollToBottom, scrollTimers.reasoningScrollDelay]);
 
   /**
-   * Cleanup scroll timeout on unmount
+   * OPTIMIZED: Cleanup scroll timeout on unmount
    */
   useEffect(() => {
     return () => {

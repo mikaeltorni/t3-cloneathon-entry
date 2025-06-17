@@ -1,12 +1,24 @@
 /**
  * ModelsContext.tsx
  * 
- * Context for AI models with efficient caching and batch operations
+ * OPTIMIZED: Global context for managing AI model configurations
+ * 
+ * Context:
+ *   ModelsContext - Provides model data and utilities
+ * 
+ * Features:
+ *   - Model configuration management
+ *   - Caching with expiration
+ *   - Reasoning and web search capabilities detection
+ *   - Provider-based model grouping
+ *   - Performance optimized with memoization
+ * 
+ * Usage: const models = useModels();
  */
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { chatApiService } from '../services/chatApi';
 import type { ModelConfig } from '../../../src/shared/types';
+import { chatApiService } from '../services/chatApi';
 
 export interface ModelsContextType {
   availableModels: Record<string, ModelConfig>;
@@ -19,6 +31,7 @@ export interface ModelsContextType {
   getWebSearchPricing: (modelId: string) => 'standard' | 'perplexity' | 'openai';
   getModelNames: () => string[];
   refetchModels: () => void;
+  
   // New efficient methods
   clearModelsCache: () => void;
   getModelsByProvider: (provider: string) => ModelConfig[];
@@ -41,7 +54,7 @@ export const ModelsProvider: React.FC<ModelsProviderProps> = ({ children }) => {
   const [modelsError, setModelsError] = useState<string | null>(null);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
-  // Cache helpers
+  // OPTIMIZED: Memoized cache helpers to prevent recreation
   const getCachedModels = useCallback((): Record<string, ModelConfig> | null => {
     try {
       const cached = localStorage.getItem(MODELS_CACHE_KEY);
@@ -98,6 +111,7 @@ export const ModelsProvider: React.FC<ModelsProviderProps> = ({ children }) => {
     }
   }, []);
 
+  // OPTIMIZED: Memoized fetchModels to prevent recreation and infinite loops
   const fetchModels = useCallback(async (forceRefresh: boolean = false) => {
     // Prevent rapid successive API calls
     const now = Date.now();
@@ -154,12 +168,12 @@ export const ModelsProvider: React.FC<ModelsProviderProps> = ({ children }) => {
     fetchModels(true);
   }, [fetchModels]);
 
-  // Load models on mount
+  // FIXED: Load models on mount - prevent infinite loops
   useEffect(() => {
     fetchModels(false);
   }, [fetchModels]);
 
-  // Model utility functions
+  // OPTIMIZED: Memoized model utility functions to prevent recreation
   const getModelConfig = useCallback((modelId: string): ModelConfig | undefined => {
     return availableModels[modelId];
   }, [availableModels]);
@@ -195,7 +209,8 @@ export const ModelsProvider: React.FC<ModelsProviderProps> = ({ children }) => {
       .map(([, model]) => model);
   }, [availableModels]);
 
-  const contextValue: ModelsContextType = {
+  // CRITICAL: Memoize context value to prevent infinite re-renders of consumers
+  const contextValue: ModelsContextType = useMemo(() => ({
     availableModels,
     modelsLoading,
     modelsError,
@@ -209,7 +224,21 @@ export const ModelsProvider: React.FC<ModelsProviderProps> = ({ children }) => {
     clearModelsCache,
     getModelsByProvider,
     getCachedModelsTimestamp,
-  };
+  }), [
+    availableModels,
+    modelsLoading,
+    modelsError,
+    getModelConfig,
+    isReasoningModel,
+    getReasoningMode,
+    getWebSearchMode,
+    getWebSearchPricing,
+    getModelNames,
+    refetchModels,
+    clearModelsCache,
+    getModelsByProvider,
+    getCachedModelsTimestamp,
+  ]);
 
   return (
     <ModelsContext.Provider value={contextValue}>

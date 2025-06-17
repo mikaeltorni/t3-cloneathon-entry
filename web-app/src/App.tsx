@@ -14,7 +14,7 @@
  * 
  * Usage: Default export as main app component
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
@@ -64,16 +64,35 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   // State to prevent race conditions during manual model changes
   const [isManualModelChange, setIsManualModelChange] = useState(false);
 
-  // Update currentModel when user preferences load/change
+  // Refs to track previous values for comparison (prevent unnecessary effects)
+  const prevUserPreferenceRef = useRef(userPreferences.lastSelectedModel);
+  const prevThreadIdRef = useRef<string | undefined>(chat.currentThread?.id);
+
+  // OPTIMIZED: Memoize the current thread model calculation
+  const currentThreadModel = useMemo(() => {
+    if (!chat.currentThread) return null;
+    return chat.currentThread.currentModel || 
+           chat.currentThread.lastUsedModel || 
+           userPreferences.lastSelectedModel ||
+           DEFAULT_MODEL;
+  }, [chat.currentThread?.currentModel, chat.currentThread?.lastUsedModel, userPreferences.lastSelectedModel]);
+
+  // FIXED: Update currentModel when user preferences load/change - ONLY when actually changed
   useEffect(() => {
-    if (userPreferences.lastSelectedModel && !chat.currentThread) {
-      // Only update when no thread is selected (new chat scenario)
-      debug(`🔄 Using user's last selected model for new chat: ${userPreferences.lastSelectedModel}`);
-      setCurrentModel(userPreferences.lastSelectedModel);
+    const currentPref = userPreferences.lastSelectedModel;
+    const prevPref = prevUserPreferenceRef.current;
+    
+    // Only update if preference actually changed AND no thread is selected
+    if (currentPref && currentPref !== prevPref && !chat.currentThread) {
+      debug(`🔄 Using user's last selected model for new chat: ${currentPref}`);
+      setCurrentModel(currentPref);
     }
+    
+    // Update ref
+    prevUserPreferenceRef.current = currentPref;
   }, [userPreferences.lastSelectedModel, chat.currentThread, debug]);
 
-  // Sync currentModel when thread changes - but ONLY when switching threads, not during message generation
+  // FIXED: Sync currentModel when thread changes - prevent circular dependencies
   useEffect(() => {
     // CRITICAL: Don't override manual model changes
     if (isManualModelChange) {
@@ -81,45 +100,40 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
       return;
     }
     
-    if (chat.currentThread) {
-      // Use the thread's current model, or last used model, or fall back to user's preferred model
-      const threadModel = chat.currentThread.currentModel || 
-                          chat.currentThread.lastUsedModel || 
-                          userPreferences.lastSelectedModel ||
-                          DEFAULT_MODEL;
-      
-      // CRITICAL: Only sync model when thread ID actually changes (switching threads)
-      // Do NOT sync during message generation (when only messages change)
-      
-      // Only update if this is a genuine thread switch AND the model is different
-      if (threadModel !== currentModel) {
-        debug(`🔄 Thread model sync: changing from ${currentModel} to ${threadModel} for thread ${chat.currentThread.id}`);
-        setCurrentModel(threadModel);
-        debug(`✅ Thread model synced to: ${threadModel}`);
-      } else {
-        debug(`✅ Thread model sync: keeping current model ${currentModel} for thread ${chat.currentThread.id}`);
+    const currentThreadId = chat.currentThread?.id;
+    const prevThreadId = prevThreadIdRef.current;
+    
+    // Only sync when thread ID actually changes (switching threads)
+    if (currentThreadId !== prevThreadId) {
+      if (currentThreadModel && currentThreadModel !== currentModel) {
+        debug(`🔄 Thread model sync: changing from ${currentModel} to ${currentThreadModel} for thread ${currentThreadId}`);
+        setCurrentModel(currentThreadModel);
+        debug(`✅ Thread model synced to: ${currentThreadModel}`);
+      } else if (!chat.currentThread) {
+        // No thread selected (new chat scenario) - use user's last selected model
+        const preferredModel = userPreferences.lastSelectedModel || DEFAULT_MODEL;
+        if (preferredModel !== currentModel) {
+          debug(`🔄 No thread selected, using user's preferred model: ${preferredModel}`);
+          setCurrentModel(preferredModel);
+        }
       }
-    } else {
-      // No thread selected (new chat scenario) - use user's last selected model
-      const preferredModel = userPreferences.lastSelectedModel || DEFAULT_MODEL;
-      if (preferredModel !== currentModel) {
-        debug(`🔄 No thread selected, using user's preferred model: ${preferredModel}`);
-        setCurrentModel(preferredModel);
-      }
+      
+      // Update ref
+      prevThreadIdRef.current = currentThreadId;
     }
-  }, [chat.currentThread?.id, userPreferences.lastSelectedModel, currentModel, debug, isManualModelChange]);
+  }, [chat.currentThread?.id, currentThreadModel, currentModel, debug, isManualModelChange, userPreferences.lastSelectedModel]);
 
   /**
-   * Handle manual refresh of threads from server
+   * OPTIMIZED: Memoized handle manual refresh of threads from server
    */
-  const handleRefreshThreads = async () => {
+  const handleRefreshThreads = useCallback(async () => {
     await chat.loadThreads(true);
-  };
+  }, [chat.loadThreads]);
 
   /**
-   * Enhanced new chat handler with mobile auto-close
+   * OPTIMIZED: Memoized enhanced new chat handler with mobile auto-close
    */
-  const handleNewChat = () => {
+  const handleNewChat = useCallback(() => {
     // Call the original new chat function
     chat.handleNewChat();
     
@@ -128,36 +142,36 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
       sidebar.close();
       debug('🔥 Auto-closed sidebar on mobile after new chat creation');
     }
-  };
+  }, [chat.handleNewChat, sidebar.isOpen, sidebar.close, debug]);
 
   /**
-   * Enhanced sidebar toggle with mutual exclusivity on mobile only
+   * OPTIMIZED: Memoized enhanced sidebar toggle with mutual exclusivity on mobile only
    */
-  const handleChatSidebarToggle = () => {
+  const handleChatSidebarToggle = useCallback(() => {
     // Only enforce mutual exclusivity on mobile where dark overlay appears
     if (isMobileScreen() && isModelSidebarOpen) {
       setIsModelSidebarOpen(false);
       debug('🔄 Auto-closed model sidebar to open chat sidebar (mobile overlay mode)');
     }
     sidebar.toggle();
-  };
+  }, [isModelSidebarOpen, sidebar.toggle, debug]);
 
   /**
-   * Enhanced model sidebar toggle with mutual exclusivity on mobile only
+   * OPTIMIZED: Memoized enhanced model sidebar toggle with mutual exclusivity on mobile only
    */
-  const handleModelSidebarToggle = () => {
+  const handleModelSidebarToggle = useCallback(() => {
     // Only enforce mutual exclusivity on mobile where dark overlay appears
     if (isMobileScreen() && sidebar.isOpen) {
       sidebar.close();
       debug('🔄 Auto-closed chat sidebar to open model sidebar (mobile overlay mode)');
     }
     setIsModelSidebarOpen(!isModelSidebarOpen);
-  };
+  }, [sidebar.isOpen, sidebar.close, isModelSidebarOpen, debug]);
 
   /**
-   * Handle model change for a specific thread with Firebase persistence
+   * OPTIMIZED: Memoized handle model change for a specific thread with Firebase persistence
    */
-  const handleModelChange = async (threadId: string, modelId: string) => {
+  const handleModelChange = useCallback(async (threadId: string, modelId: string) => {
     debug(`Model changed for thread ${threadId}: ${modelId}`);
     
     try {
@@ -185,12 +199,12 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         setCurrentModel(fallbackModel);
       }
     }
-  };
+  }, [chat.currentThread?.id, chat.handleThreadUpdate, userPreferences.updateLastSelectedModel, userPreferences.lastSelectedModel, debug]);
 
   /**
-   * Handle model change from ChatInterface (current conversation)
+   * OPTIMIZED: Memoized handle model change from ChatInterface (current conversation)
    */
-  const handleCurrentModelChange = (modelId: string) => {
+  const handleCurrentModelChange = useCallback((modelId: string) => {
     // Set flag to prevent race conditions
     setIsManualModelChange(true);
     
@@ -219,14 +233,14 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         debug(`🔓 Manual model change completed (no thread), re-enabling automatic sync`);
       }, 100);
     }
-  };
+  }, [currentModel, userPreferences.updateLastSelectedModel, chat.currentThread?.id, handleModelChange, debug]);
 
   /**
-   * Check if error is a server connection error
+   * OPTIMIZED: Memoized check if error is a server connection error
    */
-  const isConnectionError = (error: string): boolean => {
+  const isConnectionError = useCallback((error: string): boolean => {
     return error.includes('server') || error.includes('running');
-  };
+  }, []);
 
   // Show connection error if threads failed to load and error suggests server issues
   if (chat.error && isConnectionError(chat.error)) {
@@ -335,9 +349,21 @@ function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const { debug } = useLogger('AppContent');
 
-  // Load threads only after user is authenticated
+  // OPTIMIZED: Track auth state changes to prevent unnecessary effects
+  const prevUserRef = useRef(user);
+  const prevAuthLoadingRef = useRef(authLoading);
+
+  // FIXED: Load threads only after user is authenticated - prevent infinite loops
   useEffect(() => {
-    if (user && !authLoading) {
+    const currentUser = user;
+    const currentAuthLoading = authLoading;
+    const prevUser = prevUserRef.current;
+    const prevAuthLoading = prevAuthLoadingRef.current;
+    
+    // Only trigger when auth state actually changes
+    if (currentUser && !currentAuthLoading && 
+        (currentUser !== prevUser || currentAuthLoading !== prevAuthLoading)) {
+      
       debug('User authenticated, clearing any existing cache and loading fresh data...');
       
       // Clear any existing cache to ensure clean state for this user session
@@ -348,7 +374,7 @@ function AppContent() {
       const loadWithDelay = async () => {
         try {
           // Wait for token to be available
-          await user.getIdToken();
+          await currentUser.getIdToken();
           chat.loadThreads();
         } catch (error) {
           console.error('Failed to get auth token, retrying in 1 second...', error);
@@ -361,14 +387,18 @@ function AppContent() {
       
       loadWithDelay();
     }
-  }, [user, authLoading, debug]); // Removed chat and chat.loadThreads from dependencies
+    
+    // Update refs
+    prevUserRef.current = currentUser;
+    prevAuthLoadingRef.current = currentAuthLoading;
+  }, [user, authLoading, debug, chat.loadThreads]);
 
   /**
-   * Handle thread updates (including tag assignments)
+   * OPTIMIZED: Memoized handle thread updates (including tag assignments)
    */
-  const handleThreadUpdate = async (threadId: string, updates: Partial<ChatThread>) => {
+  const handleThreadUpdate = useCallback(async (threadId: string, updates: Partial<ChatThread>) => {
     await chat.handleThreadUpdate(threadId, updates);
-  };
+  }, [chat.handleThreadUpdate]);
 
   // Show sign-in form if user is not authenticated
   if (!authLoading && !user) {
