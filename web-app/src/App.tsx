@@ -1,22 +1,20 @@
 /**
  * App.tsx
  * 
- * Main application component - refactored with extracted components
- * Now uses extracted error components for better organization
- * 
- * Components:
- *   App
+ * Main application component with authentication, chat interface, and model selection
  * 
  * Features:
- *   - Simplified layout and state management using custom hooks
- *   - Custom hooks for chat and model management
- *   - Enhanced error handling with extracted error components
- *   - Responsive design
- *   - Mobile sidebar toggle functionality
- *   - Cache security: Clears session cache on both login and logout
- *   - Integrated Trello-style tagging system
+ *   - Authentication flow with Firebase Auth
+ *   - Chat interface with sidebar navigation
+ *   - Model selection sidebar
+ *   - Thread management and filtering
+ *   - Error handling and loading states
+ *   - Mobile-responsive design
+ *   - Tag system integration
+ * 
+ * Usage: Default export as main app component
  */
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
@@ -63,6 +61,9 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
     userPreferences.lastSelectedModel || DEFAULT_MODEL
   );
 
+  // State to prevent race conditions during manual model changes
+  const [isManualModelChange, setIsManualModelChange] = useState(false);
+
   // Update currentModel when user preferences load/change
   useEffect(() => {
     if (userPreferences.lastSelectedModel && !chat.currentThread) {
@@ -74,6 +75,12 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
 
   // Sync currentModel when thread changes - but ONLY when switching threads, not during message generation
   useEffect(() => {
+    // CRITICAL: Don't override manual model changes
+    if (isManualModelChange) {
+      debug(`⏸️ Skipping automatic model sync - manual change in progress`);
+      return;
+    }
+    
     if (chat.currentThread) {
       // Use the thread's current model, or last used model, or fall back to user's preferred model
       const threadModel = chat.currentThread.currentModel || 
@@ -100,7 +107,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         setCurrentModel(preferredModel);
       }
     }
-  }, [chat.currentThread?.id, userPreferences.lastSelectedModel, currentModel, debug]);
+  }, [chat.currentThread?.id, userPreferences.lastSelectedModel, currentModel, debug, isManualModelChange]);
 
   /**
    * Handle manual refresh of threads from server
@@ -184,6 +191,9 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
    * Handle model change from ChatInterface (current conversation)
    */
   const handleCurrentModelChange = (modelId: string) => {
+    // Set flag to prevent race conditions
+    setIsManualModelChange(true);
+    
     debug(`🔄 Model change requested: ${modelId} (previous: ${currentModel})`);
     setCurrentModel(modelId);
     debug(`✅ Current model changed to: ${modelId}`);
@@ -195,7 +205,19 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
     
     // If there's an active thread, update its model preference
     if (chat.currentThread?.id) {
-      handleModelChange(chat.currentThread.id, modelId);
+      handleModelChange(chat.currentThread.id, modelId).finally(() => {
+        // Clear the flag after the Firebase update completes
+        setTimeout(() => {
+          setIsManualModelChange(false);
+          debug(`🔓 Manual model change completed, re-enabling automatic sync`);
+        }, 500); // Small delay to ensure all state updates have completed
+      });
+    } else {
+      // Clear the flag immediately if no thread update needed
+      setTimeout(() => {
+        setIsManualModelChange(false);
+        debug(`🔓 Manual model change completed (no thread), re-enabling automatic sync`);
+      }, 100);
     }
   };
 
@@ -245,8 +267,6 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         
         getThreadTags={getThreadTags}
       />
-
-
 
       {/* Model Selection Sidebar - Right Side */}
       <ModelSidebar
