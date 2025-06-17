@@ -15,6 +15,7 @@
  *   - Reasoning and search controls
  *   - Metrics display
  *   - Fixed positioning with proper spacing
+ *   - Input remains writable during content generation
  * 
  * Usage: <ChatInput onSendMessage={send} loading={loading} availableModels={models} />
  */
@@ -37,7 +38,7 @@ import type { ModelConfig, ImageAttachment, DocumentAttachment, TokenMetrics, Ch
  */
 interface ChatInputProps {
   onSendMessage: (content: string, images?: ImageAttachment[], documents?: DocumentAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
-  loading: boolean;
+  loading: boolean; // Only true when sending a message
   availableModels: Record<string, ModelConfig>;
   onHeightChange?: (height: number) => void;
   images: ImageAttachment[];
@@ -47,7 +48,7 @@ interface ChatInputProps {
   sidebarOpen?: boolean;
   modelSidebarOpen?: boolean;
   currentTokenMetrics?: TokenMetrics | null;
-  isGenerating?: boolean;
+  isGenerating?: boolean; // True when AI is generating content
   currentMessages?: ChatMessage[];
   selectedModel?: string;
   onModelChange?: (modelId: string) => void;
@@ -61,6 +62,7 @@ interface ChatInputProps {
  * - Reasoning and search options
  * - Metrics display
  * - Message input and submission
+ * - Input remains writable during content generation
  * 
  * @param props - Component props
  * @returns React component
@@ -95,6 +97,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   /**
    * Form state and handlers from useMessageForm hook
+   * Note: We pass loading (not isGenerating) to prevent submission during send
    */
   const {
     message,
@@ -118,7 +121,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   } = useMessageForm({
     onSendMessage,
     availableModels,
-    loading,
+    loading, // Only disabled during actual message sending
     images,
     documents,
     selectedModel: externalSelectedModel,
@@ -288,7 +291,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onKeyDown={handleKeyDown}
           onSubmit={handleSubmit}
           textareaRef={textareaRef}
-          loading={loading}
+          loading={loading} // Only disabled when sending, not during generation
+          isGenerating={isGenerating} // Pass generation state for visual feedback
           canSubmit={canSubmit}
           images={images}
           documents={documents}

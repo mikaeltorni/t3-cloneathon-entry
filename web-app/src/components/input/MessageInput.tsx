@@ -3,6 +3,7 @@
  * 
  * Component for the message input textarea, attachment buttons, and send button
  * Now includes mobile-friendly attachment buttons for images and documents
+ * Input remains writable during content generation
  * 
  * Components:
  *   MessageInput
@@ -23,7 +24,8 @@ interface MessageInputProps {
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onSubmit: (e?: React.FormEvent<HTMLFormElement>) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
-  loading: boolean;
+  loading: boolean; // True when sending a message
+  isGenerating?: boolean; // True when AI is generating content
   canSubmit: boolean;
   // New props for file attachments
   images?: ImageAttachment[];
@@ -37,13 +39,15 @@ interface MessageInputProps {
 /**
  * Message input component with textarea, attachment buttons, and send button
  * Now includes mobile-friendly file upload capabilities
+ * Input remains writable during content generation
  * 
  * @param message - Current message content
  * @param onChange - Message change handler
  * @param onKeyDown - Key down handler for shortcuts
  * @param onSubmit - Form submit handler
  * @param textareaRef - Reference to textarea element
- * @param loading - Loading state
+ * @param loading - Loading state (sending message)
+ * @param isGenerating - Generating state (AI is responding)
  * @param canSubmit - Whether submit is allowed
  * @param images - Current image attachments
  * @param documents - Current document attachments
@@ -60,6 +64,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   onSubmit,
   textareaRef,
   loading,
+  isGenerating = false,
   canSubmit,
   images = [],
   documents = [],
@@ -72,6 +77,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const documentInputRef = useRef<HTMLInputElement>(null);
   const { debug, warn } = useLogger('MessageInput');
   const { processImageFile, processDocumentFile } = useFileProcessing();
+
+  // Test console log to check if changes are being picked up
+  console.log('MessageInput rendered - cache test:', new Date().toISOString());
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -167,6 +175,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   // Check if attachment buttons should be disabled
+  // Only disable during actual sending, not during generation
   const isImageButtonDisabled = loading || images.length >= maxImages || !onImagesChange;
   const isDocumentButtonDisabled = loading || documents.length >= maxDocuments || !onDocumentsChange;
 
@@ -219,14 +228,18 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             value={message}
             onChange={onChange}
             onKeyDown={onKeyDown}
-            placeholder="Type your message... (Shift+Enter for new line)"
-            disabled={loading}
+            placeholder={
+              isGenerating 
+                ? "Assistant is responding... Type your next message..."
+                : "Write your message... (Shift+Enter for new line)"
+            }
             className={cn(
-              'w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl resize-none transition-all duration-200',
+              'w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-xl resize-none transition-all duration-200',
               'focus:ring-2 focus:ring-blue-500 focus:border-transparent',
               'min-h-[44px] sm:min-h-[48px] max-h-[120px] overflow-y-auto',
               'text-sm sm:text-base', // Responsive text size
-              loading && 'opacity-50 cursor-not-allowed'
+              //isGenerating && !loading && 'border-blue-300 bg-blue-50/30', // Visual feedback during generation
+              //isGenerating && !loading && 'border-gray-300'
             )}
             style={{ height: '44px' }} // Slightly smaller on mobile
           />
