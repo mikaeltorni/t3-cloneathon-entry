@@ -154,7 +154,7 @@ export const ThreadTagForMenu: React.FC<ThreadTagForMenuProps> = ({
         
         debug(`🧹 [${toggleId}] Clearing optimistic state after successful operation`);
         tagSystem.clearOptimistic(threadId, tag.id);
-      } catch (error) {
+      } catch {
         debug(`🚨 [${toggleId}] Operation failed, reverting optimistic state`);
         tagSystem.clearOptimistic(threadId, tag.id);
       } finally {

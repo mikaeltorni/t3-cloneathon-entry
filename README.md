@@ -48,6 +48,17 @@ The chat interface now includes visible attachment buttons that make file upload
 - **File Limits**: Maximum 5 images and 5 documents per message
 - **Multiple Selection**: Support for selecting multiple files at once
 - **Progress Indication**: Shows current attachment count (e.g., "3/5")
+- **📊 Real-time Upload Progress**: Live progress indicators for files being processed
+- **🔄 Upload State Management**: Visual feedback for uploading, completed, and failed states
+- **⚠️ Error Handling**: Clear error messages and retry capabilities
+
+#### **Upload Progress Indicators**
+Files now show real-time upload progress with:
+- **Progress Bars**: Animated progress bars showing upload/processing percentage
+- **Status Icons**: Loading spinners for active uploads, error icons for failures
+- **State Colors**: Blue for uploading, green for completed, red for errors
+- **Instant Feedback**: Files appear immediately with temporary upload states
+- **Error Recovery**: Failed uploads show error messages with retry options
 
 #### **Supported File Types**
 - **Images**: JPEG, PNG, GIF, WebP (max 10MB each)
@@ -67,6 +78,7 @@ Fixed a critical issue where JPEG files from Android devices would fail to uploa
 - **Touch Optimization**: `touch-manipulation` CSS for better mobile interaction
 - **Accessible Design**: Proper focus states and keyboard navigation
 - **Visual Hierarchy**: Clear distinction between attachment and send buttons
+- **Progress Feedback**: Mobile-friendly progress indicators and status messages
 
 #### **Technical Implementation**
 ```tsx
@@ -81,6 +93,29 @@ Fixed a critical issue where JPEG files from Android devices would fail to uploa
   <Image className="w-5 h-5" />
 </button>
 
+// Upload progress tracking
+const [images, setImages] = useState<ImageAttachment[]>([]);
+
+// Real-time progress updates
+const handleFileProcessing = async (file: File) => {
+  const tempAttachment = createTemporaryImageAttachment(file);
+  setImages(prev => [...prev, tempAttachment]);
+  
+  const result = await processImageFile(file, (progress) => {
+    setImages(prev => prev.map(img => 
+      img.id === tempAttachment.id ? { ...img, progress } : img
+    ));
+  });
+  
+  if (result.success) {
+    setImages(prev => prev.map(img => 
+      img.id === tempAttachment.id 
+        ? { ...result.attachment, isUploading: false }
+        : img
+    ));
+  }
+};
+
 // Hidden file input
 <input
   ref={imageInputRef}
@@ -90,6 +125,33 @@ Fixed a critical issue where JPEG files from Android devices would fail to uploa
   onChange={handleImageSelect}
   className="hidden"
 />
+```
+
+#### **Upload State Types**
+```typescript
+interface ImageAttachment {
+  id: string;
+  url: string;
+  name: string;
+  size: number;
+  type: string;
+  isUploading?: boolean;  // Upload in progress
+  progress?: number;      // 0-100 progress percentage
+  error?: string;         // Error message if failed
+}
+
+interface DocumentAttachment {
+  id: string;
+  url: string;
+  name: string;
+  size: number;
+  type: string;
+  content: string;
+  category: 'pdf' | 'text' | 'markdown' | 'other';
+  isUploading?: boolean;  // Upload in progress
+  progress?: number;      // 0-100 progress percentage
+  error?: string;         // Error message if failed
+}
 ```
 
 #### **Dual Upload Methods**
