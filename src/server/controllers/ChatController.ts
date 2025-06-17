@@ -405,9 +405,16 @@ export class ChatController {
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      const streamingOrigin = process.env.NODE_ENV === 'production' 
-        ? process.env.PRODUCTION_ORIGINS?.split(',')[0] || ''
-        : process.env.DEVELOPMENT_ORIGINS?.split(',')[0] || 'http://localhost:3000';
+      // Get the request origin and check if it's allowed
+      const requestOrigin = req.headers.origin;
+      const allowedOrigins = process.env.NODE_ENV === 'production'
+        ? (process.env.PRODUCTION_ORIGINS?.split(',') || [])
+        : (process.env.DEVELOPMENT_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:5173']);
+
+      // Set CORS origin to the requesting origin if it's allowed, otherwise use first allowed origin
+      const streamingOrigin = requestOrigin && allowedOrigins.includes(requestOrigin) 
+        ? requestOrigin 
+        : allowedOrigins[0] || 'http://localhost:3000';
 
       res.setHeader('Access-Control-Allow-Origin', streamingOrigin);
 
