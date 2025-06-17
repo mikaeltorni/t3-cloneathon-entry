@@ -100,7 +100,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         setCurrentModel(preferredModel);
       }
     }
-  }, [chat.currentThread?.id, chat.currentThread?.currentModel, chat.currentThread?.lastUsedModel, userPreferences.lastSelectedModel, currentModel, debug]);
+  }, [chat.currentThread?.id, userPreferences.lastSelectedModel, currentModel, debug]);
 
   /**
    * Handle manual refresh of threads from server
