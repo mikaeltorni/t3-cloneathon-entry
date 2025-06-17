@@ -110,16 +110,34 @@ export const TagSystem: React.FC<TagSystemProps> = ({
   const {
     selectedTagIds,
     filteredThreads,
-    addTagToThread,
-    removeTagFromThread,
     toggleTagFilter,
     clearTagFilters,
     getThreadTags
   } = useThreadTags({ 
     threads, 
-    tags, 
-    onThreadUpdate 
+    tags
   });
+
+  // Create wrapper functions for tag operations that use the API directly
+  const addTagToThread = useCallback(async (threadId: string, tagId: string) => {
+    const thread = threads.find(t => t.id === threadId);
+    if (!thread) return;
+
+    const currentTags = thread.tags || [];
+    if (currentTags.includes(tagId)) return;
+
+    const updatedTags = [...currentTags, tagId];
+    await onThreadUpdate(threadId, { tags: updatedTags });
+  }, [threads, onThreadUpdate]);
+
+  const removeTagFromThread = useCallback(async (threadId: string, tagId: string) => {
+    const thread = threads.find(t => t.id === threadId);
+    if (!thread) return;
+
+    const currentTags = thread.tags || [];
+    const updatedTags = currentTags.filter(id => id !== tagId);
+    await onThreadUpdate(threadId, { tags: updatedTags });
+  }, [threads, onThreadUpdate]);
 
   // Get current thread for context menu
   const currentThread = useMemo(() => 

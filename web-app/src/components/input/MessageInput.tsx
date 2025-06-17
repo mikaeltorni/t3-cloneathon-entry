@@ -83,9 +83,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const { debug, warn } = useLogger('MessageInput');
   const { processImageFile, processDocumentFile } = useFileProcessing();
 
-  // Test console log to check if changes are being picked up
-  console.log('MessageInput rendered - cache test:', new Date().toISOString());
-
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onSubmit(e);

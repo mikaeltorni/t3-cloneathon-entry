@@ -12,7 +12,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '../../utils/cn';
 import { useTagSystemContext } from '../TagSystem';
-import { Tag } from '../ui/Tag';
+import { ThreadTagForMenu } from '../ui/ThreadTagForMenu';
 import type { ChatThread, ChatTag } from '../../../../src/shared/types';
 
 /**
@@ -119,35 +119,7 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
     onClose?.();
   };
 
-  /**
-   * Handle tag assignment/removal with instant visual feedback
-   */
-  const handleToggleTag = async (tagId: string, isAssigned: boolean) => {
-    // Show instant visual feedback using shared optimistic state
-    if (!isAssigned) {
-      // Adding tag: show optimistically
-      tagSystem.setOptimisticAssigned(thread.id, tagId);
-    } else {
-      // Removing tag: hide optimistically
-      tagSystem.setOptimisticRemoved(thread.id, tagId);
-    }
 
-    try {
-      if (isAssigned) {
-        await tagSystem.removeTagFromThread(thread.id, tagId);
-      } else {
-        await tagSystem.addTagToThread(thread.id, tagId);
-      }
-      
-      // Clear optimistic state after successful server response
-      tagSystem.clearOptimistic(thread.id, tagId);
-    } catch (error) {
-      console.error('Failed to toggle tag:', error);
-      
-      // Revert optimistic state on error
-      tagSystem.clearOptimistic(thread.id, tagId);
-    }
-  };
 
   /**
    * Handle opening create tag modal
@@ -209,45 +181,43 @@ export const ThreadMenu: React.FC<ThreadMenuProps> = ({
         >
           {/* Tags section */}
           <div className="p-3 border-b border-gray-100">
-
-            {/* Available tags with highlighted selection */}
-            <div className="space-y-1 max-h-32 overflow-y-auto">
-              {tagSystem.tags.map((tag) => {
-                const isAssigned = threadTags.some((t: ChatTag) => t.id === tag.id);
-                const optimisticTags = tagSystem.getOptimisticThreadTags(thread.id);
-                const isOptimisticallyAssigned = optimisticTags.some(t => t.id === tag.id);
-                
-                return (
-                  <div
-                    key={tag.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleTag(tag.id, isAssigned);
-                    }}
-                    className={cn(
-                      'flex items-center p-2 rounded text-xs cursor-pointer transition-all duration-200',
-                      (isAssigned || isOptimisticallyAssigned) 
-                        ? 'bg-gray-50 border-2 border-gray-300 shadow-sm' 
-                        : 'hover:bg-gray-50 border-2 border-transparent hover:border-gray-200'
-                    )}
-                  >
-                    <Tag 
-                      tag={tag} 
-                      size="sm" 
-                      removable={false} 
-                      className="transition-all duration-200"
-                    />
-                    {(isAssigned || isOptimisticallyAssigned) && (
-                      <div className="ml-auto flex items-center">
-                        <div className="text-green-600 text-xs font-medium flex items-center">
-                          <span className="text-base mr-1">✓</span>
-                          Assigned
-                        </div>
-                      </div>
-                    )}
+            <div className="space-y-2">
+              {/* Assigned tags */}
+              {threadTags.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-medium text-gray-600 mb-1">Assigned Tags</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {threadTags.map((tag: ChatTag) => (
+                      <ThreadTagForMenu
+                        key={tag.id}
+                        tag={tag}
+                        threadId={thread.id}
+                        size="sm"
+                      />
+                    ))}
                   </div>
-                );
-              })}
+                </div>
+              )}
+              
+              {/* Available tags */}
+              {tagSystem.tags.filter(tag => !threadTags.some((t: ChatTag) => t.id === tag.id)).length > 0 && (
+                <div>
+                  <h4 className="text-xs font-medium text-gray-600 mb-1">Available Tags</h4>
+                  <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+                    {tagSystem.tags
+                      .filter(tag => !threadTags.some((t: ChatTag) => t.id === tag.id))
+                      .slice(0, 10)
+                      .map((tag) => (
+                        <ThreadTagForMenu
+                          key={tag.id}
+                          tag={tag}
+                          threadId={thread.id}
+                          size="sm"
+                        />
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Create new tag */}
