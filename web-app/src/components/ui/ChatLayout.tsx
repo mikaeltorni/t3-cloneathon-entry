@@ -2,6 +2,7 @@
  * ChatLayout.tsx
  * 
  * Main chat layout component that orchestrates message display and input
+ * Enhanced with improved mobile background styling
  * 
  * Components:
  *   ChatLayout
@@ -9,6 +10,7 @@
  * Features:
  *   - Flexible layout composition
  *   - Dynamic background based on drag state
+ *   - Enhanced mobile background styling
  *   - Responsive message and input positioning
  *   - Support for global drag-and-drop
  * 
@@ -28,6 +30,7 @@ interface ChatLayoutProps {
 
 /**
  * Main chat layout component
+ * Enhanced with improved mobile background styling
  * 
  * @param children - Child components to render
  * @param isDragOver - Whether files are being dragged
@@ -42,7 +45,9 @@ export const ChatLayout: React.FC<ChatLayoutProps> = React.memo(({
   return (
     <div 
       className={`flex flex-col h-full transition-colors duration-200 ${
-        isDragOver ? 'bg-blue-50 dark:bg-blue-950' : 'bg-gray-50 dark:bg-slate-950'
+        isDragOver 
+          ? 'bg-blue-50 dark:bg-blue-950' 
+          : 'bg-gradient-to-br from-gray-100 via-gray-50 to-slate-100 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-950 dark:to-slate-800'
       }`}
       {...dropHandlers}
     >

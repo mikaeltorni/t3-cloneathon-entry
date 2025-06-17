@@ -253,7 +253,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   }
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-slate-950">
+    <div className="h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-slate-100 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-950 dark:to-slate-800">
       {/* Floating Toggle Button - Only visible when sidebar is closed */}
       {!sidebar.isOpen && (
         <SidebarToggle 
@@ -404,7 +404,7 @@ function AppContent() {
   if (!authLoading && !user) {
     return (
       <ErrorBoundary>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-slate-100 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-950 dark:to-slate-800 flex items-center justify-center p-4">
           <SignInForm />
         </div>
       </ErrorBoundary>
