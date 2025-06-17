@@ -25,6 +25,7 @@ import { GlobalDragOverlay } from './ui/GlobalDragOverlay';
 import { useReasoningState } from '../hooks/useReasoningState';
 import { useInputBarHeight } from '../hooks/useInputBarHeight';
 import { useFileManagement } from '../hooks/useFileManagement';
+import { useMobileScrollState } from '../hooks/useMobileScrollState';
 import type { ChatThread, ModelConfig, ImageAttachment, DocumentAttachment, TokenMetrics } from '../../../src/shared/types';
 
 /**
@@ -114,6 +115,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
     maxDocuments: 5
   });
 
+  /**
+   * Mobile scroll state management hook
+   */
+  const mobileScrollState = useMobileScrollState();
+
   return (
     <ChatLayout 
       isDragOver={dropZone.isDragOver}
@@ -130,7 +136,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         dynamicBottomPadding={inputBarHeight}
       />
 
-      {/* Fixed Chat Input */}
+      {/* Fixed Chat Input with Mobile Scroll State */}
       <ChatInput
         onSendMessage={onSendMessage}
         loading={loading}

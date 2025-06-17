@@ -34,6 +34,9 @@ interface MessageInputProps {
   onDocumentsChange?: (documents: DocumentAttachment[]) => void;
   maxImages?: number;
   maxDocuments?: number;
+  // Mobile focus tracking
+  onFocus?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
 }
 
 /**
@@ -71,7 +74,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   onImagesChange,
   onDocumentsChange,
   maxImages = 5,
-  maxDocuments = 5
+  maxDocuments = 5,
+  onFocus,
+  onBlur
 }) => {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
@@ -228,6 +233,8 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             value={message}
             onChange={onChange}
             onKeyDown={onKeyDown}
+            onFocus={onFocus}
+            onBlur={onBlur}
             placeholder={
               isGenerating 
                 ? "Assistant is responding... Write your next message..."

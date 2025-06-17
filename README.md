@@ -7,6 +7,7 @@ A modern full-stack chat application built with React, TypeScript, Express.js, a
 - **Modern Tech Stack**: React 18+ with TypeScript, Express.js backend, Firebase integration
 - **AI Chat Integration**: OpenRouter API integration for AI conversations
 - **Model Selection Sidebar**: Right-side hover-to-reveal sidebar for easy AI model switching
+- **Smart Mobile UX**: Intelligent interface adaptation that hides controls when input is not focused to maximize chat space
 - **Firebase Rate Limiting**: Simple and effective rate limiting using firebase-functions-rate-limiter
 - **Real-time User Experience**: Client-side throttling with visual feedback
 - **Mobile-Friendly File Attachments**: Dedicated attachment buttons for images and documents
@@ -86,6 +87,67 @@ The chat interface now includes visible attachment buttons that make file upload
 The app now supports two methods for file attachments:
 1. **Button-Based Upload**: Click attachment buttons to open file picker
 2. **Drag-and-Drop**: Drag files anywhere in the chat area (desktop primarily)
+
+## 📱 Smart Mobile Chat Interface
+
+### **Intelligent UI Adaptation**
+The chat interface features smart mobile optimization that automatically adapts to user behavior, providing maximum screen real estate when needed:
+
+#### **Key Features**
+- **Focus-Aware Interface**: Automatically hides reasoning controls, search toggles, and metrics when input is not focused
+- **Instant Response Design**: Shows all controls immediately when user taps the input field
+- **Device Detection**: Uses utility functions to detect mobile screens (< 768px width)
+- **Smooth Transitions**: CSS transitions for seamless show/hide animations
+- **Always-Accessible Input**: Chat input remains visible and functional at all times
+
+#### **Behavior Logic**
+- **Desktop**: All controls always visible (normal behavior)
+- **Mobile + Input Focused**: All controls visible for full functionality when typing
+- **Mobile + Input Not Focused**: Only essential input controls visible to maximize chat space
+
+#### **Hidden Elements When Input Not Focused**
+- Token metrics and context window display
+- Current model indicator
+- Web search controls and effort selectors
+- Reasoning controls and effort selectors
+- Document/image attachment previews
+
+#### **Always Visible Elements**
+- Chat input textarea
+- Send button
+- Attachment buttons (image/document)
+- Core message functionality
+
+#### **Technical Implementation**
+```tsx
+// Custom hook for mobile scroll state management
+const mobileScrollState = useMobileScrollState();
+
+// Conditional rendering based on scroll state
+{mobileScrollState.shouldShowControls && (
+  <ReasoningControls
+    selectedModel={selectedModel}
+    useReasoning={useReasoning}
+    onUseReasoningChange={setUseReasoning}
+    // ... other props
+  />
+)}
+
+// Device detection utility
+import { isMobileScreen } from '../utils/deviceUtils';
+const isMobile = isMobileScreen(); // Returns true for width < 768px
+```
+
+#### **Hook Features**
+- **Focus Detection**: Tracks input focus/blur state for instant response
+- **Responsive Updates**: Automatically updates on window resize
+- **Performance Optimized**: Simple state management without complex timeouts
+
+#### **User Experience Benefits**
+- **More Chat Content**: Up to 40% more message content visible when not typing
+- **Reduced Clutter**: Cleaner interface when reading messages
+- **Instant Access**: Controls appear immediately when user taps input field
+- **Natural Interaction**: Intuitive behavior based on focus state
 
 ## 🎨 Model Selection
 

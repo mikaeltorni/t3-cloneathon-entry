@@ -29,6 +29,7 @@ import { ImageAttachments } from './ImageAttachments';
 import { DocumentAttachments } from './DocumentAttachments';
 import { useLogger } from '../hooks/useLogger';
 import { useMessageForm } from '../hooks/useMessageForm';
+import { useMobileScrollState } from '../hooks/useMobileScrollState';
 import { tokenizerService } from '../services/tokenizerService';
 import { cn } from '../utils/cn';
 import type { ModelConfig, ImageAttachment, DocumentAttachment, TokenMetrics, ChatMessage } from '../../../src/shared/types';
@@ -88,6 +89,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const inputBarRef = useRef<HTMLDivElement>(null);
   const { debug } = useLogger('ChatInput');
+  
+  // Mobile scroll state management
+  const mobileScrollState = useMobileScrollState();
   
   // State for context window usage
   const [contextWindowUsage, setContextWindowUsage] = useState<{
@@ -204,12 +208,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   }, [onHeightChange, debug]);
 
   /**
-   * Enhanced message change handler with auto-resize
+   * Enhanced message change handler with auto-resize and mobile state tracking
    */
   const handleEnhancedMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value);
     autoResizeTextarea();
   }, [setMessage, autoResizeTextarea]);
+
+  /**
+   * Enhanced focus and blur handlers for mobile scroll state
+   */
+  const handleInputFocus = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
+    mobileScrollState.handleInputFocus();
+  }, [mobileScrollState]);
+
+  const handleInputBlur = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
+    mobileScrollState.handleInputBlur();
+  }, [mobileScrollState]);
 
   // Update input bar height when content changes
   useEffect(() => {
@@ -246,15 +261,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onDocumentsChange={onDocumentsChange}
         />
 
-        {/* Token Metrics and Context Window Display */}
-        <MetricsDisplay
-          currentTokenMetrics={currentTokenMetrics}
-          isGenerating={isGenerating}
-          contextWindowUsage={contextWindowUsage}
-        />
+        {/* Token Metrics and Context Window Display - Conditionally shown on mobile */}
+        {mobileScrollState.shouldShowControls && (
+          <MetricsDisplay
+            currentTokenMetrics={currentTokenMetrics}
+            isGenerating={isGenerating}
+            contextWindowUsage={contextWindowUsage}
+          />
+        )}
 
-        {/* Current Model Indicator */}
-        {selectedModel && availableModels[selectedModel] && (
+        {/* Current Model Indicator - Conditionally shown on mobile */}
+        {selectedModel && availableModels[selectedModel] && mobileScrollState.shouldShowControls && (
           <ModelIndicator
             selectedModel={selectedModel}
             availableModels={availableModels}
@@ -263,8 +280,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           />
         )}
 
-        {/* Web Search Controls */}
-        {availableModels[selectedModel] && (
+        {/* Web Search Controls - Conditionally shown on mobile */}
+        {availableModels[selectedModel] && mobileScrollState.shouldShowControls && (
           <SearchControls
             selectedModel={selectedModel}
             availableModels={availableModels}
@@ -276,19 +293,21 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           />
         )}
 
-        {/* Reasoning Controls */}
-        <ReasoningControls
-          selectedModel={selectedModel}
-          availableModels={availableModels}
-          useReasoning={useReasoning}
-          reasoningEffort={reasoningEffort}
-          onUseReasoningChange={setUseReasoning}
-          onReasoningEffortChange={setReasoningEffort}
-          isReasoningModel={isReasoningModel}
-          supportsEffortControl={supportsEffortControl}
-        />
+        {/* Reasoning Controls - Conditionally shown on mobile */}
+        {mobileScrollState.shouldShowControls && (
+          <ReasoningControls
+            selectedModel={selectedModel}
+            availableModels={availableModels}
+            useReasoning={useReasoning}
+            reasoningEffort={reasoningEffort}
+            onUseReasoningChange={setUseReasoning}
+            onReasoningEffortChange={setReasoningEffort}
+            isReasoningModel={isReasoningModel}
+            supportsEffortControl={supportsEffortControl}
+          />
+        )}
 
-        {/* Message Input */}
+        {/* Message Input - Always visible */}
         <MessageInput
           message={message}
           onChange={handleEnhancedMessageChange}
@@ -304,6 +323,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onDocumentsChange={onDocumentsChange}
           maxImages={5}
           maxDocuments={5}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
         />
       </div>
     </div>
