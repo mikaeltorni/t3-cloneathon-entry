@@ -14,8 +14,8 @@ import { AuthenticatedRequest } from './auth';
 const rateLimiter = FirebaseFunctionsRateLimiter.withFirestoreBackend(
   {
     name: 'rateLimits',
-    periodSeconds: 1 * 60, // 1 minute
-    maxCalls: process.env.RATE_LIMIT_PER_MINUTE
+    periodSeconds: 60, // 1 minute
+    maxCalls: Number(process.env.RATE_LIMIT_PER_MINUTE) || 60, // Default to 60 if not set
   },
   admin.firestore()
 );
