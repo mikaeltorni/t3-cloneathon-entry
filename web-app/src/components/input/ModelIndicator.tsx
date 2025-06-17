@@ -2,7 +2,7 @@
  * ModelIndicator.tsx
  * 
  * Clickable component for displaying currently selected model information and opening model selector
- * Combines the functionality of the old ModelIndicator and ModelSelectorButton
+ * Enhanced with comprehensive dark mode support
  * 
  * Components:
  *   ModelIndicator
@@ -24,6 +24,7 @@ interface ModelIndicatorProps {
 
 /**
  * Clickable component that displays the currently selected model and opens the model selector
+ * Enhanced with comprehensive dark mode support
  * 
  * @param selectedModel - Currently selected model ID
  * @param availableModels - Available model configurations
@@ -53,12 +54,19 @@ export const ModelIndicator: React.FC<ModelIndicatorProps> = ({
       onClick={onClick}
       disabled={disabled || loading}
       className={cn(
-        // Base button styles
-        'w-full p-3 bg-gray-50 border border-gray-200 rounded-lg mb-3 text-left',
-        'transition-all duration-200 hover:bg-gray-100 hover:border-gray-300 hover:shadow-sm',
+        // Base button styles with dark mode support
+        'w-full p-3 rounded-lg mb-3 text-left transition-all duration-200',
+        'bg-gray-50 border border-gray-200 dark:bg-slate-800 dark:border-slate-600',
+        // Hover states with dark mode
+        'hover:bg-gray-100 hover:border-gray-300 hover:shadow-sm',
+        'dark:hover:bg-slate-700 dark:hover:border-slate-500 dark:hover:shadow-lg',
+        // Focus states with dark mode
         'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+        'dark:focus:ring-primary-400 dark:focus:ring-offset-slate-900',
+        // Active states with dark mode
         'active:bg-gray-200 active:scale-[0.98]',
-        // Disabled state
+        'dark:active:bg-slate-600',
+        // Disabled state with dark mode
         disabled || loading 
           ? 'opacity-50 cursor-not-allowed' 
           : 'cursor-pointer',
@@ -73,19 +81,19 @@ export const ModelIndicator: React.FC<ModelIndicatorProps> = ({
             style={{ backgroundColor: model.color }}
             aria-hidden="true"
           />
-          <span className="text-sm font-medium text-gray-700 truncate">
+          <span className="text-sm font-medium text-gray-700 dark:text-slate-200 truncate">
             Current Model: {model.name}
           </span>
         </div>
         
-        {/* Dropdown arrow and click hint */}
+        {/* Dropdown arrow and click hint with dark mode */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xs text-gray-500 hidden sm:inline">
+          <span className="text-xs text-gray-500 dark:text-slate-400 hidden sm:inline">
             Click to change
           </span>
           <svg
             className={cn(
-              'w-4 h-4 text-gray-400 transition-transform duration-200',
+              'w-4 h-4 text-gray-400 dark:text-slate-500 transition-transform duration-200',
               loading && 'animate-spin'
             )}
             fill="none"
@@ -114,8 +122,8 @@ export const ModelIndicator: React.FC<ModelIndicatorProps> = ({
         </div>
       </div>
       
-      {/* Model Description */}
-      <p className="text-xs text-gray-600 leading-relaxed pr-8">
+      {/* Model Description with dark mode */}
+      <p className="text-xs text-gray-600 dark:text-slate-400 leading-relaxed pr-8">
         {model.description}
       </p>
     </button>
