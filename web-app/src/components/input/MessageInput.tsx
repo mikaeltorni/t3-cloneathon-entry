@@ -237,7 +237,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               'w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-xl resize-none transition-all duration-200',
               'focus:ring-2 focus:ring-blue-500 focus:border-transparent',
               'min-h-[44px] sm:min-h-[48px] max-h-[120px] overflow-y-auto',
-              'text-sm sm:text-base', // Responsive text size
+              'text-sm sm:text-base' // Responsive text size
               //isGenerating && !loading && 'border-blue-300 bg-blue-50/30', // Visual feedback during generation
               //isGenerating && !loading && 'border-gray-300'
             )}
