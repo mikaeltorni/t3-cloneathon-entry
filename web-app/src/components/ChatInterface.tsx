@@ -44,6 +44,7 @@ interface ChatInterfaceProps {
   currentTokenMetrics?: TokenMetrics | null;
   selectedModel?: string; // External model selection from ModelSidebar
   onModelChange?: (modelId: string) => void; // Model change handler
+  onModelSelectorClick?: () => void; // Callback to open model selector
 }
 
 /**
@@ -79,7 +80,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   modelSidebarOpen = false,
   currentTokenMetrics = null,
   selectedModel,
-  onModelChange
+  onModelChange,
+  onModelSelectorClick
 }) => {
 
 
@@ -145,6 +147,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
         currentMessages={messages}
         selectedModel={selectedModel}
         onModelChange={onModelChange}
+        onModelSelectorClick={onModelSelectorClick}
       />
     </ChatLayout>
   );

@@ -21,7 +21,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { ModelSidebar } from './components/ModelSidebar';
-import { ModelSidebarToggle } from './components/ui/ModelSidebarToggle';
+
 import { TagSystem } from './components/TagSystem';
 import { SidebarToggle } from './components/ui/SidebarToggle';
 import { SignInForm } from './components/auth/SignInForm';
@@ -212,14 +212,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         getThreadTags={getThreadTags}
       />
 
-      {/* Model Sidebar Toggle Button - Top Right */}
-      <ModelSidebarToggle
-        isOpen={isModelSidebarOpen}
-        onToggle={handleModelSidebarToggle}
-        currentModel={currentModel}
-        models={models.availableModels}
-        loading={models.modelsLoading}
-      />
+
 
       {/* Model Selection Sidebar - Right Side */}
       <ModelSidebar
@@ -269,6 +262,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
             currentTokenMetrics={chat.currentTokenMetrics}
             selectedModel={currentModel}
             onModelChange={handleCurrentModelChange}
+            onModelSelectorClick={handleModelSidebarToggle}
           />
         </div>
       </div>

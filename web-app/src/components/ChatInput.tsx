@@ -52,6 +52,7 @@ interface ChatInputProps {
   currentMessages?: ChatMessage[];
   selectedModel?: string;
   onModelChange?: (modelId: string) => void;
+  onModelSelectorClick?: () => void; // Callback to open model selector
 }
 
 /**
@@ -82,7 +83,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   isGenerating = false,
   currentMessages = [],
   selectedModel: externalSelectedModel,
-  onModelChange
+  onModelChange,
+  onModelSelectorClick
 }) => {
   const inputBarRef = useRef<HTMLDivElement>(null);
   const { debug } = useLogger('ChatInput');
@@ -256,6 +258,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <ModelIndicator
             selectedModel={selectedModel}
             availableModels={availableModels}
+            onClick={() => onModelSelectorClick?.()}
+            loading={loading}
           />
         )}
 
