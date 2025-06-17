@@ -138,10 +138,10 @@ export const ThreadList: React.FC<ThreadListProps> = ({
     // Try to get the model config
     let modelConfig = getModelConfig(modelId);
     
-    // Log if we have a model ID but can't find the config
-    if (!modelConfig && modelId) {
-      console.warn(`[ThreadList] Model config not found for modelId: ${modelId} in thread ${thread.id}. Available models:`, Object.keys(availableModels));
-    }
+    // // Log if we have a model ID but can't find the config
+    // if (!modelConfig && modelId) {
+    //   console.warn(`[ThreadList] Model config not found for modelId: ${modelId} in thread ${thread.id}. Available models:`, Object.keys(availableModels));
+    // }
     
     // Log when no model is found at all
     if (!modelConfig && !modelId) {
