@@ -2,6 +2,7 @@
  * SignInForm.tsx
  * 
  * Google sign-in form component
+ * Enhanced with comprehensive dark mode support
  * 
  * Component:
  *   SignInForm - Google authentication form
@@ -14,6 +15,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 /**
  * Google sign-in form component
+ * Enhanced with comprehensive dark mode support
  * 
  * @returns Sign-in form
  */
@@ -40,18 +42,18 @@ export const SignInForm: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+    <div className="max-w-md mx-auto bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-slate-900/50 p-6 border border-gray-200 dark:border-slate-600">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-2">
           Welcome to OpenRouter Chat
         </h2>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-slate-300">
           Sign in with your Google account to continue
         </p>
       </div>
 
       {error && (
-        <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md mb-4">
+        <div className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 p-3 rounded-md mb-4">
           {error}
         </div>
       )}
@@ -59,10 +61,10 @@ export const SignInForm: React.FC = () => {
       <button
         onClick={handleGoogleSignIn}
         disabled={loading}
-        className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? (
-          <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mr-3"></div>
+          <div className="w-5 h-5 border-2 border-gray-300 dark:border-slate-500 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin mr-3"></div>
         ) : (
           <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
             <path
@@ -87,8 +89,8 @@ export const SignInForm: React.FC = () => {
       </button>
 
       <div className="mt-6 text-center">
-        <p className="text-xs text-gray-500">
-          By signing in, you agree that this project is a proof-of-concept and that the host and/or the repository owner is not liable for ANYTHING, such as loss of data, loss of money, or any other damages. This project is not intended to be used for any other purpose than testing, do not enter any confidential information! For any GDPR inquires contact the repository owner at <a href="mailto:mikaeltorni25@gmail.com" className="text-blue-500 hover:underline">mikaeltorni25@gmail.com</a>.
+        <p className="text-xs text-gray-500 dark:text-slate-400">
+          By signing in, you agree that this project is a proof-of-concept and that the host and/or the repository owner is not liable for ANYTHING, such as loss of data, loss of money, or any other damages. This project is not intended to be used for any other purpose than testing, do not enter any confidential information! For any GDPR inquires contact the repository owner at <a href="mailto:mikaeltorni25@gmail.com" className="text-blue-500 dark:text-blue-400 hover:underline">mikaeltorni25@gmail.com</a>.
         </p>
       </div>
     </div>
