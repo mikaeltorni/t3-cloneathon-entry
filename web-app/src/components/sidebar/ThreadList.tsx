@@ -91,7 +91,7 @@ export const ThreadList: React.FC<ThreadListProps> = ({
     }
     
     // If model not found, log a warning but don't fallback yet
-    console.warn(`[ThreadList] Model not found in availableModels: ${modelId}. Available models:`, Object.keys(availableModels));
+    //console.warn(`[ThreadList] Model not found in availableModels: ${modelId}. Available models:`, Object.keys(availableModels));
     return null;
   }, [availableModels]);
 
