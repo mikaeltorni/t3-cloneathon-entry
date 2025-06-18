@@ -393,18 +393,18 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         // Log reasoning token status
         if (useReasoning && modelConfig.hasReasoning) {
           if (reasoning) {
-            console.log(`[OpenRouter] ✅ Reasoning tokens received (${reasoning.length} characters)`);
+            console.log(`[OpenRouter] Reasoning tokens received (${reasoning.length} characters)`);
           } else {
-            console.log(`[OpenRouter] ⚠️  No reasoning tokens received from ${actualModelId} - this model may not return reasoning tokens`);
+            console.log(`[OpenRouter] No reasoning tokens received from ${actualModelId} - this model may not return reasoning tokens`);
           }
         }
 
         // Log web search status
         if (useWebSearch) {
           if (annotations && annotations.length > 0) {
-            console.log(`[OpenRouter] ✅ Web search enabled for ${actualModelId} with ${annotations.length} citations`);
+            console.log(`[OpenRouter] Web search enabled for ${actualModelId} with ${annotations.length} citations`);
           } else {
-          console.log(`[OpenRouter] ✅ Web search enabled for ${actualModelId}`);
+          console.log(`[OpenRouter] Web search enabled for ${actualModelId}`);
           }
         }
 

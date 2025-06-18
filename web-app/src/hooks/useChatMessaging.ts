@@ -123,7 +123,7 @@ export const useChatMessaging = (
                                !newThreadId.startsWith('temp-thread-');
 
     if (isRealThreadSwitch) {
-      debug(`🔄 Real thread switch from ${previousThreadId} to ${newThreadId}, canceling active streams`);
+              debug(`Real thread switch from ${previousThreadId} to ${newThreadId}, canceling active streams`);
       if (chatApiService.cancelActiveStream) {
         chatApiService.cancelActiveStream();
       }
@@ -131,7 +131,7 @@ export const useChatMessaging = (
       setIsSending(false);
       setError(null);
     } else if (previousThreadId !== newThreadId) {
-      debug(`ℹ️ Thread ID changed but not canceling stream: ${previousThreadId} -> ${newThreadId}`, {
+      debug(`Thread ID changed but not canceling stream: ${previousThreadId} -> ${newThreadId}`, {
         isNewChat: !previousThreadId,
         isTempUpdate: previousThreadId?.startsWith('temp-thread-') || newThreadId?.startsWith('temp-thread-'),
         reason: !previousThreadId ? 'new chat' : 'temp ID update'
@@ -146,7 +146,7 @@ export const useChatMessaging = (
   useEffect(() => {
     // Only cleanup on component unmount, not on dependency changes
     return () => {
-      debug('🧹 Component unmounting, canceling any active streams');
+      debug('Component unmounting, canceling any active streams');
       if (chatApiService.cancelActiveStream) {
         chatApiService.cancelActiveStream();
       }
@@ -167,7 +167,7 @@ export const useChatMessaging = (
       setIsSending(true);
       setError(null);
 
-      debug('🚀 Starting message send', {
+      debug('Starting message send', {
         threadId: request.threadId || 'new',
         hasContent: !!request.content,
         hasImages: !!(request.images && request.images.length > 0),
@@ -206,7 +206,7 @@ export const useChatMessaging = (
         };
         
         setCurrentThread(tempThread);
-        debug('✅ Created temporary thread for new chat', { 
+        debug('Created temporary thread for new chat', { 
           tempThreadId: tempThread.id,
           messageId: userMessage.id,
           title: newThreadTitle 
@@ -219,7 +219,7 @@ export const useChatMessaging = (
           updatedAt: new Date()
         };
         setCurrentThread(tempThread);
-        debug('✅ Added user message to existing thread', { 
+        debug('Added user message to existing thread', { 
           messageId: userMessage.id,
           threadId: tempThread.id,
           messageCount: tempThread.messages.length 
@@ -240,7 +240,7 @@ export const useChatMessaging = (
 
       // FIXED: Regular callback functions (not useCallback - that would violate Rules of Hooks)
       const onChunk = (chunk: string, fullContent: string) => {
-        debug('📝 Received content chunk', { 
+                  debug('Received content chunk', { 
           chunkLength: chunk.length, 
           totalLength: fullContent.length,
           chunkPreview: chunk.substring(0, 50) + '...',
@@ -288,7 +288,7 @@ export const useChatMessaging = (
       };
 
       const onComplete = (finalResponse: CreateMessageResponse) => {
-        debug('✅ Message streaming completed', { 
+        debug('Message streaming completed', { 
           messageId: finalResponse.assistantResponse?.id,
           contentLength: finalResponse.assistantResponse?.content?.length,
           hasReasoning: !!finalResponse.assistantResponse?.reasoning,
@@ -341,7 +341,7 @@ export const useChatMessaging = (
       };
 
       const onReasoningChunk = (reasoning: string, fullReasoning: string) => {
-        debug('🧠 Received reasoning chunk', { 
+                  debug('Received reasoning chunk', { 
           chunkLength: reasoning.length, 
           totalLength: fullReasoning.length, 
           chunkPreview: reasoning.substring(0, 50) + '...',
@@ -397,7 +397,7 @@ export const useChatMessaging = (
         },
         // onAnnotationsChunk callback
         (annotations) => {
-          debug('🔍 Received web search annotations', { count: annotations.length });
+          debug('Received web search annotations', { count: annotations.length });
         },
         // onThreadCreated callback
         (threadId) => {
@@ -410,7 +410,7 @@ export const useChatMessaging = (
               id: threadId // Replace temporary ID with real ID from server
             };
             setCurrentThread(tempThread);
-            debug('🔄 Updated temp thread with real ID', { 
+            debug('Updated temp thread with real ID', { 
               tempId: tempThread.id,
               realId: threadId 
             });
@@ -418,13 +418,13 @@ export const useChatMessaging = (
         },
         // onUserMessageConfirmed callback
         (userMessage) => {
-          debug('✅ User message confirmed', { messageId: userMessage.id });
+          debug('User message confirmed', { messageId: userMessage.id });
         }
       );
 
       // Clear attachments after successful send
       clearAttachments();
-      debug('🧹 Cleared attachments after successful message send');
+      debug('Cleared attachments after successful message send');
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';

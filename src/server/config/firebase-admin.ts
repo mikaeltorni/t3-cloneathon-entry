@@ -34,7 +34,7 @@ let db: admin.firestore.Firestore;
 try {
   // Check if Firebase is already initialized
   if (admin.apps.length === 0) {
-    console.log('🔥 Initializing Firebase Admin SDK...');
+    console.log('Initializing Firebase Admin SDK...');
 
     // Validate required environment variables
     if (!firebaseConfig.projectId) {
@@ -64,15 +64,15 @@ try {
       ignoreUndefinedProperties: true,
     });
 
-    console.log('✅ Firebase Admin SDK initialized successfully');
-    console.log(`📊 Project ID: ${firebaseConfig.projectId}`);
+    console.log('Firebase Admin SDK initialized successfully');
+    console.log(`Project ID: ${firebaseConfig.projectId}`);
   } else {
     app = admin.apps[0] as admin.app.App;
     db = admin.firestore();
-    console.log('♻️ Using existing Firebase Admin SDK instance');
+    console.log('Using existing Firebase Admin SDK instance');
   }
 } catch (error) {
-  console.error('❌ Failed to initialize Firebase Admin SDK:', error);
+      console.error('Failed to initialize Firebase Admin SDK:', error);
   throw error;
 }
 
@@ -87,7 +87,7 @@ export async function verifyIdToken(idToken: string) {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     return decodedToken;
   } catch (error) {
-    console.error('❌ Failed to verify ID token:', error);
+    console.error('Failed to verify ID token:', error);
     throw new Error('Invalid authentication token');
   }
 }
@@ -103,7 +103,7 @@ export async function getUserByUid(uid: string) {
     const userRecord = await admin.auth().getUser(uid);
     return userRecord;
   } catch (error) {
-    console.error(`❌ Failed to get user by UID (${uid}):`, error);
+    console.error(`Failed to get user by UID (${uid}):`, error);
     throw new Error('User not found');
   }
 }

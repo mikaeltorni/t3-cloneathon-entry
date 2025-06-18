@@ -91,7 +91,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
     
     // Only update if preference actually changed AND no thread is selected
     if (currentPref && currentPref !== prevPref && !chat.currentThread) {
-      debug(`🔄 Using user's last selected model for new chat: ${currentPref}`);
+      debug(`Using user's last selected model for new chat: ${currentPref}`);
       setCurrentModel(currentPref);
     }
     
@@ -103,7 +103,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   useEffect(() => {
     // CRITICAL: Don't override manual model changes
     if (isManualModelChange) {
-      debug(`⏸️ Skipping automatic model sync - manual change in progress`);
+      debug(`Skipping automatic model sync - manual change in progress`);
       return;
     }
     
@@ -113,14 +113,14 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
     // Only sync when thread ID actually changes (switching threads)
     if (currentThreadId !== prevThreadId) {
       if (currentThreadModel && currentThreadModel !== currentModel) {
-        debug(`🔄 Thread model sync: changing from ${currentModel} to ${currentThreadModel} for thread ${currentThreadId}`);
+        debug(`Thread model sync: changing from ${currentModel} to ${currentThreadModel} for thread ${currentThreadId}`);
         setCurrentModel(currentThreadModel);
-        debug(`✅ Thread model synced to: ${currentThreadModel}`);
+        debug(`Thread model synced to: ${currentThreadModel}`);
       } else if (!chat.currentThread) {
         // No thread selected (new chat scenario) - use user's last selected model
         const preferredModel = userPreferences.lastSelectedModel || DEFAULT_MODEL;
         if (preferredModel !== currentModel) {
-          debug(`🔄 No thread selected, using user's preferred model: ${preferredModel}`);
+          debug(`No thread selected, using user's preferred model: ${preferredModel}`);
           setCurrentModel(preferredModel);
         }
       }
@@ -230,7 +230,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
     // Auto-close sidebar on mobile for better UX
     if (isMobileScreen() && sidebar.isOpen) {
       sidebar.close();
-      debug('🔥 Auto-closed sidebar on mobile after new chat creation');
+      debug('Auto-closed sidebar on mobile after new chat creation');
     }
   }, [chat.handleNewChat, sidebar.isOpen, sidebar.close, debug]);
 
@@ -241,7 +241,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
     // Only enforce mutual exclusivity on mobile where dark overlay appears
     if (isMobileScreen() && isModelSidebarOpen) {
       setIsModelSidebarOpen(false);
-      debug('🔄 Auto-closed model sidebar to open chat sidebar (mobile overlay mode)');
+      debug('Auto-closed model sidebar to open chat sidebar (mobile overlay mode)');
     }
     sidebar.toggle();
   }, [isModelSidebarOpen, sidebar.toggle, debug]);
@@ -253,7 +253,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
     // Only enforce mutual exclusivity on mobile where dark overlay appears
     if (isMobileScreen() && sidebar.isOpen) {
       sidebar.close();
-      debug('🔄 Auto-closed chat sidebar to open model sidebar (mobile overlay mode)');
+      debug('Auto-closed chat sidebar to open model sidebar (mobile overlay mode)');
     }
     setIsModelSidebarOpen(!isModelSidebarOpen);
   }, [sidebar.isOpen, sidebar.close, isModelSidebarOpen, debug]);
@@ -271,15 +271,15 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         
         // Also update user's last selected model preference (for new chats)
         userPreferences.updateLastSelectedModel(modelId).catch(error => {
-          debug(`⚠️ Failed to update user's last selected model: ${error.message}`);
+          debug(`Failed to update user's last selected model: ${error.message}`);
         });
       }
       
       // Update the thread's current model in Firebase
       await chat.handleThreadUpdate(threadId, { currentModel: modelId });
-      debug(`✅ Successfully updated thread model in Firebase: ${threadId} -> ${modelId}`);
+      debug(`Successfully updated thread model in Firebase: ${threadId} -> ${modelId}`);
     } catch (error) {
-      debug(`❌ Failed to update thread model in Firebase: ${error}`);
+      debug(`Failed to update thread model in Firebase: ${error}`);
       // Revert the local change if Firebase update failed
       if (threadId === chat.currentThread?.id) {
         const fallbackModel = chat.currentThread?.currentModel || 
@@ -298,13 +298,13 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
     // Set flag to prevent race conditions
     setIsManualModelChange(true);
     
-    debug(`🔄 Model change requested: ${modelId} (previous: ${currentModel})`);
+    debug(`Model change requested: ${modelId} (previous: ${currentModel})`);
     setCurrentModel(modelId);
-    debug(`✅ Current model changed to: ${modelId}`);
+          debug(`Current model changed to: ${modelId}`);
     
     // Update user's last selected model preference (for new chats)
     userPreferences.updateLastSelectedModel(modelId).catch(error => {
-      debug(`⚠️ Failed to update user's last selected model: ${error.message}`);
+      debug(`Failed to update user's last selected model: ${error.message}`);
     });
     
     // If there's an active thread, update its model preference
@@ -313,14 +313,14 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         // Clear the flag after the Firebase update completes
         setTimeout(() => {
           setIsManualModelChange(false);
-          debug(`🔓 Manual model change completed, re-enabling automatic sync`);
+          debug(`Manual model change completed, re-enabling automatic sync`);
         }, 500); // Small delay to ensure all state updates have completed
       });
     } else {
       // Clear the flag immediately if no thread update needed
       setTimeout(() => {
         setIsManualModelChange(false);
-        debug(`🔓 Manual model change completed (no thread), re-enabling automatic sync`);
+        debug(`Manual model change completed (no thread), re-enabling automatic sync`);
       }, 100);
     }
   }, [currentModel, userPreferences.updateLastSelectedModel, chat.currentThread?.id, handleModelChange, debug]);
@@ -476,7 +476,7 @@ function AppContent() {
       
       // Clear any existing cache to ensure clean state for this user session
       clearAllCaches();
-      debug('🗑️ All cache layers cleared for security');
+      debug('All cache layers cleared for security');
       
       // Add a small delay to ensure Firebase token is ready
       const loadWithDelay = async () => {

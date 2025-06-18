@@ -170,66 +170,66 @@ export const TagSystem: React.FC<TagSystemProps> = ({
   const tagOperations = useMemo(() => ({
     addTagToThread: async (threadId: string, tagId: string) => {
       const operationId = `ADD-${threadId}-${tagId}-${Date.now()}`;
-      console.log(`🏷️ [TagSystem-${operationId}] ADD operation started`);
+      console.log(`[TagSystem-${operationId}] ADD operation started`);
       
       const thread = threadsMap.get(threadId);
       if (!thread) {
-        console.log(`❌ [TagSystem-${operationId}] Thread not found: ${threadId}`);
+        console.log(`[TagSystem-${operationId}] Thread not found: ${threadId}`);
         return;
       }
 
       // ✨ Use optimistic thread tags instead of raw thread tags to account for pending operations
       const optimisticTags = getOptimisticThreadTags(threadId);
       const currentTags = optimisticTags.map(tag => tag.id);
-      console.log(`🏷️ [TagSystem-${operationId}] Current tags (with optimistic):`, currentTags);
-      console.log(`🏷️ [TagSystem-${operationId}] Original thread tags:`, thread.tags || []);
-      console.log(`🏷️ [TagSystem-${operationId}] Adding tag: ${tagId}`);
+      console.log(`[TagSystem-${operationId}] Current tags (with optimistic):`, currentTags);
+      console.log(`[TagSystem-${operationId}] Original thread tags:`, thread.tags || []);
+      console.log(`[TagSystem-${operationId}] Adding tag: ${tagId}`);
       
       // Always add the tag if it's not already there - build correct final state
       const updatedTags = currentTags.includes(tagId) 
         ? currentTags 
         : [...currentTags, tagId];
       
-      console.log(`🏷️ [TagSystem-${operationId}] Final tags:`, updatedTags);
-      console.log(`🏷️ [TagSystem-${operationId}] Calling onThreadUpdate with tags:`, updatedTags);
-      
-      try {
-        await onThreadUpdate(threadId, { tags: updatedTags });
-        console.log(`✅ [TagSystem-${operationId}] Successfully updated thread tags`);
-      } catch (error) {
-        console.error(`❌ [TagSystem-${operationId}] Failed to update thread:`, error);
-        throw error;
-      }
-    },
+      console.log(`[TagSystem-${operationId}] Final tags:`, updatedTags);
+              console.log(`[TagSystem-${operationId}] Calling onThreadUpdate with tags:`, updatedTags);
+        
+        try {
+          await onThreadUpdate(threadId, { tags: updatedTags });
+          console.log(`[TagSystem-${operationId}] Successfully updated thread tags`);
+        } catch (error) {
+          console.error(`[TagSystem-${operationId}] Failed to update thread:`, error);
+          throw error;
+        }
+      },
 
     removeTagFromThread: async (threadId: string, tagId: string) => {
       const operationId = `REMOVE-${threadId}-${tagId}-${Date.now()}`;
-      console.log(`🏷️ [TagSystem-${operationId}] REMOVE operation started`);
+      console.log(`[TagSystem-${operationId}] REMOVE operation started`);
       
       const thread = threadsMap.get(threadId);
       if (!thread) {
-        console.log(`❌ [TagSystem-${operationId}] Thread not found: ${threadId}`);
+        console.log(`[TagSystem-${operationId}] Thread not found: ${threadId}`);
         return;
       }
 
       // ✨ Use optimistic thread tags instead of raw thread tags to account for pending operations
       const optimisticTags = getOptimisticThreadTags(threadId);
       const currentTags = optimisticTags.map(tag => tag.id);
-      console.log(`🏷️ [TagSystem-${operationId}] Current tags (with optimistic):`, currentTags);
-      console.log(`🏷️ [TagSystem-${operationId}] Original thread tags:`, thread.tags || []);
-      console.log(`🏷️ [TagSystem-${operationId}] Removing tag: ${tagId}`);
+      console.log(`[TagSystem-${operationId}] Current tags (with optimistic):`, currentTags);
+      console.log(`[TagSystem-${operationId}] Original thread tags:`, thread.tags || []);
+      console.log(`[TagSystem-${operationId}] Removing tag: ${tagId}`);
       
       // Always remove the tag - build correct final state
       const updatedTags = currentTags.filter(id => id !== tagId);
       
-      console.log(`🏷️ [TagSystem-${operationId}] Final tags:`, updatedTags);
-      console.log(`🏷️ [TagSystem-${operationId}] Calling onThreadUpdate with tags:`, updatedTags);
+      console.log(`[TagSystem-${operationId}] Final tags:`, updatedTags);
+      console.log(`[TagSystem-${operationId}] Calling onThreadUpdate with tags:`, updatedTags);
       
       try {
         await onThreadUpdate(threadId, { tags: updatedTags });
-        console.log(`✅ [TagSystem-${operationId}] Successfully updated thread tags`);
+        console.log(`[TagSystem-${operationId}] Successfully updated thread tags`);
       } catch (error) {
-        console.error(`❌ [TagSystem-${operationId}] Failed to update thread:`, error);
+        console.error(`[TagSystem-${operationId}] Failed to update thread:`, error);
         throw error;
       }
     }
@@ -452,16 +452,16 @@ export const TagSystem: React.FC<TagSystemProps> = ({
    */
   const setOptimisticAssigned = useCallback((threadId: string, tagId: string) => {
     const stateKey = `${threadId}-${tagId}`;
-    console.log(`🔵 [TagSystem] Setting optimistic ASSIGNED for ${stateKey}`);
+    console.log(`[TagSystem] Setting optimistic ASSIGNED for ${stateKey}`);
     
     setOptimisticAssignedState(prev => {
       const newMap = new Map(prev);
       const threadSet = newMap.get(threadId) || new Set();
       
-      console.log(`🔵 [TagSystem] Before adding - thread ${threadId} assigned tags:`, Array.from(threadSet));
+      console.log(`[TagSystem] Before adding - thread ${threadId} assigned tags:`, Array.from(threadSet));
       threadSet.add(tagId);
       newMap.set(threadId, threadSet);
-      console.log(`🔵 [TagSystem] After adding - thread ${threadId} assigned tags:`, Array.from(threadSet));
+      console.log(`[TagSystem] After adding - thread ${threadId} assigned tags:`, Array.from(threadSet));
       
       return newMap;
     });
@@ -472,16 +472,16 @@ export const TagSystem: React.FC<TagSystemProps> = ({
    */
   const setOptimisticRemoved = useCallback((threadId: string, tagId: string) => {
     const stateKey = `${threadId}-${tagId}`;
-    console.log(`🔴 [TagSystem] Setting optimistic REMOVED for ${stateKey}`);
+    console.log(`[TagSystem] Setting optimistic REMOVED for ${stateKey}`);
     
     setOptimisticRemovedState(prev => {
       const newMap = new Map(prev);
       const threadSet = newMap.get(threadId) || new Set();
       
-      console.log(`🔴 [TagSystem] Before adding - thread ${threadId} removed tags:`, Array.from(threadSet));
+      console.log(`[TagSystem] Before adding - thread ${threadId} removed tags:`, Array.from(threadSet));
       threadSet.add(tagId);
       newMap.set(threadId, threadSet);
-      console.log(`🔴 [TagSystem] After adding - thread ${threadId} removed tags:`, Array.from(threadSet));
+      console.log(`[TagSystem] After adding - thread ${threadId} removed tags:`, Array.from(threadSet));
       
       return newMap;
     });
@@ -492,23 +492,23 @@ export const TagSystem: React.FC<TagSystemProps> = ({
    */
   const clearOptimistic = useCallback((threadId: string, tagId: string) => {
     const stateKey = `${threadId}-${tagId}`;
-    console.log(`🧹 [TagSystem] Clearing optimistic state for ${stateKey}`);
+    console.log(`[TagSystem] Clearing optimistic state for ${stateKey}`);
     
     setOptimisticAssignedState(prev => {
       const newMap = new Map(prev);
       const threadSet = newMap.get(threadId);
       if (threadSet) {
-        console.log(`🧹 [TagSystem] Before clearing assigned - thread ${threadId}:`, Array.from(threadSet));
+        console.log(`[TagSystem] Before clearing assigned - thread ${threadId}:`, Array.from(threadSet));
         threadSet.delete(tagId);
         if (threadSet.size === 0) {
           newMap.delete(threadId);
-          console.log(`🧹 [TagSystem] Removed empty assigned set for thread ${threadId}`);
+          console.log(`[TagSystem] Removed empty assigned set for thread ${threadId}`);
         } else {
           newMap.set(threadId, threadSet);
-          console.log(`🧹 [TagSystem] After clearing assigned - thread ${threadId}:`, Array.from(threadSet));
+          console.log(`[TagSystem] After clearing assigned - thread ${threadId}:`, Array.from(threadSet));
         }
       } else {
-        console.log(`🧹 [TagSystem] No assigned set found for thread ${threadId}`);
+        console.log(`[TagSystem] No assigned set found for thread ${threadId}`);
       }
       return newMap;
     });
@@ -517,17 +517,17 @@ export const TagSystem: React.FC<TagSystemProps> = ({
       const newMap = new Map(prev);
       const threadSet = newMap.get(threadId);
       if (threadSet) {
-        console.log(`🧹 [TagSystem] Before clearing removed - thread ${threadId}:`, Array.from(threadSet));
+        console.log(`[TagSystem] Before clearing removed - thread ${threadId}:`, Array.from(threadSet));
         threadSet.delete(tagId);
         if (threadSet.size === 0) {
           newMap.delete(threadId);
-          console.log(`🧹 [TagSystem] Removed empty removed set for thread ${threadId}`);
+          console.log(`[TagSystem] Removed empty removed set for thread ${threadId}`);
         } else {
           newMap.set(threadId, threadSet);
-          console.log(`🧹 [TagSystem] After clearing removed - thread ${threadId}:`, Array.from(threadSet));
+          console.log(`[TagSystem] After clearing removed - thread ${threadId}:`, Array.from(threadSet));
         }
       } else {
-        console.log(`🧹 [TagSystem] No removed set found for thread ${threadId}`);
+        console.log(`[TagSystem] No removed set found for thread ${threadId}`);
       }
       return newMap;
     });

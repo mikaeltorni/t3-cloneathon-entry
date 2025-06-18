@@ -81,7 +81,7 @@ export function useAutoScroll({
           // Content fits in viewport - just scroll to the very end to show everything
           const finalScrollPosition = containerScrollHeight - containerHeight;
           
-          console.log('📏 SHORT CONTENT - scroll to show all:', {
+          console.log('SHORT CONTENT - scroll to show all:', {
             containerHeight,
             containerScrollHeight,
             finalScrollPosition,
@@ -99,7 +99,7 @@ export function useAutoScroll({
           const targetScrollPosition = messagesEndOffsetTop - containerHeight + spaceForInputBar;
           const finalScrollPosition = Math.max(0, targetScrollPosition);
           
-          console.log('📜 LONG CONTENT - anchor to input bar:', {
+          console.log('LONG CONTENT - anchor to input bar:', {
             messagesEndOffsetTop,
             containerHeight,
             spaceForInputBar,

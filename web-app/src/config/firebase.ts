@@ -65,17 +65,17 @@ async function initializeFirebaseAuth(): Promise<Auth> {
 
   initPromise = (async () => {
     try {
-      console.log('🔥 Initializing Firebase with server config...');
+      console.log('Initializing Firebase with server config...');
       const firebaseConfig = await fetchFirebaseConfig();
       
       app = initializeApp(firebaseConfig);
       authInstance = firebaseGetAuth(app);
       firestoreInstance = firebaseGetFirestore(app);
       
-      console.log('✅ Firebase initialized successfully');
+      console.log('Firebase initialized successfully');
       return authInstance;
     } catch (error) {
-      console.error('❌ Failed to initialize Firebase:', error);
+      console.error('Failed to initialize Firebase:', error);
       initPromise = null; // Reset promise to allow retry
       throw error;
     }

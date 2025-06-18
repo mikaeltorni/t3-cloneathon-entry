@@ -94,23 +94,23 @@ export const ThreadTagForMenu: React.FC<ThreadTagForMenuProps> = ({
     try {
       setIsLoading(true);
       
-      debug(`🚀 [${operationId}] Starting operation: ${shouldAssign ? 'ADD' : 'REMOVE'} tag ${tag.id} to/from thread ${threadId}`);
-      debug(`🚀 [${operationId}] Current effective state: ${effectivelyAssigned ? 'ASSIGNED' : 'UNASSIGNED'}`);
+      debug(`[${operationId}] Starting operation: ${shouldAssign ? 'ADD' : 'REMOVE'} tag ${tag.id} to/from thread ${threadId}`);
+      debug(`[${operationId}] Current effective state: ${effectivelyAssigned ? 'ASSIGNED' : 'UNASSIGNED'}`);
       
       if (shouldAssign) {
         debug(`➕ [${operationId}] Calling tagSystem.addTagToThread(${threadId}, ${tag.id})`);
         await tagSystem.addTagToThread(threadId, tag.id);
-        debug(`✅ [${operationId}] Successfully called addTagToThread`);
+        debug(`[${operationId}] Successfully called addTagToThread`);
       } else {
         debug(`➖ [${operationId}] Calling tagSystem.removeTagFromThread(${threadId}, ${tag.id})`);
         await tagSystem.removeTagFromThread(threadId, tag.id);
-        debug(`✅ [${operationId}] Successfully called removeTagFromThread`);
+        debug(`[${operationId}] Successfully called removeTagFromThread`);
       }
       
-      log(`🎉 [${operationId}] Operation completed: ${shouldAssign ? 'added' : 'removed'} tag ${tag.id} ${shouldAssign ? 'to' : 'from'} thread ${threadId}`);
+      log(`[${operationId}] Operation completed: ${shouldAssign ? 'added' : 'removed'} tag ${tag.id} ${shouldAssign ? 'to' : 'from'} thread ${threadId}`);
       
     } catch (error) {
-      logError(`❌ [${operationId}] Operation failed:`, error as Error);
+      logError(`[${operationId}] Operation failed:`, error as Error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -125,21 +125,21 @@ export const ThreadTagForMenu: React.FC<ThreadTagForMenuProps> = ({
     const targetState = !effectivelyAssigned;
     const toggleId = `TOGGLE-${threadId}-${tag.id}-${Date.now()}`;
     
-    debug(`🎯 [${toggleId}] Toggle initiated: current=${effectivelyAssigned ? 'ASSIGNED' : 'UNASSIGNED'} → target=${targetState ? 'ASSIGNED' : 'UNASSIGNED'}`);
-    debug(`🎯 [${toggleId}] Has pending timeout: ${timeoutRef.current !== null}`);
+    debug(`[${toggleId}] Toggle initiated: current=${effectivelyAssigned ? 'ASSIGNED' : 'UNASSIGNED'} → target=${targetState ? 'ASSIGNED' : 'UNASSIGNED'}`);
+    debug(`[${toggleId}] Has pending timeout: ${timeoutRef.current !== null}`);
     
     // Set optimistic state immediately for instant feedback using TagSystem
     if (targetState) {
-      debug(`🔵 [${toggleId}] Setting optimistic ASSIGNED state`);
+      debug(`[${toggleId}] Setting optimistic ASSIGNED state`);
       tagSystem.setOptimisticAssigned(threadId, tag.id);
     } else {
-      debug(`🔴 [${toggleId}] Setting optimistic REMOVED state`);
+      debug(`[${toggleId}] Setting optimistic REMOVED state`);
       tagSystem.setOptimisticRemoved(threadId, tag.id);
     }
     
     // Clear any existing timeout
     if (timeoutRef.current) {
-      debug(`⏹️ [${toggleId}] Clearing existing timeout`);
+      debug(`[${toggleId}] Clearing existing timeout`);
       clearPendingTimeout();
     } else {
       debug(`✨ [${toggleId}] No existing timeout to clear`);
@@ -152,7 +152,7 @@ export const ThreadTagForMenu: React.FC<ThreadTagForMenuProps> = ({
       try {
         await performOperation(targetState);
         
-        debug(`🧹 [${toggleId}] Clearing optimistic state after successful operation`);
+        debug(`[${toggleId}] Clearing optimistic state after successful operation`);
         tagSystem.clearOptimistic(threadId, tag.id);
       } catch {
         debug(`🚨 [${toggleId}] Operation failed, reverting optimistic state`);

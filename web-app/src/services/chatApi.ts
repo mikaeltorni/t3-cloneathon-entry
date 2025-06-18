@@ -174,8 +174,8 @@ export class ChatApiService {
     const apiCallId = `API-${threadId}-${Date.now()}`;
     const startTime = Date.now();
     
-    console.log(`🌐 [API-${apiCallId}] ========== API TAG UPDATE CALL STARTED ==========`);
-    console.log(`🌐 [API-${apiCallId}] Call parameters:`, {
+    console.log(`[API-${apiCallId}] ========== API TAG UPDATE CALL STARTED ==========`);
+    console.log(`[API-${apiCallId}] Call parameters:`, {
       threadId: threadId,
       tags: tags,
       tagsLength: tags?.length,
@@ -183,16 +183,16 @@ export class ChatApiService {
     });
     
     if (!threadId?.trim()) {
-      console.log(`❌ [API-${apiCallId}] Validation failed - Thread ID is required`);
+      console.log(`[API-${apiCallId}] Validation failed - Thread ID is required`);
       throw new Error('Thread ID is required');
     }
 
     if (!Array.isArray(tags)) {
-      console.log(`❌ [API-${apiCallId}] Validation failed - Tags must be an array, got: ${typeof tags}`);
+      console.log(`[API-${apiCallId}] Validation failed - Tags must be an array, got: ${typeof tags}`);
       throw new Error('Tags must be an array');
     }
 
-    console.log(`🌐 [API-${apiCallId}] Validation passed - making HTTP PATCH request`);
+    console.log(`[API-${apiCallId}] Validation passed - making HTTP PATCH request`);
     logger.info(`Updating thread tags: ${threadId} -> [${tags.join(', ')}]`);
     
     try {
@@ -202,8 +202,8 @@ export class ChatApiService {
       });
       const patchDuration = Date.now() - patchStartTime;
       
-      console.log(`✅ [API-${apiCallId}] HTTP PATCH completed in ${patchDuration}ms`);
-      console.log(`🌐 [API-${apiCallId}] Response received:`, {
+      console.log(`[API-${apiCallId}] HTTP PATCH completed in ${patchDuration}ms`);
+      console.log(`[API-${apiCallId}] Response received:`, {
         threadId: updatedThread.id,
         title: updatedThread.title,
         tags: updatedThread.tags,
@@ -212,21 +212,21 @@ export class ChatApiService {
       });
       
       const totalDuration = Date.now() - startTime;
-      console.log(`🎉 [API-${apiCallId}] API CALL COMPLETED SUCCESSFULLY in ${totalDuration}ms`);
-      console.log(`🌐 [API-${apiCallId}] ========== API TAG UPDATE CALL FINISHED ==========`);
+      console.log(`[API-${apiCallId}] API CALL COMPLETED SUCCESSFULLY in ${totalDuration}ms`);
+      console.log(`[API-${apiCallId}] ========== API TAG UPDATE CALL FINISHED ==========`);
       
       logger.info(`Successfully updated thread tags: ${threadId}`);
       return updatedThread;
     } catch (error) {
       const totalDuration = Date.now() - startTime;
-      console.error(`❌ [API-${apiCallId}] API CALL FAILED after ${totalDuration}ms:`, error);
-      console.error(`❌ [API-${apiCallId}] Error details:`, {
+      console.error(`[API-${apiCallId}] API CALL FAILED after ${totalDuration}ms:`, error);
+      console.error(`[API-${apiCallId}] Error details:`, {
         name: (error as Error).name,
         message: (error as Error).message,
         response: (error as { response?: { data?: unknown; status?: number } }).response?.data,
         status: (error as { response?: { data?: unknown; status?: number } }).response?.status
       });
-      console.log(`🌐 [API-${apiCallId}] ========== API TAG UPDATE CALL FAILED ==========`);
+      console.log(`[API-${apiCallId}] ========== API TAG UPDATE CALL FAILED ==========`);
       throw error;
     }
   }

@@ -590,7 +590,7 @@ class UserPreferencesApiService {
       return processedTags;
     } catch (error) {
       logger.error('Failed to get tags', error as Error);
-      console.error('❌ [userPreferencesApi] Failed to get tags:', error);
+      console.error('[userPreferencesApi] Failed to get tags:', error);
       // Return empty array on error to not break the UI
       return [];
     }

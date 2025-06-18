@@ -240,16 +240,16 @@ export function getCacheStats(): {
  */
 export function clearAllCaches(): void {
   try {
-    logger.info('🧹 Clearing ALL cache layers for security...');
+    logger.info('Clearing ALL cache layers for security...');
     
     // 1. Clear session storage cache
     clearThreadsCache();
-    logger.debug('✅ Session storage cache cleared');
+          logger.debug('Session storage cache cleared');
     
     // 2. Clear HTTP client cache if available
     if (httpClientInstance && typeof httpClientInstance.clearCache === 'function') {
       httpClientInstance.clearCache();
-      logger.debug('✅ HTTP client cache cleared');
+      logger.debug('HTTP client cache cleared');
     } else {
       logger.warn('HTTP client instance not available for cache clearing');
     }
@@ -277,7 +277,7 @@ export function clearAllCaches(): void {
       });
       
       if (keysToRemove.length > 0) {
-        logger.debug(`✅ Cleared ${keysToRemove.length} localStorage entries`);
+        logger.debug(`Cleared ${keysToRemove.length} localStorage entries`);
       }
     } catch (error) {
       logger.warn('Failed to clear localStorage entries:', error);
@@ -305,13 +305,13 @@ export function clearAllCaches(): void {
       });
       
       if (sessionKeysToRemove.length > 0) {
-        logger.debug(`✅ Cleared ${sessionKeysToRemove.length} sessionStorage entries`);
+        logger.debug(`Cleared ${sessionKeysToRemove.length} sessionStorage entries`);
       }
     } catch (error) {
       logger.warn('Failed to clear sessionStorage entries:', error);
     }
     
-    logger.info('🎉 All cache layers cleared successfully');
+    logger.info('All cache layers cleared successfully');
   } catch (error) {
     logger.error('Failed to clear all caches:', error as Error);
   }

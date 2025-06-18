@@ -40,8 +40,8 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 // Get API key from environment
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 if (!OPENROUTER_API_KEY) {
-  console.error('❌ OPENROUTER_API_KEY environment variable is required');
-  console.error('💡 Set it with: $env:OPENROUTER_API_KEY="sk-or-v1-your-key-here"');
+      console.error('OPENROUTER_API_KEY environment variable is required');
+      console.error('Set it with: $env:OPENROUTER_API_KEY="sk-or-v1-your-key-here"');
   process.exit(1);
 }
 
@@ -58,8 +58,8 @@ export const getAllowedOrigins = (): string[] => {
   if (process.env.NODE_ENV === 'production') {
     const prodOrigins = process.env.PRODUCTION_ORIGINS;
     if (!prodOrigins) {
-      console.error('❌ PRODUCTION_ORIGINS not set in production environment');
-      console.error('💡 Set it with: PRODUCTION_ORIGINS="https://yourdomain.com,https://www.yourdomain.com"');
+      console.error('PRODUCTION_ORIGINS not set in production environment');
+      console.error('Set it with: PRODUCTION_ORIGINS="https://yourdomain.com,https://www.yourdomain.com"');
       return [];
     }
     const origins = prodOrigins.split(',').map(origin => origin.trim());
@@ -67,7 +67,7 @@ export const getAllowedOrigins = (): string[] => {
     // Validate production origins
     origins.forEach(origin => {
       if (!origin.startsWith('https://')) {
-        console.warn(`⚠️ Production origin "${origin}" should use HTTPS`);
+        console.warn(`Production origin "${origin}" should use HTTPS`);
       }
     });
     
@@ -305,16 +305,16 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log('🚀 Vibe Chat Server Started!');
-  console.log(`📍 Server running on port ${PORT}`);
-  console.log(`🌐 Frontend: http://localhost:${PORT}`);
-  console.log(`🔗 API: http://localhost:${PORT}/api`);
-  console.log(`💬 Chat API: http://localhost:${PORT}/api/chats`);
-  console.log(`🤖 Models API: http://localhost:${PORT}/api/models`);
-  console.log(`💚 Health: http://localhost:${PORT}/api/health`);
-  console.log(`🔑 OpenRouter API Key: ${OPENROUTER_API_KEY ? '✅ Configured' : '❌ Missing (see env.template)'}`);
-  console.log(`📂 Static files: ${path.join(__dirname, '../../web-app/dist')}`);
+  console.log('Vibe Chat Server Started!');
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Frontend: http://localhost:${PORT}`);
+  console.log(`API: http://localhost:${PORT}/api`);
+  console.log(`Chat API: http://localhost:${PORT}/api/chats`);
+  console.log(`Models API: http://localhost:${PORT}/api/models`);
+  console.log(`Health: http://localhost:${PORT}/api/health`);
+  console.log(`OpenRouter API Key: ${OPENROUTER_API_KEY ? 'Configured' : 'Missing (see env.template)'}`);
+  console.log(`Static files: ${path.join(__dirname, '../../web-app/dist')}`);
   console.log('');
-  console.log('🎯 Ready for database integration and authentication!');
-  console.log('🔥 Architecture: Controllers -> Services -> Repositories -> Storage');
+  console.log('Ready for database integration and authentication!');
+  console.log('Architecture: Controllers -> Services -> Repositories -> Storage');
 });

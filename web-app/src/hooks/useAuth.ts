@@ -61,7 +61,7 @@ export function useAuth(): UseAuthReturn {
 
     const initAuth = async () => {
       try {
-        console.log('🔐 Initializing Firebase Auth...');
+        console.log('Initializing Firebase Auth...');
         const auth = await initializeFirebaseAuth();
         setAuthInstance(auth);
 
@@ -74,9 +74,9 @@ export function useAuth(): UseAuthReturn {
           });
         });
 
-        console.log('✅ Firebase Auth initialized');
+        console.log('Firebase Auth initialized');
       } catch (error) {
-        console.error('❌ Failed to initialize Firebase Auth:', error);
+        console.error('Failed to initialize Firebase Auth:', error);
         setAuthState({
           user: null,
           loading: false,
@@ -123,16 +123,16 @@ export function useAuth(): UseAuthReturn {
     }
 
     try {
-      console.log('🔒 Signing out user and clearing cache...');
+      console.log('Signing out user and clearing cache...');
       
       // Clear ALL cache layers before signing out for security
       clearAllCaches();
-      console.log('🗑️ All cache layers cleared');
+      console.log('All cache layers cleared');
       
       await firebaseSignOut(authInstance);
-      console.log('✅ User signed out successfully');
+      console.log('User signed out successfully');
     } catch (error) {
-      console.error('❌ Sign out error:', error);
+      console.error('Sign out error:', error);
       throw error;
     }
   }, [authInstance]);

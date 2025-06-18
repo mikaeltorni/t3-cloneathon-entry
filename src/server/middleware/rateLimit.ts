@@ -278,14 +278,14 @@ export async function rateLimit(req: Request, res: Response, next: NextFunction)
   });
   
   if (shouldSkip) {
-    console.log(`[RateLimit] ⏭️ SKIPPING: ${req.path} (critical endpoint)`);
+          console.log(`[RateLimit] SKIPPING: ${req.path} (critical endpoint)`);
     next();
     return;
   }
   
   // Only apply rate limiting to authenticated users - no IP-based limiting
   if (!isAuthenticated || !userId) {
-    console.log(`[RateLimit] ⏭️ SKIPPING: ${key} (unauthenticated - no rate limiting for anonymous users)`);
+          console.log(`[RateLimit] SKIPPING: ${key} (unauthenticated - no rate limiting for anonymous users)`);
     next();
     return;
   }
@@ -330,7 +330,7 @@ export async function rateLimit(req: Request, res: Response, next: NextFunction)
       ? result.remainingRequests 
       : userConfig.maxCallsPerMinute;
       
-    console.log(`[RateLimit] ✅ ALLOWED: ${key} - Remaining: ${remainingRequests}`);
+    console.log(`[RateLimit] ALLOWED: ${key} - Remaining: ${remainingRequests}`);
       
     res.set({
       'X-RateLimit-Remaining-Minute': remainingRequests.toString(),
