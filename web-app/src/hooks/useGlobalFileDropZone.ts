@@ -24,10 +24,6 @@ import type { ImageAttachment, DocumentAttachment } from '../../../src/shared/ty
 interface UseGlobalFileDropZoneProps {
   onImagesAdd: (images: ImageAttachment[]) => void;
   onDocumentsAdd: (documents: DocumentAttachment[]) => void;
-  onImagesChange?: (images: ImageAttachment[]) => void;
-  onDocumentsChange?: (documents: DocumentAttachment[]) => void;
-  currentImages?: ImageAttachment[];
-  currentDocuments?: DocumentAttachment[];
   currentImageCount: number;
   currentDocumentCount: number;
   maxImages?: number;
@@ -61,10 +57,6 @@ interface UseGlobalFileDropZoneReturn {
 export function useGlobalFileDropZone({
   onImagesAdd,
   onDocumentsAdd,
-  onImagesChange,
-  onDocumentsChange,
-  currentImages = [],
-  currentDocuments = [],
   currentImageCount,
   currentDocumentCount,
   maxImages = 5,
@@ -88,99 +80,22 @@ export function useGlobalFileDropZone({
     };
 
     try {
-      const result = await processFiles(files, config, (_, progress, fileName) => {
-        debug(`File ${fileName} progress: ${progress}%`);
-        
-        // Update progress for specific attachments if change handlers are available
-        if (onImagesChange && result.temporaryImages?.length > 0) {
-          const updatedImages = currentImages.map((img: ImageAttachment) => {
-            const tempImg = result.temporaryImages.find(temp => temp.name === fileName);
-            if (tempImg && img.id === tempImg.id) {
-              return { ...img, progress };
-            }
-            return img;
-          });
-          onImagesChange(updatedImages);
-        }
+      const result = await processFiles(files, config);
 
-        if (onDocumentsChange && result.temporaryDocuments?.length > 0) {
-          const updatedDocuments = currentDocuments.map((doc: DocumentAttachment) => {
-            const tempDoc = result.temporaryDocuments.find(temp => temp.name === fileName);
-            if (tempDoc && doc.id === tempDoc.id) {
-              return { ...doc, progress };
-            }
-            return doc;
-          });
-          onDocumentsChange(updatedDocuments);
-        }
-      });
-
-      // Add temporary attachments immediately for instant UI feedback
-      if (result.temporaryImages.length > 0) {
-        onImagesAdd(result.temporaryImages);
-        debug(`Added ${result.temporaryImages.length} temporary images for progress tracking`);
+      // Simply add processed files
+      if (result.processedImages.length > 0) {
+        onImagesAdd(result.processedImages);
+        debug(`Added ${result.processedImages.length} processed images`);
       }
 
-      if (result.temporaryDocuments.length > 0) {
-        onDocumentsAdd(result.temporaryDocuments);
-        debug(`Added ${result.temporaryDocuments.length} temporary documents for progress tracking`);
+      if (result.processedDocuments.length > 0) {
+        onDocumentsAdd(result.processedDocuments);
+        debug(`Added ${result.processedDocuments.length} processed documents`);
       }
 
-      // Replace temporary attachments with processed ones
-      if (result.processedImages.length > 0 && onImagesChange) {
-        const finalImages = currentImages.map((img: ImageAttachment) => {
-          const processed = result.processedImages.find(proc => 
-            result.temporaryImages.some(temp => temp.id === img.id && temp.name === proc.name)
-          );
-          if (processed) {
-            return { ...processed, isUploading: false };
-          }
-          return img;
-        });
-        onImagesChange(finalImages);
-        debug(`Replaced ${result.processedImages.length} temporary images with processed ones`);
-      }
-
-      if (result.processedDocuments.length > 0 && onDocumentsChange) {
-        const finalDocuments = currentDocuments.map((doc: DocumentAttachment) => {
-          const processed = result.processedDocuments.find(proc => 
-            result.temporaryDocuments.some(temp => temp.id === doc.id && temp.name === proc.name)
-          );
-          if (processed) {
-            return { ...processed, isUploading: false };
-          }
-          return doc;
-        });
-        onDocumentsChange(finalDocuments);
-        debug(`Replaced ${result.processedDocuments.length} temporary documents with processed ones`);
-      }
-
-      // Handle errors by marking failed uploads
+      // Log any errors
       if (result.errors.length > 0) {
         result.errors.forEach(error => warn(error));
-        
-        // Mark failed files in current attachments
-        if (onImagesChange) {
-          const failedImages = currentImages.map((img: ImageAttachment) => {
-            const failed = result.skippedFiles.includes(img.name);
-            if (failed && img.isUploading) {
-              return { ...img, isUploading: false, error: 'Processing failed' };
-            }
-            return img;
-          });
-          onImagesChange(failedImages);
-        }
-
-        if (onDocumentsChange) {
-          const failedDocuments = currentDocuments.map((doc: DocumentAttachment) => {
-            const failed = result.skippedFiles.includes(doc.name);
-            if (failed && doc.isUploading) {
-              return { ...doc, isUploading: false, error: 'Processing failed' };
-            }
-            return doc;
-          });
-          onDocumentsChange(failedDocuments);
-        }
       }
 
       // Log skipped files
@@ -197,10 +112,6 @@ export function useGlobalFileDropZone({
     maxDocuments,
     onImagesAdd,
     onDocumentsAdd,
-    onImagesChange,
-    onDocumentsChange,
-    currentImages,
-    currentDocuments,
     processFiles,
     debug,
     warn
