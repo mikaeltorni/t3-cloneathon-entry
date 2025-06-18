@@ -1,7 +1,7 @@
 /**
  * useFileOrchestrator.ts
  * 
- * Focused hook for orchestrating file processing operations
+ * Focused hook for orchestrating file processing operations with progress tracking support
  */
 import { useCallback } from 'react';
 import { useLogger } from '../useLogger';
@@ -12,22 +12,34 @@ import type { ImageAttachment, DocumentAttachment } from '../../../../src/shared
 export interface FileOrchestrationResult {
   processedImages: ImageAttachment[];
   processedDocuments: DocumentAttachment[];
+  temporaryImages: ImageAttachment[];
+  temporaryDocuments: DocumentAttachment[];
   errors: string[];
   skippedFiles: string[];
 }
 
 export interface UseFileOrchestratorReturn {
-  processFiles: (files: FileList | File[], config: FileValidationConfig) => Promise<FileOrchestrationResult>;
+  processFiles: (
+    files: FileList | File[], 
+    config: FileValidationConfig,
+    onProgress?: (fileIndex: number, progress: number, fileName: string) => void
+  ) => Promise<FileOrchestrationResult>;
 }
 
 export function useFileOrchestrator(): UseFileOrchestratorReturn {
   const { debug, warn } = useLogger('useFileOrchestrator');
   const { validateFile, getSupportedTypesMessage } = useFileValidation();
-  const { processImageFile, processDocumentFile } = useFileProcessing();
+  const { 
+    processImageFile, 
+    processDocumentFile,
+    createTemporaryImageAttachment,
+    createTemporaryDocumentAttachment
+  } = useFileProcessing();
 
   const processFiles = useCallback(async (
     files: FileList | File[], 
-    config: FileValidationConfig
+    config: FileValidationConfig,
+    onProgress?: (fileIndex: number, progress: number, fileName: string) => void
   ): Promise<FileOrchestrationResult> => {
     const fileArray = Array.from(files);
     debug(`Processing ${fileArray.length} files`);
@@ -35,6 +47,8 @@ export function useFileOrchestrator(): UseFileOrchestratorReturn {
     const result: FileOrchestrationResult = {
       processedImages: [],
       processedDocuments: [],
+      temporaryImages: [],
+      temporaryDocuments: [],
       errors: [],
       skippedFiles: []
     };
@@ -43,7 +57,11 @@ export function useFileOrchestrator(): UseFileOrchestratorReturn {
     let imageCount = config.currentImageCount;
     let documentCount = config.currentDocumentCount;
 
-    for (const file of fileArray) {
+    // First pass: Create temporary attachments for valid files
+    const validFiles: { file: File; validation: any; index: number }[] = [];
+    
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
       const validation = validateFile(file, {
         ...config,
         currentImageCount: imageCount,
@@ -60,21 +78,41 @@ export function useFileOrchestrator(): UseFileOrchestratorReturn {
         continue;
       }
 
+      validFiles.push({ file, validation, index: i });
+
+      // Create temporary attachments for immediate UI feedback
+      if (validation.fileType === 'image') {
+        const tempAttachment = createTemporaryImageAttachment(file);
+        result.temporaryImages.push(tempAttachment);
+        imageCount++;
+      } else if (validation.fileType === 'document') {
+        const tempAttachment = createTemporaryDocumentAttachment(file);
+        result.temporaryDocuments.push(tempAttachment);
+        documentCount++;
+      }
+    }
+
+    // Second pass: Process files with progress tracking
+    for (const { file, validation, index } of validFiles) {
       try {
         if (validation.fileType === 'image') {
-          const processingResult = await processImageFile(file);
+          const processingResult = await processImageFile(file, (progress) => {
+            onProgress?.(index, progress, file.name);
+          });
+          
           if (processingResult.success && processingResult.attachment) {
             result.processedImages.push(processingResult.attachment as ImageAttachment);
-            imageCount++;
           } else {
             result.errors.push(processingResult.error || `Failed to process image ${file.name}`);
             result.skippedFiles.push(file.name);
           }
         } else if (validation.fileType === 'document') {
-          const processingResult = await processDocumentFile(file);
+          const processingResult = await processDocumentFile(file, (progress) => {
+            onProgress?.(index, progress, file.name);
+          });
+          
           if (processingResult.success && processingResult.attachment) {
             result.processedDocuments.push(processingResult.attachment as DocumentAttachment);
-            documentCount++;
           } else {
             result.errors.push(processingResult.error || `Failed to process document ${file.name}`);
             result.skippedFiles.push(file.name);
@@ -104,7 +142,7 @@ export function useFileOrchestrator(): UseFileOrchestratorReturn {
     debug(`Processing complete: ${result.processedImages.length} images, ${result.processedDocuments.length} documents, ${result.errors.length} errors`);
     
     return result;
-  }, [debug, warn, validateFile, getSupportedTypesMessage, processImageFile, processDocumentFile]);
+  }, [debug, warn, validateFile, getSupportedTypesMessage, processImageFile, processDocumentFile, createTemporaryImageAttachment, createTemporaryDocumentAttachment]);
 
   return {
     processFiles
