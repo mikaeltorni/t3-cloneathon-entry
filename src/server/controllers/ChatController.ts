@@ -586,27 +586,6 @@ export class ChatController {
           chunkCount++;
           console.log(`[ChatController] Chunk ${chunkCount}: type="${chunk.split(':')[0]}", length=${chunk.length}, preview="${chunk.substring(0, 100)}..."`);
           
-          // TEMPORARY: Add test reasoning for Google models to verify UI works during streaming
-          if (chunkCount <= 3 && modelId.includes('google/gemini') && useReasoning) {
-            console.log(`[ChatController] Adding streaming test reasoning chunk ${chunkCount} for Google model`);
-            
-            const testReasoningChunk = chunkCount === 1 
-              ? "Let me think about this step by step... "
-              : chunkCount === 2 
-              ? "First, I need to understand the context and requirements... "
-              : "Now I'll formulate my response based on this analysis... ";
-            
-            fullReasoning += testReasoningChunk;
-            
-            // Send test reasoning chunk during streaming
-            res.write(`data: ${JSON.stringify({ 
-              type: 'reasoning_chunk', 
-              content: testReasoningChunk,
-              fullReasoning: fullReasoning,
-              tokenMetrics: getSimpleMetrics()
-            })}\n\n`);
-          }
-          
           // Handle reasoning and content chunks with prefixes from OpenRouter
           if (chunk.startsWith('reasoning:')) {
             // Extract reasoning content
