@@ -307,36 +307,31 @@ const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
 - **Development**: Hot reload, TypeScript compilation
 - **Linting**: ESLint with TypeScript rules
 
-## 🛡️ Rate Limiting
+## 🛡️ Enhanced Rate Limiting System
 
-Simple server-side rate limiting using `firebase-functions-rate-limiter`:
+### Per-Account Database Persistence
+- **Individual user tracking**: Each authenticated user has separate rate limits stored in Firestore
+- **Per-minute tracking**: Simple and effective minute-based rate limiting
+- **Authenticated users only**: No rate limiting for anonymous/unauthenticated users
+- **Real-time monitoring**: Live tracking of usage 
+- **Admin management**: Tools to reset limits and set custom user limits
+- **Custom limits**: Admins can override default limits for specific users
 
-### Rate Limit
-- **All API Requests**: 100 requests per 15 minutes
-- **Per User/IP**: Tracks authenticated users by user ID, anonymous by IP
-- **Firebase Storage**: Uses Firestore for persistence
+### Default Rate Limits
 
-### Implementation
-```typescript
-// Server - applies to ALL /api/* routes
-const rateLimiter = new RateLimiter({
-  database: admin.firestore(),
-  collection: 'rateLimits',
-  periodSeconds: 15 * 60, // 15 minutes
-  maxCalls: 100,
-});
+| Time Window | Default Limit |
+|-------------|---------------|
+| **Per Minute** | 60 requests |
 
-app.use('/api', rateLimit); // Applied to all API routes
-```
+### Database Collections
+- `rateLimitStats` - Individual user statistics and current usage
+- `rateLimits_minute_{userId}` - Per-minute tracking for each user
+- `users` - User profiles with custom limit overrides
 
-### Error Response
-```json
-{
-  "error": "Rate limit exceeded",
-  "message": "Too many requests. Please wait before trying again.",
-  "retryAfter": 900
-}
-```
+### API Endpoints for Rate Limiting
+- `GET /api/preferences/rate-limit-status` - Get current user's rate limit status
+- `POST /api/preferences/admin/reset-rate-limit` - Admin: Reset user's rate limits
+- `POST /api/preferences/admin/update-rate-limits` - Admin: Set custom limits for a user
 
 ## 📦 Installation
 
@@ -1349,38 +1344,61 @@ interface ChatThread {
 2. Install dependencies:
    ```bash
    npm install
-   cd web-app && npm install
+   cd web-app && npm install && cd ..
    ```
 
 3. Set up environment variables:
    ```bash
-   cp .env.example .env
-   # Edit .env with your Firebase configuration
+   cp env.template .env
+   # Edit .env with your configuration
+   ```
+
+   **Required Environment Variables:**
+   ```bash
+   # OpenRouter API
+   OPENROUTER_API_KEY=sk-or-v1-your-key-here
+   
+   # Firebase Admin (for rate limiting database)
+   FIREBASE_PROJECT_ID=your-project-id
+   FIREBASE_CLIENT_EMAIL=your-service-account-email
+   FIREBASE_PRIVATE_KEY="your-private-key"
+   
+   # Rate Limit Configuration
+   RATE_LIMIT_PER_MINUTE=60
    ```
 
 ## 🏃‍♂️ Development
 
-Start the development server:
+### Start Development Server:
 ```bash
-cd web-app
+# Start both frontend and backend
 npm run dev
+
+# Or start separately:
+# Backend (port 3000)
+npm run server:dev
+
+# Frontend (port 5173)
+cd web-app && npm run dev
 ```
 
-The application will be available at `http://localhost:5173`
+### Monitor Rate Limiting:
+```bash
+# Check server logs for rate limit activity
+npm run server:dev
 
-## 🔧 Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production  
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm run type-check` - Run TypeScript compiler
+# Look for logs like:
+# [RateLimit] ✅ ALLOWED: user_12345 - Remaining: 55
+# [RateLimit] 🚫 BLOCKED: user_67890 - Rate limit exceeded for minute window (60 requests)
+```
 
 ## 🏗️ Production Build
 
-For monorepo or multi-app structures:
 ```bash
+# Build for production
 npm run web:build
+
+# Or step by step:
 cd web-app && npm run build
 tsc -b && vite build
 ```
@@ -1388,209 +1406,125 @@ tsc -b && vite build
 ## 📁 Project Structure
 
 ```
-├── src/
-│   ├── components/
-│   │   ├── ui/              # Reusable UI components
-│   │   │   ├── Tag.tsx      # Individual tag display
-│   │   │   ├── TagModal.tsx # Tag creation/editing modal
-│   │   │   ├── TagFilterBar.tsx # Top filter bar
-│   │   │   ├── ContextMenu.tsx  # Right-click menu
-│   │   │   └── ColorPicker.tsx  # RGB color picker
-│   │   ├── TagSystem.tsx    # Main tagging orchestrator
-│   │   └── sidebar/         # Chat sidebar components
-│   ├── hooks/
-│   │   ├── useTags.ts       # Tag CRUD operations
-│   │   └── useThreadTags.ts # Thread-tag assignments
-│   ├── services/
-│   │   └── userPreferencesApi.ts # Firebase tag storage
-│   ├── config/
-│   │   └── firebase.ts      # Firebase configuration
-│   └── types/               # TypeScript definitions
-├── shared/
-│   └── types.ts            # Shared type definitions
-└── firebase_config/
-    └── firestore.rules     # Firestore security rules
+├── src/server/                 # Backend Express server
+│   ├── middleware/
+│   │   └── rateLimit.ts       # Enhanced per-account rate limiting
+│   ├── controllers/           # API route handlers
+│   ├── services/              # Business logic layer
+│   └── config/                # Firebase and other configs
+├── web-app/src/               # Frontend React application
+│   ├── components/            # Reusable UI components
+│   ├── hooks/                 # Custom React hooks
+│   ├── services/              # API client services
+│   └── utils/                 # Utility functions
+├── firebase_config/           # Firebase configuration
+└── env.template              # Environment variables template
 ```
 
-## 🎨 Component Architecture
+## 🔧 Rate Limiting Configuration
 
-### Tag Management Components
+### Environment Variables
+The rate limiting system uses environment variables for easy configuration:
 
-#### `<Tag />` - Individual Tag Display
-```tsx
-import { Tag } from './components/ui/Tag';
-
-<Tag 
-  tag={tag} 
-  size="md" 
-  selected={isSelected}
-  removable={true}
-  onClick={handleClick}
-  onRemove={handleRemove}
-/>
+```bash
+# Default limits for all authenticated users
+RATE_LIMIT_PER_MINUTE=60
 ```
 
-#### `<TagModal />` - Tag Creation/Editing
-```tsx
-import { TagModal } from './components/ui/TagModal';
+### Custom User Limits
+Admins can set custom limits for specific users that override the defaults:
 
-<TagModal
-  isOpen={isOpen}
-  onClose={handleClose}
-  onSubmit={handleSubmit}
-  title="Create New Tag"
-  submitLabel="Create Tag"
-  initialName="Work"
-  initialColor={{ r: 59, g: 130, b: 246 }}
-/>
-```
-
-#### `<TagFilterBar />` - Top Filter Bar
-```tsx
-import { TagFilterBar } from './components/ui/TagFilterBar';
-
-<TagFilterBar
-  tags={allTags}
-  selectedTags={selectedTagIds}
-  onTagToggle={handleTagToggle}
-  onClearAll={handleClearAll}
-/>
-```
-
-#### `<ContextMenu />` - Right-Click Menu
-```tsx
-import { ContextMenu } from './components/ui/ContextMenu';
-
-<ContextMenu
-  isOpen={isMenuOpen}
-  position={{ x: mouseX, y: mouseY }}
-  items={menuItems}
-  onClose={handleClose}
-/>
-```
-
-### Custom Hooks
-
-#### `useTags()` - Tag Management
-```tsx
-import { useTags } from '../hooks/useTags';
-
-const { 
-  tags, 
-  loading, 
-  error, 
-  createTag, 
-  updateTag, 
-  deleteTag, 
-  refreshTags 
-} = useTags();
-```
-
-#### `useThreadTags()` - Thread-Tag Operations
-```tsx
-import { useThreadTags } from '../hooks/useThreadTags';
-
-const {
-  selectedTagIds,
-  filteredThreads,
-  addTagToThread,
-  removeTagFromThread,
-  toggleTagFilter,
-  clearTagFilters
-} = useThreadTags({ threads, tags, onThreadUpdate });
-```
-
-## 🔧 Configuration
-
-### Firebase Structure
-Tags are stored in the user's Firestore document:
-```
-/users/{userId}/settings/tags
-{
-  tags: [
-    {
-      id: "tag_123456789_abc",
-      name: "Work",
-      color: { r: 59, g: 130, b: 246 },
-      createdAt: Date
-    }
-  ],
-  updatedAt: ServerTimestamp
-}
-```
-
-### Thread Tag Assignment
-Thread documents include tag references:
 ```typescript
-interface ChatThread {
-  id: string;
-  title: string;
-  tags?: string[]; // Array of tag IDs
-  // ... other properties
+// Example user document in Firestore
+{
+  uid: "user123",
+  customRateLimit: {
+    perMinute: 100  // Override default
+  },
+  isAdmin: false
 }
 ```
 
-### Firestore Security Rules
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      match /settings/{document=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
+### Admin Functions
+Administrators can manage user rate limits:
+
+```bash
+# Reset user's rate limits
+curl -X POST /api/preferences/admin/reset-rate-limit \
+  -H "Authorization: Bearer <admin-token>" \
+  -d '{"targetUserId": "user123"}'
+
+# Set custom limits for a user
+curl -X POST /api/preferences/admin/update-rate-limits \
+  -H "Authorization: Bearer <admin-token>" \
+  -d '{
+    "targetUserId": "user123", 
+    "customLimits": {
+      "perMinute": 100
     }
-  }
+  }'
+```
+
+## 🎨 Response Headers
+
+The enhanced rate limiting system includes informative headers:
+
+```
+X-RateLimit-Remaining-Minute: 55
+X-RateLimit-Limit-Minute: 60
+```
+
+## 🔍 Rate Limit Monitoring
+
+### Database Collections
+
+**rateLimitStats Collection:**
+```typescript
+{
+  userId: "user123",
+  requestsInLastMinute: 5,
+  lastRequestTimestamp: 1699123456789,
+  isBlocked: false,
+  lastUpdated: "2023-11-04T10:30:00Z"
 }
 ```
 
-## 🎯 Tagging System Features
+**User Rate Limit Collections:**
+- `rateLimits_minute_user123` - Minute-window tracking
 
-### ✅ Implemented Features
-- [x] Trello-style tag creation with color picker
-- [x] RGB color picker with sliders (0-255) and input fields
-- [x] 8 color presets in tag creation modal
-- [x] Right-click context menu on chat threads
-- [x] Tag assignment and removal via context menu
-- [x] "Create New Tag" always available in context menu
-- [x] Filter bar with ALL button and tag selection
-- [x] Real-time tag filtering
-- [x] Visual tag display under model names
-- [x] Firebase Firestore integration
-- [x] Proper TypeScript typing throughout
-- [x] Error handling and logging
-- [x] Responsive design
+### Monitoring Queries
 
-### 🎨 Visual Design
-- **Tag Chips**: Rounded colored chips with white text
-- **Color Picker**: RGB sliders with live preview and presets
-- **Filter Bar**: Clean top bar with ALL button and scrollable tags
-- **Context Menu**: Right-click menu with icons and color indicators
-- **Hover Effects**: Smooth transitions and visual feedback
+```javascript
+// Get user's current rate limit status
+const status = await admin.firestore()
+  .collection('rateLimitStats')
+  .doc('user123')
+  .get();
 
-### 🔍 User Experience
-- **Intuitive**: Right-click any chat to access tag options
-- **Visual**: Color-coded tags for easy identification
-- **Fast**: Instant filtering and real-time updates
-- **Flexible**: Custom colors and unlimited tag creation
-- **Accessible**: Keyboard navigation and screen reader support
-
-## 🧪 Testing
-
-The tagging system is ready for testing! Key scenarios to test:
-
-1. **Tag Creation**: Right-click chat → Create New Tag → Test color picker
-2. **Tag Assignment**: Right-click chat → Add available tags
-3. **Tag Removal**: Right-click chat → Remove assigned tags (red options)
-4. **Filtering**: Use filter bar to show/hide chats by tags
-5. **Multiple Tags**: Assign multiple tags to same chat
-6. **Cross-Session**: Tags should persist across browser sessions
+// Get all users with high usage
+const highUsageUsers = await admin.firestore()
+  .collection('rateLimitStats')
+  .where('requestsInLastMinute', '>', 50)
+  .get();
+```
 
 ## 🚀 Deployment
 
-Tags are stored in Firebase Firestore and will automatically deploy with your Firebase configuration. No additional deployment steps needed for the tagging system.
+The application is configured for Railway deployment with:
+- Automatic builds from Git
+- Environment variable management  
+- Health check endpoints
+- Production CORS configuration
+- Database connectivity for rate limiting
+
+## 🔒 Security Features
+
+- **Per-account isolation**: Each user's rate limits are completely separate
+- **Custom limit overrides**: Admins can set specific limits for individual users
+- **Admin-only controls**: Protected endpoints for user management
+- **Database persistence**: All limits survive server restarts
+- **Comprehensive logging**: Full audit trail of rate limit decisions
+- **Graceful error handling**: System continues working even if rate limiting fails
 
 ## 🤝 Contributing
 
@@ -1602,7 +1536,7 @@ Tags are stored in Firebase Firestore and will automatically deploy with your Fi
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE.md file for details.
 
 ---
 

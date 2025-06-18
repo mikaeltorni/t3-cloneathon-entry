@@ -29,6 +29,7 @@ import { createModelsController } from './controllers/ModelsController';
 import { createUserPreferencesController } from './controllers/UserPreferencesController';
 import { createDocumentController } from './controllers/DocumentController';
 import { rateLimit } from './middleware/rateLimit';
+import { optionalAuth } from './middleware/auth';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -143,17 +144,43 @@ const errorHandler = (error: Error, req: Request, res: Response, next: NextFunct
   });
 };
 
-// Apply request logging and rate limiting
+// Apply request logging
 app.use(requestLogger);
 
-// Apply rate limiting to all API requests
-app.use('/api', rateLimit);
+/**
+ * Critical endpoints that should NOT be rate limited - define BEFORE rate limiting middleware
+ */
 
-// API Routes using controllers
-app.use('/api/chats', chatController.getRoutes());
-app.use('/api/models', modelsController.getRoutes());
-app.use('/api/preferences', userPreferencesController.getRoutes());
-app.use('/api/documents', documentController.getRoutes());
+/**
+ * Firebase configuration endpoint
+ * 
+ * @route GET /api/config/firebase
+ */
+app.get('/api/config/firebase', (req: Request, res: Response) => {
+  const firebaseConfig = {
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID
+  };
+
+  // Check if all required Firebase config is present
+  const missingKeys = Object.entries(firebaseConfig)
+    .filter(([_, value]) => !value)
+    .map(([key, _]) => key);
+
+  if (missingKeys.length > 0) {
+    return res.status(500).json({
+      error: 'Firebase configuration incomplete',
+      missingKeys,
+      message: 'Please check your environment variables'
+    });
+  }
+
+  res.json(firebaseConfig);
+});
 
 /**
  * Root health check endpoint
@@ -186,9 +213,8 @@ app.get('/api/rate-limit-status', async (req: Request, res: Response) => {
       userId: authReq.user?.uid || null,
       ip: req.ip || 'unknown',
       rateLimit: {
-        maxRequests: 100,
-        period: '15 minutes',
-        description: 'All API requests are limited to 100 requests per 15 minutes'
+        description: 'Rate limiting only applied to authenticated users',
+        note: 'Anonymous users have no rate limits'
       },
       timestamp: new Date().toISOString(),
     });
@@ -199,37 +225,6 @@ app.get('/api/rate-limit-status', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
     });
   }
-});
-
-/**
- * Firebase configuration endpoint
- * 
- * @route GET /api/config/firebase
- */
-app.get('/api/config/firebase', (req: Request, res: Response) => {
-  const firebaseConfig = {
-    apiKey: process.env.FIREBASE_API_KEY,
-    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.FIREBASE_APP_ID
-  };
-
-  // Check if all required Firebase config is present
-  const missingKeys = Object.entries(firebaseConfig)
-    .filter(([_, value]) => !value)
-    .map(([key, _]) => key);
-
-  if (missingKeys.length > 0) {
-    return res.status(500).json({
-      error: 'Firebase configuration incomplete',
-      missingKeys,
-      message: 'Please check your environment variables'
-    });
-  }
-
-  res.json(firebaseConfig);
 });
 
 /**
@@ -270,9 +265,25 @@ app.get('/api', (req: Request, res: Response) => {
         'GET /api/config/firebase': 'Get Firebase configuration for frontend'
       }
     },
+    rateLimit: {
+      description: 'Rate limiting only applied to authenticated users',
+      note: 'Anonymous users and critical endpoints have no rate limits'
+    },
     timestamp: new Date().toISOString()
   });
 });
+
+// Apply optional authentication before rate limiting (so rate limiter can see authenticated users)
+app.use('/api', optionalAuth);
+
+// Apply rate limiting to remaining API requests (after critical endpoints and optional auth)
+app.use('/api', rateLimit);
+
+// API Routes using controllers
+app.use('/api/chats', chatController.getRoutes());
+app.use('/api/models', modelsController.getRoutes());
+app.use('/api/preferences', userPreferencesController.getRoutes());
+app.use('/api/documents', documentController.getRoutes());
 
 // Catch-all handler for React frontend
 app.get('*', (req: Request, res: Response) => {
