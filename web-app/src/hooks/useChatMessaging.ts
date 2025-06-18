@@ -250,6 +250,13 @@ export const useChatMessaging = (
         // Update the temporary message content
         tempAiMessage.content = fullContent;
         
+        // If we're receiving content chunks, reasoning phase is done
+        tempAiMessage.metadata = {
+          ...tempAiMessage.metadata,
+          isReasoning: false,
+          isStreaming: true
+        };
+        
         if (tempThread) {
           // Find if temp message already exists in thread
           const existingTempIndex = tempThread.messages.findIndex((msg: ChatMessage) => msg.id === tempAiMessage.id);
@@ -294,14 +301,25 @@ export const useChatMessaging = (
           const tempIndex = tempThread.messages.findIndex((msg: ChatMessage) => msg.id === tempAiMessage.id);
           
           if (tempIndex >= 0) {
+            const finalMessage = {
+              ...finalResponse.assistantResponse,
+              // Clear streaming metadata when message is complete
+              metadata: {
+                ...finalResponse.assistantResponse.metadata,
+                isReasoning: false,
+                isStreaming: false
+              }
+            };
+            
             const updatedMessages = [...tempThread.messages];
-            updatedMessages[tempIndex] = finalResponse.assistantResponse;
+            updatedMessages[tempIndex] = finalMessage;
             const updatedThread = {
               ...tempThread,
               messages: updatedMessages,
               updatedAt: new Date()
             };
             setCurrentThread(updatedThread);
+            tempThread = updatedThread; // Update local reference
           }
         }
         
@@ -330,10 +348,11 @@ export const useChatMessaging = (
           fullReasoningPreview: fullReasoning.substring(0, 100) + '...'
         });
         
-        // Mark that we're currently in reasoning mode
+        // Mark that we're currently in reasoning mode and update reasoning content
         tempAiMessage.metadata = {
           ...tempAiMessage.metadata,
           isReasoning: true,
+          isStreaming: true,
           reasoning: fullReasoning
         };
         
@@ -346,6 +365,16 @@ export const useChatMessaging = (
             const updatedThread = {
               ...tempThread,
               messages: updatedMessages,
+              updatedAt: new Date()
+            };
+            
+            setCurrentThread(updatedThread);
+            tempThread = updatedThread;
+          } else {
+            // Add the temp message with reasoning to the thread if it doesn't exist
+            const updatedThread = {
+              ...tempThread,
+              messages: [...tempThread.messages, tempAiMessage],
               updatedAt: new Date()
             };
             

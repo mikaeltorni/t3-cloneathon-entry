@@ -86,6 +86,7 @@ const Message: React.FC<MessageProps> = React.memo(({
             messageId={message.id}
             showReasoning={showReasoning}
             onToggleReasoning={onToggleReasoning}
+            message={message}
           />
           <MessageImageGrid 
             images={message.images}

@@ -2,43 +2,77 @@
  * MessageReasoning.tsx
  * 
  * Component for displaying message reasoning with toggle functionality
- * Enhanced with comprehensive dark mode support
+ * Enhanced with comprehensive dark mode support and streaming reasoning display
  * 
  * Components:
  *   MessageReasoning
  * 
- * Usage: <MessageReasoning reasoning={reasoning} messageId={messageId} showReasoning={showReasoning} onToggle={onToggle} />
+ * Usage: <MessageReasoning reasoning={reasoning} messageId={messageId} showReasoning={showReasoning} onToggle={onToggle} message={message} />
  */
 import React, { useMemo } from 'react';
+import { ReasoningDisplay } from '../ReasoningDisplay';
+import type { ChatMessage } from '../../../../src/shared/types';
 
 interface MessageReasoningProps {
   reasoning?: string;
   messageId: string;
   showReasoning: boolean;
   onToggleReasoning: () => void;
+  message?: ChatMessage; // Add message prop to access metadata
 }
 
 /**
  * Reasoning display component for messages
- * Enhanced with comprehensive dark mode support
+ * Enhanced with comprehensive dark mode support and streaming reasoning
  * 
- * @param reasoning - Reasoning content
+ * @param reasoning - Final reasoning content
  * @param messageId - Message ID for accessibility
  * @param showReasoning - Whether reasoning is currently shown
  * @param onToggleReasoning - Toggle function
+ * @param message - Full message object to access metadata for streaming
  * @returns React component
  */
 export const MessageReasoning: React.FC<MessageReasoningProps> = ({
   reasoning,
   messageId,
   showReasoning,
-  onToggleReasoning
+  onToggleReasoning,
+  message
 }) => {
   /**
-   * Memoized reasoning content
+   * Check if this message is currently streaming reasoning
+   */
+  const isStreamingReasoning = useMemo(() => {
+    return message?.metadata?.isReasoning === true && !!message?.metadata?.reasoning;
+  }, [message?.metadata?.isReasoning, message?.metadata?.reasoning]);
+
+  /**
+   * Get the streaming reasoning content
+   */
+  const streamingReasoningContent = useMemo(() => {
+    return isStreamingReasoning ? message?.metadata?.reasoning : null;
+  }, [isStreamingReasoning, message?.metadata?.reasoning]);
+
+  /**
+   * Memoized reasoning content - handles both streaming and final reasoning
    */
   const reasoningContent = useMemo(() => {
-    if (!reasoning) return null;
+    // Show streaming reasoning first if available
+    if (isStreamingReasoning && streamingReasoningContent) {
+      return (
+        <div className="mb-3">
+          <ReasoningDisplay 
+            reasoning={streamingReasoningContent}
+            className="animate-pulse" // Add pulse animation for streaming
+          />
+        </div>
+      );
+    }
+
+    // Show final reasoning with toggle if available
+    if (!reasoning) {
+      return null;
+    }
 
     return (
       <div className="mb-3">
@@ -69,7 +103,7 @@ export const MessageReasoning: React.FC<MessageReasoningProps> = ({
         )}
       </div>
     );
-  }, [reasoning, messageId, showReasoning, onToggleReasoning]);
+  }, [reasoning, messageId, showReasoning, onToggleReasoning, isStreamingReasoning, streamingReasoningContent]);
 
   return reasoningContent;
 }; 
