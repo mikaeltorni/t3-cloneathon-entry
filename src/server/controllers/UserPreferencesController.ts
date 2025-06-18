@@ -18,6 +18,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { firestoreUserPreferences, type UserPreferences } from '../firestoreUserPreferences';
 import { authenticateUser } from '../middleware/auth';
+import { getUserRateLimitStatus, resetUserRateLimit } from '../middleware/rateLimit';
+import admin from 'firebase-admin';
 
 /**
  * Authenticated request interface
@@ -201,6 +203,135 @@ export class UserPreferencesController {
   };
 
   /**
+   * Get user's rate limit status
+   */
+  getRateLimitStatus = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.uid;
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const status = await getUserRateLimitStatus(userId);
+      
+      if (!status) {
+        return res.json({
+          userId,
+          requestsInLastMinute: 0,
+          lastRequestTimestamp: 0,
+          isBlocked: false
+        });
+      }
+
+      res.json(status);
+    } catch (error) {
+      console.error('Error fetching rate limit status:', error);
+      res.status(500).json({ error: 'Failed to fetch rate limit status' });
+    }
+  };
+
+  /**
+   * Admin endpoint to reset user rate limits
+   */
+  adminResetUserRateLimit = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { targetUserId } = req.body;
+      const adminUserId = req.user?.uid;
+
+      if (!adminUserId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      // Check if user is admin (you should implement your own admin check)
+      const adminDoc = await admin.firestore()
+        .collection('users')
+        .doc(adminUserId)
+        .get();
+      
+      const isAdmin = adminDoc.data()?.isAdmin || false;
+      if (!isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      if (!targetUserId) {
+        return res.status(400).json({ error: 'Target user ID is required' });
+      }
+
+      await resetUserRateLimit(targetUserId);
+
+      res.json({ 
+        message: 'Rate limit reset successfully',
+        targetUserId,
+        resetBy: adminUserId,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error resetting user rate limit:', error);
+      res.status(500).json({ error: 'Failed to reset rate limit' });
+    }
+  };
+
+  /**
+   * Update user's custom rate limits
+   */
+  updateUserRateLimits = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { targetUserId, customLimits } = req.body;
+      const adminUserId = req.user?.uid;
+
+      if (!adminUserId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      // Check if user is admin
+      const adminDoc = await admin.firestore()
+        .collection('users')
+        .doc(adminUserId)
+        .get();
+      
+      const isAdmin = adminDoc.data()?.isAdmin || false;
+      if (!isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+
+      if (!targetUserId || !customLimits) {
+        return res.status(400).json({ error: 'Target user ID and custom limits are required' });
+      }
+
+      // Validate custom limits
+      const { perMinute } = customLimits;
+      if (typeof perMinute !== 'number') {
+        return res.status(400).json({ error: 'Custom limit must be a number' });
+      }
+
+      if (perMinute < 1) {
+        return res.status(400).json({ error: 'Custom limit must be a positive number' });
+      }
+
+      const updateData = {
+        customRateLimit: { perMinute },
+        rateLimitUpdatedBy: adminUserId,
+        rateLimitUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+
+      await admin.firestore()
+        .collection('users')
+        .doc(targetUserId)
+        .set(updateData, { merge: true });
+
+      res.json({ 
+        message: 'User rate limits updated successfully',
+        targetUserId,
+        customLimits: { perMinute },
+        updatedBy: adminUserId
+      });
+    } catch (error) {
+      console.error('Error updating user rate limits:', error);
+      res.status(500).json({ error: 'Failed to update user rate limits' });
+    }
+  };
+
+  /**
    * Get Express router with all routes
    */
   getRoutes() {
@@ -214,6 +345,9 @@ export class UserPreferencesController {
     router.put('/', this.updateUserPreferences);
     router.post('/models/:modelId/pin', this.toggleModelPin);
     router.get('/models/pinned', this.getPinnedModels);
+    router.get('/rate-limit-status', this.getRateLimitStatus);
+    router.post('/admin/reset-rate-limit', this.adminResetUserRateLimit);
+    router.post('/admin/update-rate-limits', this.updateUserRateLimits);
 
     console.log('[UserPreferencesController] Defining routes...');
     return router;
