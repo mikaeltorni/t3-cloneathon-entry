@@ -126,7 +126,7 @@ export const UserProfile: React.FC = () => {
 
       {/* Project Information */}
       <div className="mt-2 text-xs text-gray-400 dark:text-slate-500 space-y-1">
-        <div>v16062025</div>
+        <div>v18062025</div>
         <div>Made by Mikael Törni</div>
         <a 
           href="https://github.com/mikaeltorni/t3-cloneathon-entry" 
