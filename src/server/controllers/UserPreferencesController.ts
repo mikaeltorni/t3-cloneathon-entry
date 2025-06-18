@@ -8,18 +8,21 @@
  *   PUT /api/preferences - Update user preferences
  *   POST /api/preferences/models/:modelId/pin - Toggle model pin status
  *   GET /api/preferences/models/pinned - Get pinned models
+ *   GET /api/preferences/apps - Get user apps
+ *   POST /api/preferences/apps - Create a new app
+ *   PUT /api/preferences/apps/:appId - Update an app
+ *   DELETE /api/preferences/apps/:appId - Delete an app
  * 
  * Features:
  *   - User-specific preferences management
  *   - Model pinning functionality
+ *   - App management functionality
  *   - Authentication-aware operations
  *   - Error handling and validation
  */
 import express, { Request, Response, NextFunction } from 'express';
 import { firestoreUserPreferences, type UserPreferences } from '../firestoreUserPreferences';
 import { authenticateUser } from '../middleware/auth';
-import { getUserRateLimitStatus, resetUserRateLimit } from '../middleware/rateLimit';
-import admin from 'firebase-admin';
 
 /**
  * Authenticated request interface
@@ -205,131 +208,186 @@ export class UserPreferencesController {
   // ===== App Management Endpoints =====
 
   /**
-   * Get user's rate limit status
+   * Get user apps
+   * 
+   * @route GET /api/preferences/apps
    */
-  getRateLimitStatus = async (req: AuthenticatedRequest, res: Response) => {
+  getUserApps = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.user?.uid;
-      if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-      const status = await getUserRateLimitStatus(userId);
-      
-      if (!status) {
-        return res.json({
-          userId,
-          requestsInLastMinute: 0,
-          lastRequestTimestamp: 0,
-          isBlocked: false
+      if (!req.user?.uid) {
+        console.log('[UserPreferencesController] No user authentication found');
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
         });
+        return;
       }
 
-      res.json(status);
-    } catch (error) {
-      console.error('Error fetching rate limit status:', error);
-      res.status(500).json({ error: 'Failed to fetch rate limit status' });
-    }
-  };
-
-  /**
-   * Admin endpoint to reset user rate limits
-   */
-  adminResetUserRateLimit = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { targetUserId } = req.body;
-      const adminUserId = req.user?.uid;
-
-      if (!adminUserId) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-      // Check if user is admin (you should implement your own admin check)
-      const adminDoc = await admin.firestore()
-        .collection('users')
-        .doc(adminUserId)
-        .get();
+      console.log(`[UserPreferencesController] Getting apps for user: ${req.user.uid}`);
       
-      const isAdmin = adminDoc.data()?.isAdmin || false;
-      if (!isAdmin) {
-        return res.status(403).json({ error: 'Admin access required' });
-      }
-
-      if (!targetUserId) {
-        return res.status(400).json({ error: 'Target user ID is required' });
-      }
-
-      await resetUserRateLimit(targetUserId);
-
-      res.json({ 
-        message: 'Rate limit reset successfully',
-        targetUserId,
-        resetBy: adminUserId,
+      const apps = await firestoreUserPreferences.getUserApps(req.user.uid);
+      
+      console.log(`[UserPreferencesController] Successfully retrieved ${apps.length} apps for user: ${req.user.uid}`, apps);
+      res.json({
+        apps,
+        count: apps.length,
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error resetting user rate limit:', error);
-      res.status(500).json({ error: 'Failed to reset rate limit' });
+      console.error('[UserPreferencesController] Error getting user apps:', error);
+      next(error);
     }
   };
 
   /**
-   * Update user's custom rate limits
+   * Create a new app
+   * 
+   * @route POST /api/preferences/apps
    */
-  updateUserRateLimits = async (req: AuthenticatedRequest, res: Response) => {
+  createApp = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { targetUserId, customLimits } = req.body;
-      const adminUserId = req.user?.uid;
-
-      if (!adminUserId) {
-        return res.status(401).json({ error: 'Unauthorized' });
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
       }
 
-      // Check if user is admin
-      const adminDoc = await admin.firestore()
-        .collection('users')
-        .doc(adminUserId)
-        .get();
+      const { name, systemPrompt } = req.body;
       
-      const isAdmin = adminDoc.data()?.isAdmin || false;
-      if (!isAdmin) {
-        return res.status(403).json({ error: 'Admin access required' });
+      // Validate input
+      if (!name?.trim()) {
+        res.status(400).json({ 
+          error: 'App name is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
       }
 
-      if (!targetUserId || !customLimits) {
-        return res.status(400).json({ error: 'Target user ID and custom limits are required' });
+      if (!systemPrompt?.trim()) {
+        res.status(400).json({ 
+          error: 'App system prompt is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
       }
 
-      // Validate custom limits
-      const { perMinute } = customLimits;
-      if (typeof perMinute !== 'number') {
-        return res.status(400).json({ error: 'Custom limit must be a number' });
-      }
-
-      if (perMinute < 1) {
-        return res.status(400).json({ error: 'Custom limit must be a positive number' });
-      }
-
-      const updateData = {
-        customRateLimit: { perMinute },
-        rateLimitUpdatedBy: adminUserId,
-        rateLimitUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
-      };
-
-      await admin.firestore()
-        .collection('users')
-        .doc(targetUserId)
-        .set(updateData, { merge: true });
-
-      res.json({ 
-        message: 'User rate limits updated successfully',
-        targetUserId,
-        customLimits: { perMinute },
-        updatedBy: adminUserId
+      console.log(`[UserPreferencesController] Creating app for user: ${req.user.uid}, name: ${name}`);
+      
+      const updatedPreferences = await firestoreUserPreferences.createApp(req.user.uid, name, systemPrompt);
+      
+      // Get the newly created app (it will be the last one)
+      const newApp = updatedPreferences.apps![updatedPreferences.apps!.length - 1];
+      
+      console.log(`[UserPreferencesController] Successfully created app: ${newApp.id} for user: ${req.user.uid}`);
+      res.status(201).json({
+        success: true,
+        app: newApp,
+        timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error updating user rate limits:', error);
-      res.status(500).json({ error: 'Failed to update user rate limits' });
+      console.error('[UserPreferencesController] Error creating app:', error);
+      next(error);
+    }
+  };
+
+  /**
+   * Update an existing app
+   * 
+   * @route PUT /api/preferences/apps/:appId
+   */
+  updateApp = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const { appId } = req.params;
+      const { name, systemPrompt } = req.body;
+      
+      if (!appId?.trim()) {
+        res.status(400).json({ 
+          error: 'App ID is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Validate at least one field is provided
+      if (!name?.trim() && !systemPrompt?.trim()) {
+        res.status(400).json({ 
+          error: 'At least one field (name or systemPrompt) is required for update',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const updates: { name?: string; systemPrompt?: string } = {};
+      if (name?.trim()) updates.name = name.trim();
+      if (systemPrompt?.trim()) updates.systemPrompt = systemPrompt.trim();
+
+      console.log(`[UserPreferencesController] Updating app ${appId} for user: ${req.user.uid}`);
+      
+      const updatedPreferences = await firestoreUserPreferences.updateApp(req.user.uid, appId, updates);
+      
+      // Find the updated app
+      const updatedApp = updatedPreferences.apps!.find(app => app.id === appId);
+      
+      console.log(`[UserPreferencesController] Successfully updated app: ${appId} for user: ${req.user.uid}`);
+      res.json({
+        success: true,
+        app: updatedApp,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('[UserPreferencesController] Error updating app:', error);
+      next(error);
+    }
+  };
+
+  /**
+   * Delete an app
+   * 
+   * @route DELETE /api/preferences/apps/:appId
+   */
+  deleteApp = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const { appId } = req.params;
+      
+      if (!appId?.trim()) {
+        res.status(400).json({ 
+          error: 'App ID is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      console.log(`[UserPreferencesController] Deleting app ${appId} for user: ${req.user.uid}`);
+      
+      await firestoreUserPreferences.deleteApp(req.user.uid, appId);
+      
+      console.log(`[UserPreferencesController] Successfully deleted app: ${appId} for user: ${req.user.uid}`);
+      res.json({
+        success: true,
+        appId,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('[UserPreferencesController] Error deleting app:', error);
+      next(error);
     }
   };
 
@@ -347,9 +405,12 @@ export class UserPreferencesController {
     router.put('/', this.updateUserPreferences);
     router.post('/models/:modelId/pin', this.toggleModelPin);
     router.get('/models/pinned', this.getPinnedModels);
-    router.get('/rate-limit-status', this.getRateLimitStatus);
-    router.post('/admin/reset-rate-limit', this.adminResetUserRateLimit);
-    router.post('/admin/update-rate-limits', this.updateUserRateLimits);
+
+    // App management routes
+    router.get('/apps', this.getUserApps);
+    router.post('/apps', this.createApp);
+    router.put('/apps/:appId', this.updateApp);
+    router.delete('/apps/:appId', this.deleteApp);
 
     console.log('[UserPreferencesController] Defining routes...');
     return router;
