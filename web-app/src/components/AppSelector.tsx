@@ -158,10 +158,27 @@ const AppSelectorItem: React.FC<AppSelectorItemProps> = ({
 
       {/* Delete confirmation overlay */}
       {showDeleteConfirm && (
-        <div className="absolute inset-0 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 flex items-center justify-center">
-          <p className="text-sm font-medium text-red-600 dark:text-red-400">
-            Click delete again to confirm
+        <div 
+          className="absolute inset-0 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 flex flex-col items-center justify-center z-10 gap-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <p className="text-sm font-medium text-red-600 dark:text-red-400 text-center px-4">
+            Delete "{app.name}"?
           </p>
+          <div className="flex gap-3">
+            <button
+              onClick={handleDelete}
+              className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Delete
+            </button>
+            <button
+              onClick={handleCancelDelete}
+              className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
     </div>
