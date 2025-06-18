@@ -76,4 +76,5 @@ npm run dev build
 If you run in to any issues error the node server setup, kill all node processes, or cmd instances that might have had the server running, perhaps reboot your computer if you can't fix it with these.
 
 MAKE SURE THAT YOUR ENV FILE IS CLEAR OF SYNTAX ERRORS! Small extra comma or quote can make it non functional. Follow the template.
-For Vercel/Railway deployment you will need to allow the domain from the Google Firebase Console + setup the PRODUCTION_ORIGINS and VITE_API_BASE_URL variables, otherwise it won't work.
+For Vercel/Railway deployment you will need to allow the domain from the Google Firebase Console + setup the PRODUCTION_ORIGINS and VITE_API_BASE_URL variables, otherwise it won't work. 
+I used railway, there's the railway.json file that you can use for CMD deployment, which I did for mobile testing.
