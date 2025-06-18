@@ -64,18 +64,16 @@ export const AppModal: React.FC<AppModalProps> = ({
   // Handle ESC key to close modal
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && isOpen) {
         event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
         onClose();
       }
     };
 
     if (isOpen) {
-      // Add event listener with capture to intercept before it bubbles
-      document.addEventListener('keydown', handleKeyDown, { capture: true });
-      return () => document.removeEventListener('keydown', handleKeyDown, { capture: true });
+      // Add event listener without capture to avoid conflicts
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
     }
   }, [isOpen, onClose]);
 
@@ -107,7 +105,9 @@ export const AppModal: React.FC<AppModalProps> = ({
       />
       
       {/* Modal */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg p-6 w-full max-w-2xl mx-4 shadow-2xl border dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+      <div 
+        className="relative bg-white dark:bg-slate-900 rounded-lg p-6 w-full max-w-2xl mx-4 shadow-2xl border dark:border-slate-700 max-h-[90vh] overflow-y-auto z-10"
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{title}</h2>
