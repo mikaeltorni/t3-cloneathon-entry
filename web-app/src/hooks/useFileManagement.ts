@@ -85,10 +85,6 @@ export function useFileManagement({
   const { isDragOver, dropHandlers } = useGlobalFileDropZone({
     onImagesAdd: handleImagesAdd,
     onDocumentsAdd: handleDocumentsAdd,
-    onImagesChange,
-    onDocumentsChange,
-    currentImages: images,
-    currentDocuments: documents,
     currentImageCount: images.length,
     currentDocumentCount: documents.length,
     maxImages,

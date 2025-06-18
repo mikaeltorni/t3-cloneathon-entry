@@ -94,10 +94,20 @@ export class DocumentController {
       // Process the document
       const processingResult = await this.documentProcessor.processDocument(file.buffer, file.originalname);
 
-      // Create document attachment
+      // For large files (>5MB), don't include the full data URL to avoid Firestore size limits
+      const isLargeFile = file.size > 5 * 1024 * 1024;
+      const documentUrl = isLargeFile 
+        ? `document://${file.originalname}` // Placeholder URL for large files
+        : `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+
+      if (isLargeFile) {
+        logger.warn(`Large file detected (${(file.size / 1024 / 1024).toFixed(1)}MB): Using placeholder URL to avoid Firestore size limits`);
+      }
+
+      // Create document attachment (exclude metadata to avoid Firestore serialization issues)
       const document: DocumentAttachment = {
         id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        url: `data:${file.mimetype};base64,${file.buffer.toString('base64')}`,
+        url: documentUrl,
         name: file.originalname,
         size: file.size,
         type: file.mimetype,
@@ -107,7 +117,7 @@ export class DocumentController {
 
       const processingTime = Date.now() - startTime;
 
-      logger.info(`Successfully processed ${file.originalname}: ${processingResult.content.length} characters extracted`);
+      logger.info(`Successfully processed ${file.originalname}: ${processingResult.content.length} characters extracted, document size: ${(file.size / 1024).toFixed(1)}KB, using ${isLargeFile ? 'placeholder' : 'data'} URL`);
       
       res.json({
         success: true,

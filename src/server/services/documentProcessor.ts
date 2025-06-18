@@ -173,16 +173,41 @@ export class DocumentProcessor {
         .then((data) => {
           clearTimeout(timeout);
           
-          logger.info(`PDF processed successfully: ${data.numpages} pages, ${data.text.length} characters`);
+          // Sanitize content to remove null bytes and invalid characters
+          let content = data.text || '';
+          content = content.replace(/\0/g, '').trim();
+          
+          // Ensure we have valid content
+          if (!content || content.length === 0) {
+            logger.warn('PDF processed but no text content extracted');
+            content = '[No text content could be extracted from this PDF]';
+          }
+          
+          // Sanitize metadata to remove undefined values and circular references
+          const sanitizedMetadata: Record<string, any> = {
+            title: data.info?.Title || undefined,
+            author: data.info?.Author || undefined,
+            subject: data.info?.Subject || undefined,
+            creator: data.info?.Creator || undefined,
+            producer: data.info?.Producer || undefined,
+            creationDate: data.info?.CreationDate || undefined,
+            modificationDate: data.info?.ModDate || undefined,
+            version: data.version || undefined
+          };
+          
+          // Remove undefined values
+          Object.keys(sanitizedMetadata).forEach(key => {
+            if (sanitizedMetadata[key] === undefined) {
+              delete sanitizedMetadata[key];
+            }
+          });
+          
+          logger.info(`PDF processed successfully: ${data.numpages} pages, ${content.length} characters`);
           
           resolve({
-            content: data.text,
-            pageCount: data.numpages,
-            metadata: {
-              info: data.info,
-              metadata: data.metadata,
-              version: data.version
-            }
+            content,
+            pageCount: data.numpages || 0,
+            metadata: sanitizedMetadata
           });
         })
         .catch((error) => {

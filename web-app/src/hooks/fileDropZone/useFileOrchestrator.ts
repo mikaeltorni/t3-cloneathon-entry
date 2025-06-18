@@ -12,8 +12,6 @@ import type { ImageAttachment, DocumentAttachment } from '../../../../src/shared
 export interface FileOrchestrationResult {
   processedImages: ImageAttachment[];
   processedDocuments: DocumentAttachment[];
-  temporaryImages: ImageAttachment[];
-  temporaryDocuments: DocumentAttachment[];
   errors: string[];
   skippedFiles: string[];
 }
@@ -21,8 +19,7 @@ export interface FileOrchestrationResult {
 export interface UseFileOrchestratorReturn {
   processFiles: (
     files: FileList | File[], 
-    config: FileValidationConfig,
-    onProgress?: (fileIndex: number, progress: number, fileName: string) => void
+    config: FileValidationConfig
   ) => Promise<FileOrchestrationResult>;
 }
 
@@ -31,15 +28,12 @@ export function useFileOrchestrator(): UseFileOrchestratorReturn {
   const { validateFile, getSupportedTypesMessage } = useFileValidation();
   const { 
     processImageFile, 
-    processDocumentFile,
-    createTemporaryImageAttachment,
-    createTemporaryDocumentAttachment
+    processDocumentFile
   } = useFileProcessing();
 
   const processFiles = useCallback(async (
     files: FileList | File[], 
-    config: FileValidationConfig,
-    onProgress?: (fileIndex: number, progress: number, fileName: string) => void
+    config: FileValidationConfig
   ): Promise<FileOrchestrationResult> => {
     const fileArray = Array.from(files);
     debug(`Processing ${fileArray.length} files`);
@@ -47,8 +41,6 @@ export function useFileOrchestrator(): UseFileOrchestratorReturn {
     const result: FileOrchestrationResult = {
       processedImages: [],
       processedDocuments: [],
-      temporaryImages: [],
-      temporaryDocuments: [],
       errors: [],
       skippedFiles: []
     };
@@ -80,25 +72,19 @@ export function useFileOrchestrator(): UseFileOrchestratorReturn {
 
       validFiles.push({ file, validation, index: i });
 
-      // Create temporary attachments for immediate UI feedback
+      // Count files for validation
       if (validation.fileType === 'image') {
-        const tempAttachment = createTemporaryImageAttachment(file);
-        result.temporaryImages.push(tempAttachment);
         imageCount++;
       } else if (validation.fileType === 'document') {
-        const tempAttachment = createTemporaryDocumentAttachment(file);
-        result.temporaryDocuments.push(tempAttachment);
         documentCount++;
       }
     }
 
     // Second pass: Process files with progress tracking
-    for (const { file, validation, index } of validFiles) {
+    for (const { file, validation } of validFiles) {
       try {
         if (validation.fileType === 'image') {
-          const processingResult = await processImageFile(file, (progress) => {
-            onProgress?.(index, progress, file.name);
-          });
+          const processingResult = await processImageFile(file);
           
           if (processingResult.success && processingResult.attachment) {
             result.processedImages.push(processingResult.attachment as ImageAttachment);
@@ -107,9 +93,7 @@ export function useFileOrchestrator(): UseFileOrchestratorReturn {
             result.skippedFiles.push(file.name);
           }
         } else if (validation.fileType === 'document') {
-          const processingResult = await processDocumentFile(file, (progress) => {
-            onProgress?.(index, progress, file.name);
-          });
+          const processingResult = await processDocumentFile(file);
           
           if (processingResult.success && processingResult.attachment) {
             result.processedDocuments.push(processingResult.attachment as DocumentAttachment);
@@ -142,7 +126,7 @@ export function useFileOrchestrator(): UseFileOrchestratorReturn {
     debug(`Processing complete: ${result.processedImages.length} images, ${result.processedDocuments.length} documents, ${result.errors.length} errors`);
     
     return result;
-  }, [debug, warn, validateFile, getSupportedTypesMessage, processImageFile, processDocumentFile, createTemporaryImageAttachment, createTemporaryDocumentAttachment]);
+  }, [debug, warn, validateFile, getSupportedTypesMessage, processImageFile, processDocumentFile]);
 
   return {
     processFiles
