@@ -18,7 +18,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useLogger } from './useLogger';
 import { useErrorHandler } from './useErrorHandler';
-import type { App } from '../../../src/shared/types';
+import { useAuth } from './useAuth';
+import { userPreferencesApi, type App } from '../services/userPreferencesApi';
 
 interface UseAppsReturn {
   // State
@@ -37,8 +38,6 @@ interface UseAppsReturn {
   clearError: () => void;
 }
 
-const STORAGE_KEY = 'user-apps';
-
 /**
  * Custom hook for managing user-created apps
  * 
@@ -52,52 +51,29 @@ export const useApps = (): UseAppsReturn => {
   
   const { debug, log } = useLogger('useApps');
   const { handleError } = useErrorHandler();
+  const { user, initialized } = useAuth();
 
   // Get current app
   const currentApp = apps.find(app => app.id === currentAppId) || null;
 
   /**
-   * Load apps from localStorage
+   * Load apps from server
    */
   const loadApps = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      const storedApps = localStorage.getItem(STORAGE_KEY);
-      if (storedApps) {
-        const parsedApps: App[] = JSON.parse(storedApps);
-        // Convert date strings back to Date objects
-        const appsWithDates = parsedApps.map(app => ({
-          ...app,
-          createdAt: new Date(app.createdAt),
-          updatedAt: new Date(app.updatedAt)
-        }));
-        setApps(appsWithDates);
-        debug(`Loaded ${appsWithDates.length} apps from storage`);
-      }
+      const serverApps = await userPreferencesApi.getUserApps();
+      setApps(serverApps);
+      debug(`Loaded ${serverApps.length} apps from server`);
     } catch (error) {
-      const errorMessage = 'Failed to load apps from storage';
+      const errorMessage = 'Failed to load apps from server';
       setError(errorMessage);
       handleError(error as Error, 'loadApps');
       debug(errorMessage, error);
     } finally {
       setIsLoading(false);
-    }
-  }, [debug, handleError]);
-
-  /**
-   * Save apps to localStorage
-   */
-  const saveApps = useCallback((appsToSave: App[]) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appsToSave));
-      debug(`Saved ${appsToSave.length} apps to storage`);
-    } catch (error) {
-      const errorMessage = 'Failed to save apps to storage';
-      setError(errorMessage);
-      handleError(error as Error, 'saveApps');
-      debug(errorMessage, error);
     }
   }, [debug, handleError]);
 
@@ -109,18 +85,10 @@ export const useApps = (): UseAppsReturn => {
       setIsLoading(true);
       setError(null);
 
-      const newApp: App = {
-        id: `app_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: name.trim(),
-        systemPrompt: systemPrompt.trim(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        isActive: false
-      };
-
-      const updatedApps = [...apps, newApp];
-      setApps(updatedApps);
-      saveApps(updatedApps);
+      const newApp = await userPreferencesApi.createApp(name, systemPrompt);
+      
+      // Update local state
+      setApps(prev => [...prev, newApp]);
       
       log(`Created new app: ${newApp.name}`);
       debug('App created successfully', newApp);
@@ -134,7 +102,7 @@ export const useApps = (): UseAppsReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [apps, saveApps, log, debug, handleError]);
+  }, [log, debug, handleError]);
 
   /**
    * Update an existing app
@@ -144,22 +112,12 @@ export const useApps = (): UseAppsReturn => {
       setIsLoading(true);
       setError(null);
 
-      const appIndex = apps.findIndex(app => app.id === appId);
-      if (appIndex === -1) {
-        throw new Error(`App with id ${appId} not found`);
-      }
-
-      const updatedApp: App = {
-        ...apps[appIndex],
-        ...updates,
-        updatedAt: new Date()
-      };
-
-      const updatedApps = [...apps];
-      updatedApps[appIndex] = updatedApp;
+      const updatedApp = await userPreferencesApi.updateApp(appId, updates);
       
-      setApps(updatedApps);
-      saveApps(updatedApps);
+      // Update local state
+      setApps(prev => prev.map(app => 
+        app.id === appId ? updatedApp : app
+      ));
       
       log(`Updated app: ${updatedApp.name}`);
       debug('App updated successfully', updatedApp);
@@ -173,7 +131,7 @@ export const useApps = (): UseAppsReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [apps, saveApps, log, debug, handleError]);
+  }, [log, debug, handleError]);
 
   /**
    * Delete an app
@@ -184,21 +142,20 @@ export const useApps = (): UseAppsReturn => {
       setError(null);
 
       const appToDelete = apps.find(app => app.id === appId);
-      if (!appToDelete) {
-        throw new Error(`App with id ${appId} not found`);
-      }
+      const appName = appToDelete?.name || 'Unknown app';
 
-      const updatedApps = apps.filter(app => app.id !== appId);
-      setApps(updatedApps);
-      saveApps(updatedApps);
+      await userPreferencesApi.deleteApp(appId);
+      
+      // Update local state
+      setApps(prev => prev.filter(app => app.id !== appId));
       
       // Clear selection if the deleted app was selected
       if (currentAppId === appId) {
         setCurrentAppId(null);
       }
       
-      log(`Deleted app: ${appToDelete.name}`);
-      debug('App deleted successfully', { appId, appName: appToDelete.name });
+      log(`Deleted app: ${appName}`);
+      debug('App deleted successfully', { appId, appName });
     } catch (error) {
       const errorMessage = 'Failed to delete app';
       setError(errorMessage);
@@ -207,7 +164,7 @@ export const useApps = (): UseAppsReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [apps, currentAppId, saveApps, log, debug, handleError]);
+  }, [apps, currentAppId, log, debug, handleError]);
 
   /**
    * Select an app (or deselect if null)
@@ -232,10 +189,18 @@ export const useApps = (): UseAppsReturn => {
     setError(null);
   }, []);
 
-  // Load apps on mount
+  // Load apps only when user is authenticated and auth is initialized
   useEffect(() => {
-    loadApps();
-  }, [loadApps]);
+    if (initialized && user) {
+      debug('User authenticated, loading apps...');
+      loadApps();
+    } else if (initialized && !user) {
+      debug('User not authenticated, clearing apps');
+      setApps([]);
+      setCurrentAppId(null);
+      setError(null);
+    }
+  }, [initialized, user, loadApps, debug]);
 
   return {
     // State

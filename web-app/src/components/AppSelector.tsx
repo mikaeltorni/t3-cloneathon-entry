@@ -11,7 +11,7 @@
  * Usage: <AppSelector apps={apps} onAppSelect={onSelect} />
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '../utils/cn';
 import { useLogger } from '../hooks/useLogger';
 import type { App } from '../../../src/shared/types';
@@ -76,97 +76,94 @@ const AppSelectorItem: React.FC<AppSelectorItemProps> = ({
 
   return (
     <div
-      className={cn(
-        'group relative p-4 rounded-lg border cursor-pointer transition-all duration-200 min-w-72 max-w-80',
-        'hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600',
-        isSelected
-          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
-          : 'border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700'
-      )}
       onClick={handleSelect}
+      className={cn(
+        'relative min-w-[280px] max-w-[320px] p-4 rounded-lg border cursor-pointer transition-all duration-200 group',
+        'bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700',
+        {
+          'border-purple-200 dark:border-purple-700 ring-2 ring-purple-500/20 dark:ring-purple-400/30': isSelected,
+          'border-gray-200 dark:border-slate-600 hover:border-purple-300 dark:hover:border-purple-600': !isSelected
+        }
+      )}
     >
-      {/* App name */}
-      <h3 className={cn(
-        'font-semibold text-base mb-2 truncate',
-        isSelected 
-          ? 'text-blue-900 dark:text-blue-100' 
-          : 'text-gray-900 dark:text-slate-100'
-      )}>
-        {app.name}
-      </h3>
+      {/* Header with action buttons */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1 pr-2">
+          <h3 className="font-semibold text-gray-900 dark:text-slate-100 line-clamp-1">
+            {app.name}
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+            {new Date(app.createdAt).toLocaleDateString()}
+          </p>
+        </div>
+        
+        {/* Action buttons */}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {onEdit && (
+            <button
+              onClick={handleEdit}
+              className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 rounded transition-colors"
+              title="Edit app"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+          )}
+          
+          {onDelete && (
+            <button
+              onClick={handleDelete}
+              className={cn(
+                'p-1.5 rounded transition-colors',
+                showDeleteConfirm
+                  ? 'text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'
+                  : 'text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400'
+              )}
+              title={showDeleteConfirm ? "Click again to confirm" : "Delete app"}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
+          
+          {showDeleteConfirm && (
+            <button
+              onClick={handleCancelDelete}
+              className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 rounded transition-colors"
+              title="Cancel delete"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* System prompt preview */}
-      <p 
-        className={cn(
-          'text-sm mb-3 overflow-hidden',
-          isSelected 
-            ? 'text-blue-700 dark:text-blue-200' 
-            : 'text-gray-600 dark:text-slate-400'
-        )}
-        style={{
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical' as any,
-          overflow: 'hidden'
-        }}
-      >
-        {app.systemPrompt}
-      </p>
-
-      {/* Created date */}
-      <p className={cn(
-        'text-xs mb-2',
-        isSelected 
-          ? 'text-blue-600 dark:text-blue-300' 
-          : 'text-gray-500 dark:text-slate-500'
-      )}>
-        Created {new Date(app.createdAt).toLocaleDateString()}
-      </p>
-
-      {/* Actions */}
-      <div className="flex justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {onEdit && (
-          <button
-            onClick={handleEdit}
-            className="p-1 text-gray-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
-            title="Edit app"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </button>
-        )}
-        {onDelete && (
-          <>
-            {showDeleteConfirm ? (
-              <div className="flex space-x-1">
-                <button
-                  onClick={handleCancelDelete}
-                  className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:hover:bg-slate-500 rounded"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded"
-                >
-                  Delete
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={handleDelete}
-                className="p-1 text-gray-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                title="Delete app"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            )}
-          </>
-        )}
+      <div className="mb-3">
+        <p className="text-sm text-gray-600 dark:text-slate-300 line-clamp-3 leading-relaxed">
+          {app.systemPrompt}
+        </p>
       </div>
+
+      {/* Selection indicator */}
+      {isSelected && (
+        <div className="absolute top-2 right-2">
+          <div className="w-3 h-3 bg-purple-500 rounded-full ring-2 ring-white dark:ring-slate-800"></div>
+        </div>
+      )}
+
+      {/* Delete confirmation overlay */}
+      {showDeleteConfirm && (
+        <div className="absolute inset-0 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 flex items-center justify-center">
+          <p className="text-sm font-medium text-red-600 dark:text-red-400">
+            Click delete again to confirm
+          </p>
+        </div>
+      )}
     </div>
   );
 };
@@ -183,6 +180,13 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
   onNewApp,
   className
 }) => {
+  const { debug } = useLogger('AppSelector');
+
+  // Debug logging to see what props are being passed
+  useEffect(() => {
+    debug(`AppSelector rendered with ${apps.length} apps:`, apps);
+    debug(`Current app ID: ${currentAppId}`);
+  }, [apps, currentAppId, debug]);
 
   return (
     <div className={cn('bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-600', className)}>

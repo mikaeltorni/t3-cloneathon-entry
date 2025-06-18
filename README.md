@@ -48,7 +48,7 @@ When no chat thread is active, the app selector appears in the main chat area (w
 
 #### **Technical Implementation**
 ```tsx
-// App interface
+// App interface (stored in user preferences)
 interface App {
   id: string;
   name: string;
@@ -56,6 +56,17 @@ interface App {
   createdAt: Date;
   updatedAt: Date;
   isActive?: boolean;
+}
+
+// Server-side storage in UserPreferences
+interface UserPreferences {
+  pinnedModels: string[];
+  lastSelectedModel?: string;
+  theme?: 'light' | 'dark' | 'auto';
+  defaultModel?: string;
+  apps?: App[]; // Apps stored here
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // App creation modal
@@ -87,16 +98,20 @@ Create specialized AI assistants for different purposes:
 #### **App Management Features**
 - **Edit Apps**: Modify app names and system prompts after creation
 - **Delete Apps**: Remove apps you no longer need with confirmation
-- **App Persistence**: Apps are automatically saved to localStorage
+- **Server-Side Storage**: Apps are stored in Firebase Firestore with user preferences
+- **Cross-Device Sync**: Apps automatically sync across all your devices
 - **App Selection State**: The currently selected app is remembered across sessions
 - **Error Handling**: Comprehensive error handling with user-friendly messages
+- **Authentication Required**: Apps are tied to your user account for security
 
 #### **Component Architecture**
 - **AppModal**: Modal component for creating and editing apps
 - **AppSelector**: Main app selection component integrated within ChatInterface
 - **AppSelectorItem**: Individual app card component with hover actions
-- **useApps**: Custom hook for app state management
+- **useApps**: Custom hook for app state management with server API integration
+- **userPreferencesApi**: Server API service for app CRUD operations
 - **App Types**: TypeScript interfaces for type safety
+- **Server Integration**: Full backend support with Firebase Firestore storage
 - **Fixed UI Issue**: ChatInput and other UI elements now always render correctly
 
 #### **Integration with Chat System**

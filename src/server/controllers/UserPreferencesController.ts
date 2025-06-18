@@ -200,6 +200,192 @@ export class UserPreferencesController {
     }
   };
 
+  // ===== App Management Endpoints =====
+
+  /**
+   * Get user apps
+   * 
+   * @route GET /api/preferences/apps
+   */
+  getUserApps = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user?.uid) {
+        console.log('[UserPreferencesController] No user authentication found');
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      console.log(`[UserPreferencesController] Getting apps for user: ${req.user.uid}`);
+      
+      const apps = await firestoreUserPreferences.getUserApps(req.user.uid);
+      
+      console.log(`[UserPreferencesController] Successfully retrieved ${apps.length} apps for user: ${req.user.uid}`, apps);
+      res.json({
+        apps,
+        count: apps.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('[UserPreferencesController] Error getting user apps:', error);
+      next(error);
+    }
+  };
+
+  /**
+   * Create a new app
+   * 
+   * @route POST /api/preferences/apps
+   */
+  createApp = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const { name, systemPrompt } = req.body;
+      
+      // Validate input
+      if (!name?.trim()) {
+        res.status(400).json({ 
+          error: 'App name is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      if (!systemPrompt?.trim()) {
+        res.status(400).json({ 
+          error: 'App system prompt is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      console.log(`[UserPreferencesController] Creating app for user: ${req.user.uid}, name: ${name}`);
+      
+      const updatedPreferences = await firestoreUserPreferences.createApp(req.user.uid, name, systemPrompt);
+      
+      // Get the newly created app (it will be the last one)
+      const newApp = updatedPreferences.apps![updatedPreferences.apps!.length - 1];
+      
+      console.log(`[UserPreferencesController] Successfully created app: ${newApp.id} for user: ${req.user.uid}`);
+      res.status(201).json({
+        success: true,
+        app: newApp,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('[UserPreferencesController] Error creating app:', error);
+      next(error);
+    }
+  };
+
+  /**
+   * Update an existing app
+   * 
+   * @route PUT /api/preferences/apps/:appId
+   */
+  updateApp = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const { appId } = req.params;
+      const { name, systemPrompt } = req.body;
+      
+      if (!appId?.trim()) {
+        res.status(400).json({ 
+          error: 'App ID is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Validate at least one field is provided
+      if (!name?.trim() && !systemPrompt?.trim()) {
+        res.status(400).json({ 
+          error: 'At least one field (name or systemPrompt) is required for update',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const updates: { name?: string; systemPrompt?: string } = {};
+      if (name?.trim()) updates.name = name.trim();
+      if (systemPrompt?.trim()) updates.systemPrompt = systemPrompt.trim();
+
+      console.log(`[UserPreferencesController] Updating app ${appId} for user: ${req.user.uid}`);
+      
+      const updatedPreferences = await firestoreUserPreferences.updateApp(req.user.uid, appId, updates);
+      
+      // Find the updated app
+      const updatedApp = updatedPreferences.apps!.find(app => app.id === appId);
+      
+      console.log(`[UserPreferencesController] Successfully updated app: ${appId} for user: ${req.user.uid}`);
+      res.json({
+        success: true,
+        app: updatedApp,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('[UserPreferencesController] Error updating app:', error);
+      next(error);
+    }
+  };
+
+  /**
+   * Delete an app
+   * 
+   * @route DELETE /api/preferences/apps/:appId
+   */
+  deleteApp = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user?.uid) {
+        res.status(401).json({ 
+          error: 'Authentication required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      const { appId } = req.params;
+      
+      if (!appId?.trim()) {
+        res.status(400).json({ 
+          error: 'App ID is required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      console.log(`[UserPreferencesController] Deleting app ${appId} for user: ${req.user.uid}`);
+      
+      await firestoreUserPreferences.deleteApp(req.user.uid, appId);
+      
+      console.log(`[UserPreferencesController] Successfully deleted app: ${appId} for user: ${req.user.uid}`);
+      res.json({
+        success: true,
+        appId,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('[UserPreferencesController] Error deleting app:', error);
+      next(error);
+    }
+  };
+
   /**
    * Get Express router with all routes
    */
@@ -214,6 +400,12 @@ export class UserPreferencesController {
     router.put('/', this.updateUserPreferences);
     router.post('/models/:modelId/pin', this.toggleModelPin);
     router.get('/models/pinned', this.getPinnedModels);
+    
+    // App management routes
+    router.get('/apps', this.getUserApps);
+    router.post('/apps', this.createApp);
+    router.put('/apps/:appId', this.updateApp);
+    router.delete('/apps/:appId', this.deleteApp);
 
     console.log('[UserPreferencesController] Defining routes...');
     return router;

@@ -17,6 +17,18 @@ import { logger } from '../utils/logger';
 import type { ChatTag } from '../../../src/shared/types';
 
 /**
+ * App interface
+ */
+export interface App {
+  id: string;
+  name: string;
+  systemPrompt: string;
+  createdAt: Date;
+  updatedAt: Date;
+  isActive?: boolean;
+}
+
+/**
  * User preferences interface
  */
 export interface UserPreferences {
@@ -24,6 +36,7 @@ export interface UserPreferences {
   lastSelectedModel?: string; // Last model selected by user (for new chats)
   theme?: 'light' | 'dark' | 'auto';
   defaultModel?: string;
+  apps?: App[]; // User-created apps
   createdAt: Date;
   updatedAt: Date;
 }
@@ -118,6 +131,23 @@ class UserPreferencesApiService {
       if (data.updatedAt) data.updatedAt = new Date(data.updatedAt);
       if (data.preferences?.createdAt) data.preferences.createdAt = new Date(data.preferences.createdAt);
       if (data.preferences?.updatedAt) data.preferences.updatedAt = new Date(data.preferences.updatedAt);
+      
+      // Convert app dates
+      if (data.apps) {
+        data.apps = data.apps.map((app: any) => ({
+          ...app,
+          createdAt: new Date(app.createdAt),
+          updatedAt: new Date(app.updatedAt)
+        }));
+      }
+      
+      if (data.app) {
+        data.app = {
+          ...data.app,
+          createdAt: new Date(data.app.createdAt),
+          updatedAt: new Date(data.app.updatedAt)
+        };
+      }
 
       return data;
     } catch (error) {
@@ -229,6 +259,146 @@ class UserPreferencesApiService {
       return [];
     }
   }
+
+  // ===== App Management Methods =====
+
+  /**
+   * Get user apps
+   * 
+   * @returns Array of user apps
+   */
+  async getUserApps(): Promise<App[]> {
+    try {
+      logger.info('Getting user apps');
+      
+      // Debug: Check authentication state
+      const user = await this.getCurrentUser();
+      logger.debug(`Making request to /preferences/apps for user: ${user.uid}`);
+      
+      const result = await this.makeRequest<{
+        apps: App[];
+        count: number;
+      }>('/preferences/apps');
+      
+      logger.info(`Successfully retrieved ${result.count} apps:`, result.apps);
+      return result.apps;
+    } catch (error) {
+      logger.error('Failed to get user apps', error as Error);
+      // Return empty array on error to not break the UI
+      return [];
+    }
+  }
+
+  /**
+   * Create a new app
+   * 
+   * @param name - App name
+   * @param systemPrompt - App system prompt
+   * @returns Created app
+   */
+  async createApp(name: string, systemPrompt: string): Promise<App> {
+    if (!name.trim()) {
+      throw new Error('App name is required');
+    }
+
+    if (!systemPrompt.trim()) {
+      throw new Error('App system prompt is required');
+    }
+
+    try {
+      logger.info(`Creating new app: ${name}`);
+      const result = await this.makeRequest<{
+        success: boolean;
+        app: App;
+      }>('/preferences/apps', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: name.trim(),
+          systemPrompt: systemPrompt.trim()
+        }),
+      });
+      
+      logger.info(`Successfully created app: ${result.app.id}`);
+      return result.app;
+    } catch (error) {
+      logger.error(`Failed to create app: ${name}`, error as Error);
+      throw new Error('Failed to create app. Please try again.');
+    }
+  }
+
+  /**
+   * Update an existing app
+   * 
+   * @param appId - App ID to update
+   * @param updates - Updates to apply
+   * @returns Updated app
+   */
+  async updateApp(appId: string, updates: { name?: string; systemPrompt?: string }): Promise<App> {
+    if (!appId.trim()) {
+      throw new Error('App ID is required');
+    }
+
+    if (!updates.name?.trim() && !updates.systemPrompt?.trim()) {
+      throw new Error('At least one field (name or systemPrompt) is required for update');
+    }
+
+    try {
+      logger.info(`Updating app: ${appId}`);
+      const result = await this.makeRequest<{
+        success: boolean;
+        app: App;
+      }>(`/preferences/apps/${encodeURIComponent(appId)}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+      
+      logger.info(`Successfully updated app: ${appId}`);
+      return result.app;
+    } catch (error) {
+      logger.error(`Failed to update app: ${appId}`, error as Error);
+      
+      if (error instanceof ApiError && error.status === 404) {
+        throw new Error('App not found');
+      }
+      
+      throw new Error('Failed to update app. Please try again.');
+    }
+  }
+
+  /**
+   * Delete an app
+   * 
+   * @param appId - App ID to delete
+   * @returns Success status
+   */
+  async deleteApp(appId: string): Promise<{ success: boolean }> {
+    if (!appId.trim()) {
+      throw new Error('App ID is required');
+    }
+
+    try {
+      logger.info(`Deleting app: ${appId}`);
+      const result = await this.makeRequest<{
+        success: boolean;
+        appId: string;
+      }>(`/preferences/apps/${encodeURIComponent(appId)}`, {
+        method: 'DELETE',
+      });
+      
+      logger.info(`Successfully deleted app: ${appId}`);
+      return { success: result.success };
+    } catch (error) {
+      logger.error(`Failed to delete app: ${appId}`, error as Error);
+      
+      if (error instanceof ApiError && error.status === 404) {
+        throw new Error('App not found');
+      }
+      
+      throw new Error('Failed to delete app. Please try again.');
+    }
+  }
+
+  // ===== Tag Management Methods =====
 
   /**
    * Create a new tag in Firebase settings/tags document
