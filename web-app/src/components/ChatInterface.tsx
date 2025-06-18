@@ -16,7 +16,7 @@
  * 
  * Usage: <ChatInterface currentThread={thread} onSendMessage={send} ... />
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { ChatLayout } from './ui/ChatLayout';
@@ -34,7 +34,7 @@ import type { ChatThread, ModelConfig, ImageAttachment, DocumentAttachment, Toke
  */
 interface ChatInterfaceProps {
   currentThread: ChatThread | null;
-  onSendMessage: (content: string, images?: ImageAttachment[], documents?: DocumentAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high') => Promise<void>;
+  onSendMessage: (content: string, images?: ImageAttachment[], documents?: DocumentAttachment[], modelId?: string, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high', systemPrompt?: string) => Promise<void>;
   loading: boolean;
   availableModels: Record<string, ModelConfig>;
   images: ImageAttachment[];
@@ -135,6 +135,42 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
    */
   const mobileScrollState = useMobileScrollState({ modelSidebarOpen });
 
+  /**
+   * Get current app system prompt if an app is selected
+   */
+  const currentApp = useMemo(() => {
+    return apps.find(app => app.id === currentAppId) || null;
+  }, [apps, currentAppId]);
+
+  /**
+   * Wrapped send message function that includes app system prompt
+   */
+  const handleSendMessageWithApp = useCallback(async (
+    content: string,
+    images?: ImageAttachment[],
+    documents?: DocumentAttachment[],
+    modelId?: string,
+    useReasoning?: boolean,
+    reasoningEffort?: 'low' | 'medium' | 'high',
+    useWebSearch?: boolean,
+    webSearchEffort?: 'low' | 'medium' | 'high'
+  ) => {
+    // Include system prompt from selected app if available
+    const systemPrompt = currentApp?.systemPrompt;
+    
+    await onSendMessage(
+      content,
+      images,
+      documents,
+      modelId,
+      useReasoning,
+      reasoningEffort,
+      useWebSearch,
+      webSearchEffort,
+      systemPrompt
+    );
+  }, [onSendMessage, currentApp]);
+
   return (
     <ChatLayout 
       isDragOver={dropZone.isDragOver}
@@ -167,7 +203,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
 
       {/* Fixed Chat Input with Mobile Scroll State - Always show */}
       <ChatInput
-        onSendMessage={onSendMessage}
+        onSendMessage={handleSendMessageWithApp}
         loading={loading}
         availableModels={availableModels}
         images={images}

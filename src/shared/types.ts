@@ -207,6 +207,7 @@ export interface UserChats {
  * @property reasoningEffort - Reasoning effort level for supported models
  * @property useWebSearch - Whether to enable web search for supported models
  * @property webSearchEffort - Web search effort level for supported models
+ * @property systemPrompt - Optional system prompt for app-based conversations
  */
 export interface CreateMessageRequest {
   threadId?: string; // If not provided, creates new thread
@@ -219,6 +220,7 @@ export interface CreateMessageRequest {
   reasoningEffort?: 'low' | 'medium' | 'high'; // Reasoning effort level
   useWebSearch?: boolean; // Enable web search for supported models
   webSearchEffort?: 'low' | 'medium' | 'high'; // Web search effort level
+  systemPrompt?: string; // Optional system prompt for app-based conversations
 }
 
 /**
@@ -297,7 +299,7 @@ export interface GetChatsResponse {
 export interface OpenRouterRequest {
   model: string;
   messages: Array<{
-    role: 'user' | 'assistant';
+    role: 'user' | 'assistant' | 'system';
     content: string | Array<{
       type: 'text' | 'image_url';
       text?: string;

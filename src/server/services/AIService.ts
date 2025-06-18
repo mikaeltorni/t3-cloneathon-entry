@@ -29,7 +29,8 @@ export interface IAIProvider {
     messages: ChatMessage[], 
     modelId: ModelId, 
     useReasoning?: boolean,
-    reasoningEffort?: 'low' | 'medium' | 'high'
+    reasoningEffort?: 'low' | 'medium' | 'high',
+    systemPrompt?: string
   ): Promise<{ content: string; reasoning?: string }>;
 }
 
@@ -51,14 +52,18 @@ class OpenRouterProvider implements IAIProvider {
     messages: ChatMessage[], 
     modelId: ModelId, 
     useReasoning?: boolean,
-    reasoningEffort?: 'low' | 'medium' | 'high'
+    reasoningEffort?: 'low' | 'medium' | 'high',
+    systemPrompt?: string
   ): Promise<{ content: string; reasoning?: string }> {
     try {
       const response = await this.openRouterService.sendMessage(
         messages,
         modelId,
         useReasoning,
-        reasoningEffort
+        reasoningEffort,
+        false, // useWebSearch - default to false for now
+        'medium', // webSearchEffort - default
+        systemPrompt
       );
 
       return {
@@ -110,13 +115,15 @@ export class AIService {
    * @param modelId - AI model to use
    * @param useReasoning - Whether to use reasoning mode (for compatible models)
    * @param reasoningEffort - Reasoning effort level (low, medium, high)
+   * @param systemPrompt - Optional system prompt for app-based conversations
    * @returns AI response with optional reasoning
    */
   async generateResponse(
     messages: ChatMessage[],
     modelId: ModelId,
     useReasoning?: boolean,
-    reasoningEffort?: 'low' | 'medium' | 'high'
+    reasoningEffort?: 'low' | 'medium' | 'high',
+    systemPrompt?: string
   ): Promise<{ content: string; reasoning?: string; modelId: ModelId }> {
     try {
       // Validate inputs
@@ -131,7 +138,7 @@ export class AIService {
       console.log(`[AIService] Generating response with model: ${modelId}, reasoning: ${useReasoning || false}, effort: ${reasoningEffort || 'high'}`);
       
       // Generate response using the AI provider
-      const response = await this.aiProvider.generateResponse(messages, modelId, useReasoning, reasoningEffort);
+      const response = await this.aiProvider.generateResponse(messages, modelId, useReasoning, reasoningEffort, systemPrompt);
 
       // Log successful generation (could be stored in database for analytics)
       console.log(`[AIService] Successfully generated response with ${response.content.length} characters`);

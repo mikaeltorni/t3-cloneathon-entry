@@ -53,7 +53,7 @@ class OpenRouterError extends Error {
  * Message format interface for conversation history
  */
 interface ConversationMessage {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   imageUrl?: string; // Single image (backward compatibility)
   images?: ImageAttachment[]; // Multiple images (new feature)
@@ -74,8 +74,8 @@ interface ImageAttachment {
  * OpenRouter service interface
  */
 interface OpenRouterService {
-  sendMessage(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high'): Promise<{ content: string; reasoning?: string; annotations?: any[] }>;
-  sendMessageStream(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high'): Promise<AsyncIterable<string>>;
+  sendMessage(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high', systemPrompt?: string): Promise<{ content: string; reasoning?: string; annotations?: any[] }>;
+  sendMessageStream(messages: ConversationMessage[], modelId?: ModelId, useReasoning?: boolean, reasoningEffort?: 'low' | 'medium' | 'high', useWebSearch?: boolean, webSearchEffort?: 'low' | 'medium' | 'high', systemPrompt?: string): Promise<AsyncIterable<string>>;
   getAvailableModels(): typeof AVAILABLE_MODELS;
 }
 
@@ -114,10 +114,11 @@ const validateMessages = (messages: ConversationMessage[]): void => {
  * Formats messages for OpenRouter API
  * 
  * @param messages - Conversation messages
+ * @param systemPrompt - Optional system prompt to prepend
  * @returns Formatted messages for API
  */
-const formatMessagesForAPI = (messages: ConversationMessage[]): OpenRouterRequest['messages'] => {
-  return messages.map(msg => {
+const formatMessagesForAPI = (messages: ConversationMessage[], systemPrompt?: string): OpenRouterRequest['messages'] => {
+  const formattedMessages = messages.map(msg => {
     const content: any[] = [];
 
     // Add text content if present
@@ -159,6 +160,16 @@ const formatMessagesForAPI = (messages: ConversationMessage[]): OpenRouterReques
         : content          // Use array format for multimodal messages
     };
   });
+
+  // Prepend system message if system prompt is provided
+  if (systemPrompt?.trim()) {
+    formattedMessages.unshift({
+      role: 'system',
+      content: systemPrompt.trim()
+    });
+  }
+
+  return formattedMessages;
 };
 
 /**
@@ -289,6 +300,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
      * @param reasoningEffort - Reasoning effort level (low, medium, high)
      * @param useWebSearch - Whether to enable web search for supported models
      * @param webSearchEffort - Web search effort level (low, medium, high)
+     * @param systemPrompt - Optional system prompt for app-based conversations
      * @returns Promise with AI response text, reasoning, and annotations
      */
     async sendMessage(
@@ -297,7 +309,8 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
       useReasoning: boolean = false, 
       reasoningEffort: 'low' | 'medium' | 'high' = 'high',
       useWebSearch: boolean = false,
-      webSearchEffort: 'low' | 'medium' | 'high' = 'medium'
+      webSearchEffort: 'low' | 'medium' | 'high' = 'medium',
+      systemPrompt?: string
     ): Promise<{ content: string; reasoning?: string; annotations?: any[] }> {
       try {
         // Validate input
@@ -323,7 +336,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         console.log(`[OpenRouter] Processing ${messages.length} message(s) with model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}${useWebSearch ? ' (with web search)' : ''}`);
         
         // Format messages for API
-        const formattedMessages = formatMessagesForAPI(messages);
+        const formattedMessages = formatMessagesForAPI(messages, systemPrompt);
 
         // Prepare request
         const requestData: OpenRouterRequest = {
@@ -435,7 +448,8 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
       useReasoning: boolean = false, 
       reasoningEffort: 'low' | 'medium' | 'high' = 'high',
       useWebSearch: boolean = false,
-      webSearchEffort: 'low' | 'medium' | 'high' = 'medium'
+      webSearchEffort: 'low' | 'medium' | 'high' = 'medium',
+      systemPrompt?: string
     ): Promise<AsyncIterable<string>> {
       try {
         // Validate input
@@ -461,7 +475,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
         console.log(`[OpenRouter] Processing ${messages.length} message(s) with model: ${modelConfig.name}${useReasoning && modelConfig.hasReasoning ? ' (with reasoning)' : ''}${useWebSearch ? ' (with web search)' : ''}`);
         
         // Format messages for API
-        const formattedMessages = formatMessagesForAPI(messages);
+        const formattedMessages = formatMessagesForAPI(messages, systemPrompt);
 
         // Prepare streaming request with reasoning tokens
         const requestData: OpenRouterRequest & { stream: true } = {

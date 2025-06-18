@@ -170,7 +170,7 @@ export class ChatController {
         return;
       }
 
-      const { threadId, content, imageUrl, images, modelId, useReasoning, reasoningEffort }: CreateMessageRequest = req.body;
+      const { threadId, content, imageUrl, images, modelId, useReasoning, reasoningEffort, systemPrompt }: CreateMessageRequest = req.body;
 
       // Validate request
       if (!content?.trim()) {
@@ -233,12 +233,13 @@ export class ChatController {
       }
 
       // Generate AI response
-      console.log(`[ChatController] Generating AI response with model: ${modelId}${useReasoning ? ' (with reasoning)' : ''}`);
+      console.log(`[ChatController] Generating AI response with model: ${modelId}${useReasoning ? ' (with reasoning)' : ''}${systemPrompt ? ' (with app system prompt)' : ''}`);
       const aiResponse = await this.aiService.generateResponse(
         updatedThread.messages,
         modelId as any, // Type assertion - could be improved with proper typing
         useReasoning || false, // Use reasoning from request
-        reasoningEffort || 'high' // Use reasoning effort from request
+        reasoningEffort || 'high', // Use reasoning effort from request
+        systemPrompt // App system prompt
       );
 
       // Create assistant message
@@ -389,7 +390,7 @@ export class ChatController {
         return;
       }
 
-      const { threadId, content, imageUrl, images, documents, modelId, useReasoning, reasoningEffort, useWebSearch, webSearchEffort }: any = req.body;
+      const { threadId, content, imageUrl, images, documents, modelId, useReasoning, reasoningEffort, useWebSearch, webSearchEffort, systemPrompt }: any = req.body;
 
       // Validate request
       if (!content?.trim() && (!imageUrl?.trim()) && (!images || images.length === 0) && (!documents || documents.length === 0)) {
@@ -574,7 +575,8 @@ export class ChatController {
           useReasoning || false,
           reasoningEffort || 'high',
           useWebSearch || false,
-          webSearchEffort || 'medium'
+          webSearchEffort || 'medium',
+          systemPrompt
         );
         
         console.log(`[ChatController] Stream started successfully`);
