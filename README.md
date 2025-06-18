@@ -6,6 +6,7 @@ A modern full-stack chat application built with React, TypeScript, Express.js, a
 
 - **Modern Tech Stack**: React 18+ with TypeScript, Express.js backend, Firebase integration
 - **AI Chat Integration**: OpenRouter API integration for AI conversations
+- **Custom App System**: Create custom AI assistants with personalized system prompts
 - **Model Selection Sidebar**: Right-side hover-to-reveal sidebar for easy AI model switching
 - **Smart Mobile UX**: Intelligent interface adaptation that hides controls when input is not focused to maximize chat space
 - **Firebase Rate Limiting**: Simple and effective rate limiting using firebase-functions-rate-limiter
@@ -13,6 +14,112 @@ A modern full-stack chat application built with React, TypeScript, Express.js, a
 - **Mobile-Friendly File Attachments**: Dedicated attachment buttons for images and documents
 - **Responsive Design**: Tailwind CSS with mobile-first approach
 - **Production Ready**: Firebase/Google Cloud optimized architecture
+
+## 🎛️ Custom App System
+
+### **Create Custom AI Assistants**
+The application now features a comprehensive app system that allows users to create custom AI assistants with personalized behavior:
+
+#### **Key Features**
+- **App Creation**: Create custom apps with unique names and system prompts
+- **System Prompt Configuration**: Define how each AI assistant should behave and respond
+- **App Management**: Edit, delete, and organize your custom AI assistants
+- **App Selection**: Choose which app to interact with from a visual app gallery
+- **Persistent Storage**: Apps are saved locally with localStorage for quick access
+- **App Gallery**: Beautiful visual interface showing all your created apps
+
+#### **App Creation Workflow**
+1. **Create New App**: Click the "New App" button in the sidebar (purple gradient button)
+2. **Name Your App**: Give your AI assistant a memorable name
+3. **Define Behavior**: Write a system prompt that defines how the AI should behave
+4. **Save and Select**: Your app is automatically saved and selected for immediate use
+5. **Start Chatting**: Begin conversations with your custom AI assistant
+
+#### **App Selector Interface**
+When no chat thread is active, the app selector appears in the main chat area (where the context window normally displays), featuring:
+- **Horizontal App Cards**: Apps are displayed in a horizontally scrolling gallery
+- **Integrated Experience**: Appears within the main chat interface instead of a separate sidebar
+- **Visual App Cards**: Each app displays as an interactive card with name and system prompt preview
+- **Selection Feedback**: Visual indicators show which app is currently selected
+- **Quick Actions**: Edit and delete buttons appear on hover for easy management
+- **Empty State**: Helpful guidance when no apps have been created yet
+- **Always Available Chat Input**: Chat input bar remains available even when selecting apps
+- **Responsive Design**: Adapts to different screen sizes and works on mobile devices
+
+#### **Technical Implementation**
+```tsx
+// App interface (stored in user preferences)
+interface App {
+  id: string;
+  name: string;
+  systemPrompt: string;
+  createdAt: Date;
+  updatedAt: Date;
+  isActive?: boolean;
+}
+
+// Server-side storage in UserPreferences
+interface UserPreferences {
+  pinnedModels: string[];
+  lastSelectedModel?: string;
+  theme?: 'light' | 'dark' | 'auto';
+  defaultModel?: string;
+  apps?: App[]; // Apps stored here
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// App creation modal
+<AppModal
+  isOpen={isAppModalOpen}
+  onClose={() => setIsAppModalOpen(false)}
+  onSubmit={handleCreateApp}
+/>
+
+// App selector (integrated within ChatInterface)
+<AppSelector
+  apps={apps.apps}
+  currentAppId={apps.currentAppId}
+  onAppSelect={apps.selectApp}
+  onAppEdit={handleEditApp}
+  onAppDelete={handleDeleteApp}
+  onNewApp={handleNewApp}
+/>
+```
+
+#### **Usage Examples**
+Create specialized AI assistants for different purposes:
+
+- **Code Review Assistant**: "You are a senior software engineer specializing in code reviews. Provide constructive feedback on code quality, best practices, and potential improvements."
+- **Creative Writing Helper**: "You are a creative writing mentor. Help users develop compelling narratives, improve their writing style, and overcome writer's block."
+- **Technical Documentation Writer**: "You are a technical writer who excels at creating clear, comprehensive documentation. Help users write better README files, API docs, and user guides."
+- **Language Learning Tutor**: "You are a patient language tutor. Help users practice conversations, explain grammar concepts, and provide cultural context for language learning."
+
+#### **App Management Features**
+- **Edit Apps**: Modify app names and system prompts after creation
+- **Delete Apps**: Remove apps you no longer need with confirmation
+- **Server-Side Storage**: Apps are stored in Firebase Firestore with user preferences
+- **Cross-Device Sync**: Apps automatically sync across all your devices
+- **App Selection State**: The currently selected app is remembered across sessions
+- **Error Handling**: Comprehensive error handling with user-friendly messages
+- **Authentication Required**: Apps are tied to your user account for security
+
+#### **Component Architecture**
+- **AppModal**: Modal component for creating and editing apps
+- **AppSelector**: Main app selection component integrated within ChatInterface
+- **AppSelectorItem**: Individual app card component with hover actions
+- **useApps**: Custom hook for app state management with server API integration
+- **userPreferencesApi**: Server API service for app CRUD operations
+- **App Types**: TypeScript interfaces for type safety
+- **Server Integration**: Full backend support with Firebase Firestore storage
+- **Fixed UI Issue**: ChatInput and other UI elements now always render correctly
+
+#### **Integration with Chat System**
+- Apps work seamlessly with the existing chat system
+- Selected apps influence AI behavior through system prompts
+- App selection is independent of chat threads
+- Apps can be used across multiple chat sessions
+- Clear visual separation between app mode and regular chat mode
 
 ## 🚀 Recent Performance Optimizations
 

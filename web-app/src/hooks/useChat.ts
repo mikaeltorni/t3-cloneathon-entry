@@ -73,7 +73,8 @@ export interface UseChatReturn {
     useReasoning?: boolean,
     reasoningEffort?: 'low' | 'medium' | 'high',
     useWebSearch?: boolean,
-    webSearchEffort?: 'low' | 'medium' | 'high'
+    webSearchEffort?: 'low' | 'medium' | 'high',
+    systemPrompt?: string
   ) => Promise<void>;
   
   // File Management
@@ -186,7 +187,8 @@ export function useChat(): UseChatReturn {
     useReasoning?: boolean,
     reasoningEffort?: 'low' | 'medium' | 'high',
     useWebSearch?: boolean,
-    webSearchEffort?: 'low' | 'medium' | 'high'
+    webSearchEffort?: 'low' | 'medium' | 'high',
+    systemPrompt?: string
   ) => {
     const request: CreateMessageRequest = {
       threadId: chatState.currentThread?.id,
@@ -197,7 +199,8 @@ export function useChat(): UseChatReturn {
       useReasoning,
       reasoningEffort,
       useWebSearch,
-      webSearchEffort
+      webSearchEffort,
+      systemPrompt
     };
     
     await messagingOps.sendMessage(request);

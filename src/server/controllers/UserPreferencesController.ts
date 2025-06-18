@@ -202,6 +202,8 @@ export class UserPreferencesController {
     }
   };
 
+  // ===== App Management Endpoints =====
+
   /**
    * Get user's rate limit status
    */

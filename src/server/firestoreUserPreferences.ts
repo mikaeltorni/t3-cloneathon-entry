@@ -25,6 +25,14 @@ export interface UserPreferences {
   lastSelectedModel?: string; // Last model selected by user (for new chats)
   theme?: 'light' | 'dark' | 'auto';
   defaultModel?: string;
+  apps?: Array<{
+    id: string;
+    name: string;
+    systemPrompt: string;
+    createdAt: Date;
+    updatedAt: Date;
+    isActive?: boolean;
+  }>; // User-created apps
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,6 +55,11 @@ interface UserPreferencesService {
   updateUserPreferences(userId: string, preferences: Partial<UserPreferences>): Promise<UserPreferences>;
   toggleModelPin(userId: string, modelId: string): Promise<UserPreferences>;
   getPinnedModels(userId: string): Promise<string[]>;
+  // App management methods
+  createApp(userId: string, name: string, systemPrompt: string): Promise<UserPreferences>;
+  updateApp(userId: string, appId: string, updates: { name?: string; systemPrompt?: string }): Promise<UserPreferences>;
+  deleteApp(userId: string, appId: string): Promise<UserPreferences>;
+  getUserApps(userId: string): Promise<Array<{ id: string; name: string; systemPrompt: string; createdAt: Date; updatedAt: Date; isActive?: boolean }>>;
 }
 
 /**
@@ -77,6 +90,11 @@ class FirestoreUserPreferencesService implements UserPreferencesService {
       lastSelectedModel: data.lastSelectedModel || undefined,
       theme: data.theme || 'auto',
       defaultModel: data.defaultModel || undefined,
+      apps: data.apps ? data.apps.map((app: any) => ({
+        ...app,
+        createdAt: app.createdAt?.toDate() || new Date(),
+        updatedAt: app.updatedAt?.toDate() || new Date(),
+      })) : [],
       createdAt: data.createdAt?.toDate() || new Date(),
       updatedAt: data.updatedAt?.toDate() || new Date(),
     };
@@ -140,11 +158,12 @@ class FirestoreUserPreferencesService implements UserPreferencesService {
 
       const updatedPreferences: UserPreferences = {
         pinnedModels: preferences.pinnedModels ?? existingPreferences?.pinnedModels ?? [],
-        lastSelectedModel: preferences.lastSelectedModel ?? existingPreferences?.lastSelectedModel,
-        theme: preferences.theme ?? existingPreferences?.theme ?? 'auto',
-        defaultModel: preferences.defaultModel ?? existingPreferences?.defaultModel,
-        createdAt: existingPreferences?.createdAt ?? now,
-        updatedAt: now,
+              lastSelectedModel: preferences.lastSelectedModel ?? existingPreferences?.lastSelectedModel,
+      theme: preferences.theme ?? existingPreferences?.theme ?? 'auto',
+      defaultModel: preferences.defaultModel ?? existingPreferences?.defaultModel,
+      apps: preferences.apps ?? existingPreferences?.apps ?? [],
+      createdAt: existingPreferences?.createdAt ?? now,
+      updatedAt: now,
       };
 
       await preferencesRef.set({
@@ -231,6 +250,182 @@ class FirestoreUserPreferencesService implements UserPreferencesService {
       return preferences?.pinnedModels || [];
     } catch (error) {
       console.error(`[UserPreferences] Error getting pinned models for user ${userId}:`, error);
+      return []; // Return empty array on error to not break the UI
+    }
+  }
+
+  /**
+   * Create a new app for a user
+   * 
+   * @param userId - User ID
+   * @param name - App name
+   * @param systemPrompt - App system prompt
+   * @returns Updated preferences with new app
+   */
+  async createApp(userId: string, name: string, systemPrompt: string): Promise<UserPreferences> {
+    try {
+      if (!userId?.trim()) {
+        throw new Error('User ID is required');
+      }
+
+      if (!name?.trim()) {
+        throw new Error('App name is required');
+      }
+
+      if (!systemPrompt?.trim()) {
+        throw new Error('App system prompt is required');
+      }
+
+      console.log(`[UserPreferences] Creating new app for user: ${userId}, name: ${name}`);
+
+      // Get current preferences
+      const currentPreferences = await this.getUserPreferences(userId);
+      const currentApps = currentPreferences?.apps || [];
+
+      // Create new app
+      const now = new Date();
+      const newApp = {
+        id: `app_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: name.trim(),
+        systemPrompt: systemPrompt.trim(),
+        createdAt: now,
+        updatedAt: now,
+        isActive: false
+      };
+
+      // Update preferences with new app
+      const updatedPreferences = await this.updateUserPreferences(userId, {
+        apps: [...currentApps, newApp]
+      });
+
+      console.log(`[UserPreferences] Successfully created app: ${newApp.id} for user: ${userId}`);
+      return updatedPreferences;
+    } catch (error) {
+      console.error(`[UserPreferences] Error creating app for user ${userId}:`, error);
+      throw new FirestoreUserPreferencesError(
+        `Failed to create app: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'createApp',
+        error
+      );
+    }
+  }
+
+  /**
+   * Update an existing app
+   * 
+   * @param userId - User ID
+   * @param appId - App ID to update
+   * @param updates - Updates to apply
+   * @returns Updated preferences
+   */
+  async updateApp(userId: string, appId: string, updates: { name?: string; systemPrompt?: string }): Promise<UserPreferences> {
+    try {
+      if (!userId?.trim()) {
+        throw new Error('User ID is required');
+      }
+
+      if (!appId?.trim()) {
+        throw new Error('App ID is required');
+      }
+
+      console.log(`[UserPreferences] Updating app ${appId} for user: ${userId}`);
+
+      // Get current preferences
+      const currentPreferences = await this.getUserPreferences(userId);
+      const currentApps = currentPreferences?.apps || [];
+
+      // Find and update the app
+      const appIndex = currentApps.findIndex(app => app.id === appId);
+      if (appIndex === -1) {
+        throw new Error(`App with ID ${appId} not found`);
+      }
+
+      const updatedApps = [...currentApps];
+      updatedApps[appIndex] = {
+        ...updatedApps[appIndex],
+        ...updates,
+        updatedAt: new Date()
+      };
+
+      // Update preferences
+      const updatedPreferences = await this.updateUserPreferences(userId, {
+        apps: updatedApps
+      });
+
+      console.log(`[UserPreferences] Successfully updated app: ${appId} for user: ${userId}`);
+      return updatedPreferences;
+    } catch (error) {
+      console.error(`[UserPreferences] Error updating app ${appId} for user ${userId}:`, error);
+      throw new FirestoreUserPreferencesError(
+        `Failed to update app: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'updateApp',
+        error
+      );
+    }
+  }
+
+  /**
+   * Delete an app
+   * 
+   * @param userId - User ID
+   * @param appId - App ID to delete
+   * @returns Updated preferences
+   */
+  async deleteApp(userId: string, appId: string): Promise<UserPreferences> {
+    try {
+      if (!userId?.trim()) {
+        throw new Error('User ID is required');
+      }
+
+      if (!appId?.trim()) {
+        throw new Error('App ID is required');
+      }
+
+      console.log(`[UserPreferences] Deleting app ${appId} for user: ${userId}`);
+
+      // Get current preferences
+      const currentPreferences = await this.getUserPreferences(userId);
+      const currentApps = currentPreferences?.apps || [];
+
+      // Filter out the app to delete
+      const updatedApps = currentApps.filter(app => app.id !== appId);
+
+      if (updatedApps.length === currentApps.length) {
+        throw new Error(`App with ID ${appId} not found`);
+      }
+
+      // Update preferences
+      const updatedPreferences = await this.updateUserPreferences(userId, {
+        apps: updatedApps
+      });
+
+      console.log(`[UserPreferences] Successfully deleted app: ${appId} for user: ${userId}`);
+      return updatedPreferences;
+    } catch (error) {
+      console.error(`[UserPreferences] Error deleting app ${appId} for user ${userId}:`, error);
+      throw new FirestoreUserPreferencesError(
+        `Failed to delete app: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'deleteApp',
+        error
+      );
+    }
+  }
+
+  /**
+   * Get all apps for a user
+   * 
+   * @param userId - User ID
+   * @returns Array of user apps
+   */
+  async getUserApps(userId: string): Promise<Array<{ id: string; name: string; systemPrompt: string; createdAt: Date; updatedAt: Date; isActive?: boolean }>> {
+    try {
+      console.log(`[UserPreferences] Getting apps for user: ${userId}`);
+      const preferences = await this.getUserPreferences(userId);
+      const apps = preferences?.apps || [];
+      console.log(`[UserPreferences] Found ${apps.length} apps for user ${userId}:`, apps);
+      return apps;
+    } catch (error) {
+      console.error(`[UserPreferences] Error getting apps for user ${userId}:`, error);
       return []; // Return empty array on error to not break the UI
     }
   }
