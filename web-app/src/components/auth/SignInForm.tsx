@@ -130,7 +130,7 @@ export const SignInForm: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center space-x-4 text-gray-400 dark:text-slate-500">
                 <div className="flex-1 h-px bg-gray-200 dark:bg-slate-600"></div>
-                <span className="text-sm font-medium">Secure Sign In</span>
+                <span className="text-sm font-medium">Sign In with Google</span>
                 <div className="flex-1 h-px bg-gray-200 dark:bg-slate-600"></div>
               </div>
 
