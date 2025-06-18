@@ -44,7 +44,7 @@ interface SidebarHeaderProps {
 export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
   onToggle,
   onNewChat,
-  onNewApp,
+  onNewApp: _onNewApp,
   threadCount,
   pinnedCount,
   className

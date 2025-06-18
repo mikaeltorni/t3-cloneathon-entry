@@ -36,7 +36,7 @@ import { useSidebarToggle } from './hooks/useSidebarToggle';
 import { useApps } from './hooks/useApps';
 import { clearAllCaches } from './utils/sessionCache';
 import { isMobileScreen } from './utils/deviceUtils';
-import type { ChatThread } from '../../src/shared/types';
+import type { ChatThread, App as AppType } from '../../src/shared/types';
 import { DEFAULT_MODEL } from '../../src/shared/modelConfig';
 import { useTagSystemContext } from './components/TagSystem';
 import { useUserPreferences } from './hooks/useUserPreferences';
@@ -57,6 +57,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   
   // App modal state
   const [isAppModalOpen, setIsAppModalOpen] = useState(false);
+  const [editingApp, setEditingApp] = useState<AppType | null>(null);
 
   // Get tagging context
   const { filteredThreads, getThreadTags } = useTagSystemContext();
@@ -140,6 +141,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
    * Handle opening the new app modal
    */
   const handleNewApp = useCallback(() => {
+    setEditingApp(null); // Ensure we're in create mode
     setIsAppModalOpen(true);
     debug('Opening app creation modal');
   }, [debug]);
@@ -151,6 +153,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
     try {
       const newApp = await apps.createApp(name, systemPrompt);
       setIsAppModalOpen(false);
+      setEditingApp(null);
       
       // Select the newly created app
       apps.selectApp(newApp.id);
@@ -164,10 +167,38 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   /**
    * Handle editing an existing app
    */
-  const handleEditApp = useCallback(async (app: any) => {
-    // For now, just log - can be implemented later if needed
-    debug(`Edit app requested: ${app.name}`);
+  const handleEditApp = useCallback(async (app: AppType) => {
+    setEditingApp(app);
+    setIsAppModalOpen(true);
+    debug(`Opening edit modal for app: ${app.name}`);
   }, [debug]);
+
+  /**
+   * Handle updating an app (edit mode)
+   */
+  const handleUpdateApp = useCallback(async (name: string, systemPrompt: string) => {
+    if (!editingApp) return;
+    
+    try {
+      await apps.updateApp(editingApp.id, { name, systemPrompt });
+      setIsAppModalOpen(false);
+      setEditingApp(null);
+      debug(`Updated app: ${name}`);
+    } catch (error) {
+      debug('Failed to update app', error);
+    }
+  }, [editingApp, apps.updateApp, debug]);
+
+  /**
+   * Handle app creation or update based on mode
+   */
+  const handleAppSubmit = useCallback(async (name: string, systemPrompt: string) => {
+    if (editingApp) {
+      await handleUpdateApp(name, systemPrompt);
+    } else {
+      await handleCreateApp(name, systemPrompt);
+    }
+  }, [editingApp, handleUpdateApp, handleCreateApp]);
 
   /**
    * Handle app deletion
@@ -180,6 +211,14 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
       debug('Failed to delete app', error);
     }
   }, [apps.deleteApp, debug]);
+
+  /**
+   * Handle closing the app modal
+   */
+  const handleCloseAppModal = useCallback(() => {
+    setIsAppModalOpen(false);
+    setEditingApp(null);
+  }, []);
 
   /**
    * OPTIMIZED: Memoized enhanced new chat handler with mobile auto-close
@@ -394,11 +433,15 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         </div>
       </div>
 
-      {/* App Creation Modal */}
+      {/* App Creation/Edit Modal */}
       <AppModal
         isOpen={isAppModalOpen}
-        onClose={() => setIsAppModalOpen(false)}
-        onSubmit={handleCreateApp}
+        onClose={handleCloseAppModal}
+        onSubmit={handleAppSubmit}
+        title={editingApp ? 'Edit App' : 'Create App'}
+        submitLabel={editingApp ? 'Save Changes' : 'Create'}
+        initialName={editingApp?.name || ''}
+        initialSystemPrompt={editingApp?.systemPrompt || ''}
       />
     </div>
   );
