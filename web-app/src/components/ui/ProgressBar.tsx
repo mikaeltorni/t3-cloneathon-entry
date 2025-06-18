@@ -2,6 +2,7 @@
  * ProgressBar.tsx
  * 
  * Reusable progress bar component for file uploads and other progress indicators
+ * Enhanced with comprehensive dark mode support
  * 
  * Components:
  *   ProgressBar
@@ -27,7 +28,7 @@ interface ProgressBarProps {
 }
 
 /**
- * Progress bar component
+ * Progress bar component with dark mode support
  * 
  * @param progress - Progress value (0-100)
  * @param variant - Color variant
@@ -55,23 +56,23 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   };
   
   const variantClasses = {
-    default: 'bg-blue-500',
-    success: 'bg-green-500',
-    warning: 'bg-yellow-500',
-    error: 'bg-red-500'
+    default: 'bg-blue-500 dark:bg-blue-400',
+    success: 'bg-green-500 dark:bg-green-400',
+    warning: 'bg-yellow-500 dark:bg-yellow-400',
+    error: 'bg-red-500 dark:bg-red-400'
   };
 
   return (
     <div className={cn('w-full', className)}>
       {showPercentage && (
         <div className="flex justify-between items-center mb-1">
-          <span className="text-xs text-gray-600">Progress</span>
-          <span className="text-xs text-gray-600">{Math.round(clampedProgress)}%</span>
+          <span className="text-xs text-gray-600 dark:text-slate-400">Progress</span>
+          <span className="text-xs text-gray-600 dark:text-slate-400">{Math.round(clampedProgress)}%</span>
         </div>
       )}
       
       <div className={cn(
-        'w-full bg-gray-200 rounded-full overflow-hidden',
+        'w-full bg-gray-200 dark:bg-slate-600 rounded-full overflow-hidden',
         sizeClasses[size]
       )}>
         <div 

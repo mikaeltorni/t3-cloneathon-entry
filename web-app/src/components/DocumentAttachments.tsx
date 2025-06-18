@@ -60,7 +60,7 @@ export const DocumentAttachments: React.FC<DocumentAttachmentsProps> = React.mem
 
   return (
     <div className={cn('space-y-2', className)}>
-      <div className="text-sm font-medium text-gray-700 mb-2">
+      <div className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
         Documents ({documents.length})
       </div>
       
