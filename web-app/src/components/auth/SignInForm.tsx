@@ -136,7 +136,7 @@ export const SignInForm: React.FC = () => {
 
               <div className="text-center">
                 <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
-                  By signing in, you agree that this project is a proof-of-concept and that the host and/or the repository owner is not liable for ANYTHING, such as loss of data, loss of money, or any other damages. This project is not intended to be used for any other purpose than testing, do not enter any confidential information! For any GDPR inquiries contact the repository owner at{' '}
+                  By signing in, you agree that this project is a proof-of-concept and that the host and/or the repository owner is not liable for ANYTHING, such as loss of data, loss of money, or any other damages. This project is not intended to be used for any other purpose than testing, do not enter any confidential information! For GDPR inquiries contact the repository owner at{' '}
                   <a 
                     href="mailto:mikaeltorni25@gmail.com" 
                     className="text-blue-500 dark:text-blue-400 hover:underline transition-colors"
