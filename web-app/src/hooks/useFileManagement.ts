@@ -1,7 +1,7 @@
 /**
  * useFileManagement.ts
  * 
- * Custom hook for managing file attachments in chat interface
+ * Custom hook for managing file attachments in chat interface with progress tracking
  * 
  * Hooks:
  *   useFileManagement
@@ -9,7 +9,7 @@
  * Features:
  *   - Image attachment management
  *   - Document attachment management
- *   - Global drop zone integration
+ *   - Global drop zone integration with progress tracking
  *   - File validation and limits
  *   - Performance optimized callbacks
  * 
@@ -40,7 +40,7 @@ interface UseFileManagementReturn {
   handleImagesAdd: (newImages: ImageAttachment[]) => void;
   /** Callback to add new documents */
   handleDocumentsAdd: (newDocuments: DocumentAttachment[]) => void;
-  /** Global drop zone properties */
+  /** Global drop zone properties with progress tracking */
   dropZone: {
     isDragOver: boolean;
     dropHandlers: Record<string, (event: React.DragEvent<HTMLElement>) => void>;
@@ -48,7 +48,7 @@ interface UseFileManagementReturn {
 }
 
 /**
- * Custom hook for managing file attachments
+ * Custom hook for managing file attachments with drag-and-drop progress tracking
  * 
  * @param options - Configuration options for file management
  * @returns Object containing file management functions and drop zone state
@@ -80,11 +80,15 @@ export function useFileManagement({
   }, [documents, onDocumentsChange, debug]);
 
   /**
-   * Global file drop zone for the entire chat interface (excluding sidebar)
+   * Global file drop zone for the entire chat interface with progress tracking support
    */
   const { isDragOver, dropHandlers } = useGlobalFileDropZone({
     onImagesAdd: handleImagesAdd,
     onDocumentsAdd: handleDocumentsAdd,
+    onImagesChange,
+    onDocumentsChange,
+    currentImages: images,
+    currentDocuments: documents,
     currentImageCount: images.length,
     currentDocumentCount: documents.length,
     maxImages,
