@@ -67,8 +67,8 @@ export const SignInForm: React.FC = () => {
                   Vibe Chat
                 </span>
               </h1>
-              <p className="text-xl lg:text-2xl text-blue-100 dark:text-slate-300 font-light leading-relaxed max-w-md">
-                Your gateway to advanced AI conversations powered by cutting-edge language models
+              <p className="text-l lg:text-2xl text-blue-100 dark:text-slate-300 font-light leading-relaxed max-w-md">
+                Andrej Karpathy coined the term "vibe coding" on 2nd of February 2025
               </p>
             </div>
           </div>
