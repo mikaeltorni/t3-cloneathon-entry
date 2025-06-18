@@ -21,8 +21,6 @@ interface SidebarHeaderProps {
   onToggle?: () => void;
   /** Callback for creating new chat */
   onNewChat: () => void;
-  /** Callback for creating new app */
-  onNewApp?: () => void;
   /** Total number of threads */
   threadCount: number;
   /** Number of pinned threads */
@@ -44,7 +42,6 @@ interface SidebarHeaderProps {
 export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
   onToggle,
   onNewChat,
-  onNewApp: _onNewApp,
   threadCount,
   pinnedCount,
   className

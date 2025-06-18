@@ -358,7 +358,6 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         currentThreadId={chat.currentThread?.id || null}
         onThreadSelect={chat.handleThreadSelect}
         onNewChat={handleNewChat}
-        onNewApp={handleNewApp}
         onDeleteThread={chat.handleDeleteThread}
         onTogglePinThread={chat.handleTogglePinThread}
         onEditThread={chat.handleEditThreadTitle}

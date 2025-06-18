@@ -134,7 +134,7 @@ class UserPreferencesApiService {
       
       // Convert app dates
       if (data.apps) {
-        data.apps = data.apps.map((app: any) => ({
+        data.apps = data.apps.map((app: App) => ({
           ...app,
           createdAt: new Date(app.createdAt),
           updatedAt: new Date(app.updatedAt)

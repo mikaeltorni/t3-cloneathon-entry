@@ -5,7 +5,7 @@
  */
 import { useCallback } from 'react';
 import { useLogger } from '../useLogger';
-import { useFileValidation, type FileValidationConfig } from './useFileValidation';
+import { useFileValidation, type FileValidationConfig, type FileValidationResult } from './useFileValidation';
 import { useFileProcessing } from './useFileProcessing';
 import type { ImageAttachment, DocumentAttachment } from '../../../../src/shared/types';
 
@@ -50,7 +50,7 @@ export function useFileOrchestrator(): UseFileOrchestratorReturn {
     let documentCount = config.currentDocumentCount;
 
     // First pass: Create temporary attachments for valid files
-    const validFiles: { file: File; validation: any; index: number }[] = [];
+    const validFiles: { file: File; validation: FileValidationResult; index: number }[] = [];
     
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i];
