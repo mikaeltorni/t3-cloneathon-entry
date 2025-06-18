@@ -586,17 +586,22 @@ export class ChatController {
           chunkCount++;
           console.log(`[ChatController] Chunk ${chunkCount}: type="${chunk.split(':')[0]}", length=${chunk.length}, preview="${chunk.substring(0, 100)}..."`);
           
-          // TEMPORARY: Add test reasoning for Google models to verify UI works
-          if (chunkCount === 1 && modelId.includes('google/gemini') && useReasoning) {
-            console.log(`[ChatController] Adding test reasoning for Google model`);
+          // TEMPORARY: Add test reasoning for Google models to verify UI works during streaming
+          if (chunkCount <= 3 && modelId.includes('google/gemini') && useReasoning) {
+            console.log(`[ChatController] Adding streaming test reasoning chunk ${chunkCount} for Google model`);
             
-            const testReasoning = "This is a test reasoning chunk to verify the UI is working correctly. Let me think through this step by step...";
-            fullReasoning += testReasoning;
+            const testReasoningChunk = chunkCount === 1 
+              ? "Let me think about this step by step... "
+              : chunkCount === 2 
+              ? "First, I need to understand the context and requirements... "
+              : "Now I'll formulate my response based on this analysis... ";
             
-            // Send test reasoning chunk
+            fullReasoning += testReasoningChunk;
+            
+            // Send test reasoning chunk during streaming
             res.write(`data: ${JSON.stringify({ 
               type: 'reasoning_chunk', 
-              content: testReasoning,
+              content: testReasoningChunk,
               fullReasoning: fullReasoning,
               tokenMetrics: getSimpleMetrics()
             })}\n\n`);
