@@ -58,7 +58,7 @@ export function useFormSubmission(config: FormSubmissionConfig): UseFormSubmissi
     const trimmedMessage = message.trim();
     
     try {
-      debug('📤 Submitting message', { 
+      debug('Submitting message', { 
         messageLength: trimmedMessage.length, 
         imageCount: images.length,
         documentCount: documents.length,

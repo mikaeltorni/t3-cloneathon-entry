@@ -44,14 +44,14 @@ try {
     // Initialize with service account or default credentials
     if (firebaseConfig.clientEmail && firebaseConfig.privateKey) {
       // Use service account key
-      console.log('🔑 Using service account authentication');
+      console.log('Using service account authentication');
       app = admin.initializeApp({
         credential: admin.credential.cert(firebaseConfig as ServiceAccount),
         projectId: firebaseConfig.projectId,
       });
     } else {
       // Use default credentials (for production deployment)
-      console.log('🔑 Using default credentials');
+      console.log('Using default credentials');
       app = admin.initializeApp({
         projectId: firebaseConfig.projectId,
       });

@@ -78,7 +78,7 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
     }
     
     if (loading) {
-      debug('⏳ Model selection blocked - component is in loading state');
+      debug('Model selection blocked - component is in loading state');
       return;
     }
     

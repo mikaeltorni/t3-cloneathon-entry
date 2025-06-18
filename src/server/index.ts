@@ -81,7 +81,7 @@ export const getAllowedOrigins = (): string[] => {
 
 // Initialize CORS with environment-based origins
 const allowedOrigins = getAllowedOrigins();
-console.log(`🔒 CORS Configuration: ${allowedOrigins.length} allowed origins:`, allowedOrigins);
+    console.log(`CORS Configuration: ${allowedOrigins.length} allowed origins:`, allowedOrigins);
 
 app.use(cors({
   origin: allowedOrigins,

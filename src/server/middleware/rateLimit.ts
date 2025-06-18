@@ -310,7 +310,7 @@ export async function rateLimit(req: Request, res: Response, next: NextFunction)
     await saveRateLimitStats(stats);
     
     if (!result.allowed) {
-      console.warn(`[RateLimit] 🚫 BLOCKED: ${key} - ${result.reason}`);
+      console.warn(`[RateLimit] BLOCKED: ${key} - ${result.reason}`);
       
       res.status(429).json({
         error: 'Rate limit exceeded',

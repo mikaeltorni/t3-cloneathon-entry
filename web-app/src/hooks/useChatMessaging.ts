@@ -97,7 +97,7 @@ export const useChatMessaging = (
   // OPTIMIZED: Memoize the cancel function to prevent recreation
   const cancelActiveStream = useCallback(() => {
     if (chatApiService.cancelActiveStream) {
-      debug('🛑 Canceling active stream on user request');
+      debug('Canceling active stream on user request');
       chatApiService.cancelActiveStream();
       setIsSending(false);
       setError(null);
@@ -325,7 +325,7 @@ export const useChatMessaging = (
         
         // Add new thread to cache without server refresh for better UX
         if (isNewThread && tempThread) {
-          debug('🆕 Adding new thread to thread list', { 
+          debug('Adding new thread to thread list', { 
             threadId: tempThread.id,
             title: tempThread.title,
             messageCount: tempThread.messages.length 
@@ -401,7 +401,7 @@ export const useChatMessaging = (
         },
         // onThreadCreated callback
         (threadId) => {
-          debug('🆕 Thread created', { threadId });
+                      debug('Thread created', { threadId });
           
           // If this is a new thread, update the temporary thread with the real ID
           if (isNewThread && tempThread && tempThread.id.startsWith('temp-thread-')) {

@@ -98,11 +98,11 @@ export const ThreadTagForMenu: React.FC<ThreadTagForMenuProps> = ({
       debug(`[${operationId}] Current effective state: ${effectivelyAssigned ? 'ASSIGNED' : 'UNASSIGNED'}`);
       
       if (shouldAssign) {
-        debug(`➕ [${operationId}] Calling tagSystem.addTagToThread(${threadId}, ${tag.id})`);
+        debug(`[${operationId}] Calling tagSystem.addTagToThread(${threadId}, ${tag.id})`);
         await tagSystem.addTagToThread(threadId, tag.id);
         debug(`[${operationId}] Successfully called addTagToThread`);
       } else {
-        debug(`➖ [${operationId}] Calling tagSystem.removeTagFromThread(${threadId}, ${tag.id})`);
+        debug(`[${operationId}] Calling tagSystem.removeTagFromThread(${threadId}, ${tag.id})`);
         await tagSystem.removeTagFromThread(threadId, tag.id);
         debug(`[${operationId}] Successfully called removeTagFromThread`);
       }
@@ -114,7 +114,7 @@ export const ThreadTagForMenu: React.FC<ThreadTagForMenuProps> = ({
       throw error;
     } finally {
       setIsLoading(false);
-      debug(`🏁 [${operationId}] Operation finished, loading set to false`);
+      debug(`[${operationId}] Operation finished, loading set to false`);
     }
   }, [threadId, tag.id, tagSystem, debug, log, logError, effectivelyAssigned]);
 
@@ -142,24 +142,24 @@ export const ThreadTagForMenu: React.FC<ThreadTagForMenuProps> = ({
       debug(`[${toggleId}] Clearing existing timeout`);
       clearPendingTimeout();
     } else {
-      debug(`✨ [${toggleId}] No existing timeout to clear`);
+              debug(`[${toggleId}] No existing timeout to clear`);
     }
     
     // Schedule the actual operation
-    debug(`⏰ [${toggleId}] Scheduling operation with ${debounceDelay}ms delay`);
+          debug(`[${toggleId}] Scheduling operation with ${debounceDelay}ms delay`);
     timeoutRef.current = setTimeout(async () => {
-      debug(`🎬 [${toggleId}] Timeout fired, executing operation`);
+              debug(`[${toggleId}] Timeout fired, executing operation`);
       try {
         await performOperation(targetState);
         
         debug(`[${toggleId}] Clearing optimistic state after successful operation`);
         tagSystem.clearOptimistic(threadId, tag.id);
       } catch {
-        debug(`🚨 [${toggleId}] Operation failed, reverting optimistic state`);
+                  debug(`[${toggleId}] Operation failed, reverting optimistic state`);
         tagSystem.clearOptimistic(threadId, tag.id);
       } finally {
         timeoutRef.current = null;
-        debug(`🎬 [${toggleId}] Timeout completed, ref cleared`);
+                  debug(`[${toggleId}] Timeout completed, ref cleared`);
       }
     }, debounceDelay);
     
