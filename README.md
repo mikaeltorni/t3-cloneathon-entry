@@ -35,12 +35,15 @@ The application now features a comprehensive app system that allows users to cre
 4. **Save and Select**: Your app is automatically saved and selected for immediate use
 5. **Start Chatting**: Begin conversations with your custom AI assistant
 
-#### **App Gallery Interface**
-When no chat thread is active, the app gallery appears to the right of the sidebar, featuring:
+#### **App Selector Interface**
+When no chat thread is active, the app selector appears in the main chat area (where the context window normally displays), featuring:
+- **Horizontal App Cards**: Apps are displayed in a horizontally scrolling gallery
+- **Integrated Experience**: Appears within the main chat interface instead of a separate sidebar
 - **Visual App Cards**: Each app displays as an interactive card with name and system prompt preview
 - **Selection Feedback**: Visual indicators show which app is currently selected
 - **Quick Actions**: Edit and delete buttons appear on hover for easy management
 - **Empty State**: Helpful guidance when no apps have been created yet
+- **Always Available Chat Input**: Chat input bar remains available even when selecting apps
 - **Responsive Design**: Adapts to different screen sizes and works on mobile devices
 
 #### **Technical Implementation**
@@ -62,13 +65,14 @@ interface App {
   onSubmit={handleCreateApp}
 />
 
-// App gallery
-<AppList
+// App selector (integrated within ChatInterface)
+<AppSelector
   apps={apps.apps}
   currentAppId={apps.currentAppId}
   onAppSelect={apps.selectApp}
   onAppEdit={handleEditApp}
   onAppDelete={handleDeleteApp}
+  onNewApp={handleNewApp}
 />
 ```
 
@@ -89,10 +93,11 @@ Create specialized AI assistants for different purposes:
 
 #### **Component Architecture**
 - **AppModal**: Modal component for creating and editing apps
-- **AppList**: Gallery component for displaying and managing apps
-- **AppItem**: Individual app card component with actions
+- **AppSelector**: Main app selection component integrated within ChatInterface
+- **AppSelectorItem**: Individual app card component with hover actions
 - **useApps**: Custom hook for app state management
 - **App Types**: TypeScript interfaces for type safety
+- **Fixed UI Issue**: ChatInput and other UI elements now always render correctly
 
 #### **Integration with Chat System**
 - Apps work seamlessly with the existing chat system

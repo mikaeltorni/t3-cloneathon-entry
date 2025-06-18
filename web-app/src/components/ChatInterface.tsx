@@ -21,12 +21,13 @@ import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { ChatLayout } from './ui/ChatLayout';
 import { GlobalDragOverlay } from './ui/GlobalDragOverlay';
+import { AppSelector } from './AppSelector';
 
 import { useReasoningState } from '../hooks/useReasoningState';
 import { useInputBarHeight } from '../hooks/useInputBarHeight';
 import { useFileManagement } from '../hooks/useFileManagement';
 import { useMobileScrollState } from '../hooks/useMobileScrollState';
-import type { ChatThread, ModelConfig, ImageAttachment, DocumentAttachment, TokenMetrics } from '../../../src/shared/types';
+import type { ChatThread, ModelConfig, ImageAttachment, DocumentAttachment, TokenMetrics, App } from '../../../src/shared/types';
 
 /**
  * Props for the ChatInterface component
@@ -46,6 +47,13 @@ interface ChatInterfaceProps {
   selectedModel?: string; // External model selection from ModelSidebar
   onModelChange?: (modelId: string) => void; // Model change handler
   onModelSelectorClick?: () => void; // Callback to open model selector
+  // App system props
+  apps?: App[];
+  currentAppId?: string | null;
+  onAppSelect?: (appId: string) => void;
+  onAppEdit?: (app: App) => void;
+  onAppDelete?: (appId: string) => void;
+  onNewApp?: () => void;
 }
 
 /**
@@ -82,7 +90,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
   currentTokenMetrics = null,
   selectedModel,
   onModelChange,
-  onModelSelectorClick
+  onModelSelectorClick,
+  // App system props
+  apps = [],
+  currentAppId = null,
+  onAppSelect,
+  onAppEdit,
+  onAppDelete,
+  onNewApp
 }) => {
 
 
@@ -128,15 +143,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({
       {/* Global drag overlay */}
       <GlobalDragOverlay isVisible={dropZone.isDragOver} />
 
-      {/* Message List with Dynamic Spacing */}
-      <MessageList 
-        messages={messages}
-        expandedReasoningIds={expandedReasoningIds}
-        onToggleReasoning={handleToggleReasoning}
-        dynamicBottomPadding={inputBarHeight}
-      />
+      {/* App Selector - Show when no thread is selected */}
+      {!currentThread && onAppSelect && (
+        <AppSelector
+          apps={apps}
+          currentAppId={currentAppId}
+          onAppSelect={onAppSelect}
+          onAppEdit={onAppEdit}
+          onAppDelete={onAppDelete}
+          onNewApp={onNewApp}
+        />
+      )}
 
-      {/* Fixed Chat Input with Mobile Scroll State */}
+      {/* Message List with Dynamic Spacing - Only show when there's a thread */}
+      {currentThread && (
+        <MessageList 
+          messages={messages}
+          expandedReasoningIds={expandedReasoningIds}
+          onToggleReasoning={handleToggleReasoning}
+          dynamicBottomPadding={inputBarHeight}
+        />
+      )}
+
+      {/* Fixed Chat Input with Mobile Scroll State - Always show */}
       <ChatInput
         onSendMessage={onSendMessage}
         loading={loading}

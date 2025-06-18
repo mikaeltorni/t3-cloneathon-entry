@@ -43,7 +43,6 @@ import { SidebarStates } from './sidebar/SidebarStates';
 import { ThreadList } from './sidebar/ThreadList';
 import { UserProfile } from './UserProfile';
 import { TagFilterBar } from './ui/TagFilterBar';
-import { AppModal } from './ui/AppModal';
 import { useTagSystemContext } from './TagSystem';
 import { useLogger } from '../hooks/useLogger';
 import { cn } from '../utils/cn';

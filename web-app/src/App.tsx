@@ -19,7 +19,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { ModelSidebar } from './components/ModelSidebar';
-import { AppList } from './components/AppList';
 import { AppModal } from './components/ui/AppModal';
 
 import { TagSystem } from './components/TagSystem';
@@ -367,37 +366,31 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
           />
         )}
 
-        {/* Chat Interface or App List */}
+        {/* Chat Interface - Always render to fix broken UI */}
         <div className="flex-1">
-          {chat.currentThread || apps.currentApp ? (
-            <ChatInterface
-              currentThread={chat.currentThread}
-              onSendMessage={chat.handleSendMessage}
-              loading={chat.loading}
-              availableModels={models.availableModels}
-              images={chat.images}
-              documents={chat.documents}
-              onImagesChange={chat.handleImagesChange}
-              onDocumentsChange={chat.handleDocumentsChange}
-              sidebarOpen={sidebar.isOpen}
-              modelSidebarOpen={isModelSidebarOpen}
-              currentTokenMetrics={chat.currentTokenMetrics}
-              selectedModel={currentModel}
-              onModelChange={handleCurrentModelChange}
-              onModelSelectorClick={handleModelSidebarToggle}
-            />
-          ) : (
-            /* Show app list when no thread or app is selected and sidebar is open */
-            sidebar.isOpen && (
-              <AppList
-                apps={apps.apps}
-                currentAppId={apps.currentAppId}
-                onAppSelect={apps.selectApp}
-                onAppEdit={handleEditApp}
-                onAppDelete={handleDeleteApp}
-              />
-            )
-          )}
+          <ChatInterface
+            currentThread={chat.currentThread}
+            onSendMessage={chat.handleSendMessage}
+            loading={chat.loading}
+            availableModels={models.availableModels}
+            images={chat.images}
+            documents={chat.documents}
+            onImagesChange={chat.handleImagesChange}
+            onDocumentsChange={chat.handleDocumentsChange}
+            sidebarOpen={sidebar.isOpen}
+            modelSidebarOpen={isModelSidebarOpen}
+            currentTokenMetrics={chat.currentTokenMetrics}
+            selectedModel={currentModel}
+            onModelChange={handleCurrentModelChange}
+            onModelSelectorClick={handleModelSidebarToggle}
+            // App system props
+            apps={apps.apps}
+            currentAppId={apps.currentAppId}
+            onAppSelect={apps.selectApp}
+            onAppEdit={handleEditApp}
+            onAppDelete={handleDeleteApp}
+            onNewApp={handleNewApp}
+          />
         </div>
       </div>
 

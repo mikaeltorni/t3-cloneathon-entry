@@ -1,32 +1,32 @@
 /**
- * AppList.tsx
+ * AppSelector.tsx
  * 
- * Component for displaying and managing user-created apps
- * Shows to the right of the sidebar when no chat is active
+ * Component for selecting apps within the main chat interface
+ * Appears in place of the context window when no thread is selected
  * 
  * Components:
- *   AppList - List of apps with selection and management
- *   AppItem - Individual app item with actions
+ *   AppSelector - Horizontal app selection interface
+ *   AppSelectorItem - Individual app selection card
  * 
- * Usage: <AppList apps={apps} onAppSelect={onAppSelect} onAppEdit={onAppEdit} />
+ * Usage: <AppSelector apps={apps} onAppSelect={onSelect} />
  */
 
 import React, { useState } from 'react';
-import { Button } from './ui/Button';
 import { cn } from '../utils/cn';
 import { useLogger } from '../hooks/useLogger';
 import type { App } from '../../../src/shared/types';
 
-interface AppListProps {
+interface AppSelectorProps {
   apps: App[];
   currentAppId: string | null;
   onAppSelect: (appId: string) => void;
   onAppEdit?: (app: App) => void;
   onAppDelete?: (appId: string) => void;
+  onNewApp?: () => void;
   className?: string;
 }
 
-interface AppItemProps {
+interface AppSelectorItemProps {
   app: App;
   isSelected: boolean;
   onSelect: (appId: string) => void;
@@ -35,9 +35,9 @@ interface AppItemProps {
 }
 
 /**
- * Individual app item component
+ * Individual app selector item
  */
-const AppItem: React.FC<AppItemProps> = ({
+const AppSelectorItem: React.FC<AppSelectorItemProps> = ({
   app,
   isSelected,
   onSelect,
@@ -45,7 +45,7 @@ const AppItem: React.FC<AppItemProps> = ({
   onDelete
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const { debug } = useLogger('AppItem');
+  const { debug } = useLogger('AppSelectorItem');
 
   const handleSelect = () => {
     debug(`App selected: ${app.name}`);
@@ -77,7 +77,7 @@ const AppItem: React.FC<AppItemProps> = ({
   return (
     <div
       className={cn(
-        'group relative p-4 rounded-lg border cursor-pointer transition-all duration-200',
+        'group relative p-4 rounded-lg border cursor-pointer transition-all duration-200 min-w-72 max-w-80',
         'hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600',
         isSelected
           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
@@ -87,7 +87,7 @@ const AppItem: React.FC<AppItemProps> = ({
     >
       {/* App name */}
       <h3 className={cn(
-        'font-semibold text-lg mb-2 truncate',
+        'font-semibold text-base mb-2 truncate',
         isSelected 
           ? 'text-blue-900 dark:text-blue-100' 
           : 'text-gray-900 dark:text-slate-100'
@@ -96,24 +96,26 @@ const AppItem: React.FC<AppItemProps> = ({
       </h3>
 
       {/* System prompt preview */}
-      <p className={cn(
-        'text-sm mb-3 overflow-hidden',
-        isSelected 
-          ? 'text-blue-700 dark:text-blue-200' 
-          : 'text-gray-600 dark:text-slate-400'
-      )}
-      style={{
-        display: '-webkit-box',
-        WebkitLineClamp: 3,
-        WebkitBoxOrient: 'vertical' as any,
-        overflow: 'hidden'
-      }}>
+      <p 
+        className={cn(
+          'text-sm mb-3 overflow-hidden',
+          isSelected 
+            ? 'text-blue-700 dark:text-blue-200' 
+            : 'text-gray-600 dark:text-slate-400'
+        )}
+        style={{
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical' as any,
+          overflow: 'hidden'
+        }}
+      >
         {app.systemPrompt}
       </p>
 
       {/* Created date */}
       <p className={cn(
-        'text-xs mb-3',
+        'text-xs mb-2',
         isSelected 
           ? 'text-blue-600 dark:text-blue-300' 
           : 'text-gray-500 dark:text-slate-500'
@@ -122,7 +124,7 @@ const AppItem: React.FC<AppItemProps> = ({
       </p>
 
       {/* Actions */}
-      <div className="flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
         {onEdit && (
           <button
             onClick={handleEdit}
@@ -170,56 +172,74 @@ const AppItem: React.FC<AppItemProps> = ({
 };
 
 /**
- * Main AppList component
+ * Main AppSelector component - horizontal scrolling app selection
  */
-export const AppList: React.FC<AppListProps> = ({
+export const AppSelector: React.FC<AppSelectorProps> = ({
   apps,
   currentAppId,
   onAppSelect,
   onAppEdit,
   onAppDelete,
+  onNewApp,
   className
 }) => {
-  const { debug } = useLogger('AppList');
 
   return (
-    <div 
-      className={cn(
-        'fixed top-0 left-80 w-96 h-full bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-600 z-30',
-        'overflow-y-auto custom-scrollbar',
-        className
-      )}
-    >
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-800">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
-          Your Apps
-        </h2>
-        <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">
-          Select an app to start chatting with your custom AI assistant
-        </p>
-      </div>
-
-      {/* Apps list */}
+    <div className={cn('bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-600', className)}>
       <div className="p-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              Choose Your AI Assistant
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-slate-400">
+              Select an app to start chatting with a custom AI assistant
+            </p>
+          </div>
+          {onNewApp && (
+            <button
+              onClick={onNewApp}
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg shadow-sm transition-all duration-200 flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              New App
+            </button>
+          )}
+        </div>
+
+        {/* Apps horizontal scroll */}
         {apps.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-slate-600">
               <svg fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
               </svg>
             </div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-slate-100 mb-2">
               No apps yet
             </h3>
-            <p className="text-gray-600 dark:text-slate-400 text-sm">
+            <p className="text-gray-600 dark:text-slate-400 text-sm mb-4">
               Create your first app to get started with custom AI assistants
             </p>
+            {onNewApp && (
+              <button
+                onClick={onNewApp}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg shadow-sm transition-all duration-200 inline-flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Create Your First App
+              </button>
+            )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
             {apps.map((app) => (
-              <AppItem
+              <AppSelectorItem
                 key={app.id}
                 app={app}
                 isSelected={currentAppId === app.id}
