@@ -19,7 +19,7 @@ import App from './App'
 import './index.css'
 
 // Log application startup
-logger.info('Starting OpenRouter Chat application...')
+logger.info('Starting Vibe Chat application...')
 
 // Get root element
 const rootElement = document.getElementById('root')

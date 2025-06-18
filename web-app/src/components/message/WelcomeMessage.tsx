@@ -32,7 +32,7 @@ export const WelcomeMessage: React.FC = React.memo(() => {
         </div>
         
         <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-4">
-          Welcome to OpenRouter Chat!
+          Welcome to Vibe Chat!
         </h2>
         
         <p className="text-gray-600 dark:text-slate-300 mb-6 leading-relaxed">

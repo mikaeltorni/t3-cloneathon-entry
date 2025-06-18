@@ -1,7 +1,7 @@
 /**
  * types.ts
  * 
- * Shared TypeScript type definitions for the OpenRouter Chat application
+ * Shared TypeScript type definitions for the Vibe Chat application
  * Enhanced with strict typing, discriminated unions, and comprehensive coverage
  * 
  * Types:

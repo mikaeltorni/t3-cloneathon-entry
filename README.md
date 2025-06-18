@@ -1318,7 +1318,7 @@ To add support for new AI providers:
 - [Anthropic Token Counting](https://docs.anthropic.com/en/docs/build-with-claude/token-counting)
 - [Token Counting Best Practices](https://platform.openai.com/docs/guides/text-generation/managing-tokens)
 
-# OpenRouter Chat with Trello-Style Tagging System 🏷️
+# Vibe Chat with Trello-Style Tagging System 🏷️
 
 A sophisticated chat application with OpenRouter API integration and a comprehensive Trello-style tagging system for organizing conversations.
 

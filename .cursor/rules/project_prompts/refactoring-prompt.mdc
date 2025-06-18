@@ -3,11 +3,11 @@ description: Refactoring the project with continuous security monitoring
 globs: 
 alwaysApply: false
 ---
-# OpenRouter Chat App - Refactoring & Security Guide
+# Vibe Chat App - Refactoring & Security Guide
 
 ## 🎯 Refactoring & Security Objectives
 
-This document outlines a systematic refactoring plan for the OpenRouter Chat App to improve:
+This document outlines a systematic refactoring plan for the Vibe Chat App to improve:
 - **Code organization and structure**
 - **Type safety and consistency** 
 - **Reusability and maintainability**

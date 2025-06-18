@@ -107,7 +107,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
       </div>
       
       <p className="text-xs text-gray-500 text-center">
-        OpenRouter Chat • {threadCount} conversations
+        Vibe Chat • {threadCount} conversations
         {pinnedCount > 0 && (
           <span className="text-amber-600 ml-1">
             • {pinnedCount} pinned

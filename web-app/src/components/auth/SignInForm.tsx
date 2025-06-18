@@ -64,7 +64,7 @@ export const SignInForm: React.FC = () => {
               <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
                 Welcome to
                 <span className="block bg-gradient-to-r from-blue-200 to-purple-200 dark:from-blue-300 dark:to-purple-300 bg-clip-text text-transparent">
-                  OpenRouter Chat
+                  Vibe Chat
                 </span>
               </h1>
               <p className="text-xl lg:text-2xl text-blue-100 dark:text-slate-300 font-light leading-relaxed max-w-md">

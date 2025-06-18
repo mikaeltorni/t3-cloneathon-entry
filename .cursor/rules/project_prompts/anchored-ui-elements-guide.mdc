@@ -5,7 +5,7 @@ alwaysApply: false
 ---
 # Anchored UI Elements Implementation Guide
 
-**Project**: OpenRouter Chat Application  
+**Project**: Vibe Chat Application  
 **Framework**: React + TypeScript + Tailwind CSS  
 **Problem Solved**: UI elements scrolling away from users during chat interactions  
 **Solution**: Fixed positioning with layout compensation  

@@ -198,7 +198,7 @@ const makeOpenRouterRequest = async (
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://your-app.com', // Required by OpenRouter
-        'X-Title': 'OpenRouter Chat App', // Optional but recommended
+        'X-Title': 'Vibe Chat App', // Optional but recommended
       },
       body: JSON.stringify(requestData),
     });
@@ -526,7 +526,7 @@ export const createOpenRouterService = (apiKey: string): OpenRouterService => {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
             'HTTP-Referer': 'https://localhost:3000',
-            'X-Title': 'OpenRouter Chat App'
+            'X-Title': 'Vibe Chat App'
           },
           body: JSON.stringify(requestData),
         });

@@ -1,7 +1,7 @@
 /**
  * index.ts
  * 
- * Main Express server for the OpenRouter Chat application - Refactored Architecture
+ * Main Express server for the Vibe Chat application - Refactored Architecture
  * 
  * Features:
  *   - Express.js server with CORS support
@@ -234,7 +234,7 @@ app.get('/api/rate-limit-status', async (req: Request, res: Response) => {
  */
 app.get('/api', (req: Request, res: Response) => {
   res.json({
-    name: 'OpenRouter Chat API',
+    name: 'Vibe Chat API',
     version: process.env.npm_package_version || '1.0.0',
     description: 'AI chat application with multiple model support',
     endpoints: {
@@ -305,7 +305,7 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log('🚀 OpenRouter Chat Server Started!');
+  console.log('🚀 Vibe Chat Server Started!');
   console.log(`📍 Server running on port ${PORT}`);
   console.log(`🌐 Frontend: http://localhost:${PORT}`);
   console.log(`🔗 API: http://localhost:${PORT}/api`);
