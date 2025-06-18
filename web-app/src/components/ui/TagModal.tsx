@@ -66,18 +66,16 @@ export const TagModal: React.FC<TagModalProps> = ({
   // Handle ESC key to close modal
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && isOpen) {
         event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
         onClose();
       }
     };
 
     if (isOpen) {
-      // Add event listener with capture to intercept before it bubbles
-      document.addEventListener('keydown', handleKeyDown, { capture: true });
-      return () => document.removeEventListener('keydown', handleKeyDown, { capture: true });
+      // Add event listener without capture to avoid conflicts
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
     }
   }, [isOpen, onClose]);
 
@@ -102,14 +100,14 @@ export const TagModal: React.FC<TagModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Very Light Backdrop */}
+      {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black bg-opacity-20" 
         onClick={handleClose}
       />
       
-      {/* Dark Modal */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl border dark:border-slate-700">
+      {/* Modal */}
+      <div className="relative bg-white dark:bg-slate-900 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl border dark:border-slate-700 z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{title}</h2>
