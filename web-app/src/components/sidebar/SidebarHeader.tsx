@@ -95,7 +95,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
         </Button>
 
         {/* New App button */}
-        {onNewApp && (
+        {/* {onNewApp && (
           <Button 
             onClick={onNewApp} 
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-sm"
@@ -106,7 +106,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
             </svg>
             New App
           </Button>
-        )}
+        )} */}
       </div>
       
       <p className="text-xs text-gray-500 text-center">
