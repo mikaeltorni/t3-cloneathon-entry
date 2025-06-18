@@ -19,6 +19,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { ModelSidebar } from './components/ModelSidebar';
+import { AppList } from './components/AppList';
+import { AppModal } from './components/ui/AppModal';
 
 import { TagSystem } from './components/TagSystem';
 import { SidebarToggle } from './components/ui/SidebarToggle';
@@ -32,6 +34,7 @@ import { useModels } from './hooks/useModels';
 import { useLogger } from './hooks/useLogger';
 import { useAuth } from './hooks/useAuth';
 import { useSidebarToggle } from './hooks/useSidebarToggle';
+import { useApps } from './hooks/useApps';
 import { clearAllCaches } from './utils/sessionCache';
 import { isMobileScreen } from './utils/deviceUtils';
 import type { ChatThread } from '../../src/shared/types';
@@ -47,10 +50,14 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   const models = useModels();
   const sidebar = useSidebarToggle();
   const userPreferences = useUserPreferences();
+  const apps = useApps();
   const { debug } = useLogger('App');
   
   // Model sidebar state
   const [isModelSidebarOpen, setIsModelSidebarOpen] = useState(false);
+  
+  // App modal state
+  const [isAppModalOpen, setIsAppModalOpen] = useState(false);
 
   // Get tagging context
   const { filteredThreads, getThreadTags } = useTagSystemContext();
@@ -129,6 +136,51 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
   const handleRefreshThreads = useCallback(async () => {
     await chat.loadThreads(true);
   }, [chat.loadThreads]);
+
+  /**
+   * Handle opening the new app modal
+   */
+  const handleNewApp = useCallback(() => {
+    setIsAppModalOpen(true);
+    debug('Opening app creation modal');
+  }, [debug]);
+
+  /**
+   * Handle creating a new app
+   */
+  const handleCreateApp = useCallback(async (name: string, systemPrompt: string) => {
+    try {
+      const newApp = await apps.createApp(name, systemPrompt);
+      setIsAppModalOpen(false);
+      
+      // Select the newly created app
+      apps.selectApp(newApp.id);
+      
+      debug(`Created and selected new app: ${newApp.name}`);
+    } catch (error) {
+      debug('Failed to create app', error);
+    }
+  }, [apps.createApp, apps.selectApp, debug]);
+
+  /**
+   * Handle editing an existing app
+   */
+  const handleEditApp = useCallback(async (app: any) => {
+    // For now, just log - can be implemented later if needed
+    debug(`Edit app requested: ${app.name}`);
+  }, [debug]);
+
+  /**
+   * Handle app deletion
+   */
+  const handleDeleteApp = useCallback(async (appId: string) => {
+    try {
+      await apps.deleteApp(appId);
+      debug(`Deleted app: ${appId}`);
+    } catch (error) {
+      debug('Failed to delete app', error);
+    }
+  }, [apps.deleteApp, debug]);
 
   /**
    * OPTIMIZED: Memoized enhanced new chat handler with mobile auto-close
@@ -268,6 +320,7 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
         currentThreadId={chat.currentThread?.id || null}
         onThreadSelect={chat.handleThreadSelect}
         onNewChat={handleNewChat}
+        onNewApp={handleNewApp}
         onDeleteThread={chat.handleDeleteThread}
         onTogglePinThread={chat.handleTogglePinThread}
         onEditThread={chat.handleEditThreadTitle}
@@ -314,26 +367,46 @@ function AppInner({ chat }: { chat: ReturnType<typeof useChat> }) {
           />
         )}
 
-        {/* Chat Interface */}
+        {/* Chat Interface or App List */}
         <div className="flex-1">
-          <ChatInterface
-            currentThread={chat.currentThread}
-            onSendMessage={chat.handleSendMessage}
-            loading={chat.loading}
-            availableModels={models.availableModels}
-            images={chat.images}
-            documents={chat.documents}
-            onImagesChange={chat.handleImagesChange}
-            onDocumentsChange={chat.handleDocumentsChange}
-            sidebarOpen={sidebar.isOpen}
-            modelSidebarOpen={isModelSidebarOpen}
-            currentTokenMetrics={chat.currentTokenMetrics}
-            selectedModel={currentModel}
-            onModelChange={handleCurrentModelChange}
-            onModelSelectorClick={handleModelSidebarToggle}
-          />
+          {chat.currentThread || apps.currentApp ? (
+            <ChatInterface
+              currentThread={chat.currentThread}
+              onSendMessage={chat.handleSendMessage}
+              loading={chat.loading}
+              availableModels={models.availableModels}
+              images={chat.images}
+              documents={chat.documents}
+              onImagesChange={chat.handleImagesChange}
+              onDocumentsChange={chat.handleDocumentsChange}
+              sidebarOpen={sidebar.isOpen}
+              modelSidebarOpen={isModelSidebarOpen}
+              currentTokenMetrics={chat.currentTokenMetrics}
+              selectedModel={currentModel}
+              onModelChange={handleCurrentModelChange}
+              onModelSelectorClick={handleModelSidebarToggle}
+            />
+          ) : (
+            /* Show app list when no thread or app is selected and sidebar is open */
+            sidebar.isOpen && (
+              <AppList
+                apps={apps.apps}
+                currentAppId={apps.currentAppId}
+                onAppSelect={apps.selectApp}
+                onAppEdit={handleEditApp}
+                onAppDelete={handleDeleteApp}
+              />
+            )
+          )}
         </div>
       </div>
+
+      {/* App Creation Modal */}
+      <AppModal
+        isOpen={isAppModalOpen}
+        onClose={() => setIsAppModalOpen(false)}
+        onSubmit={handleCreateApp}
+      />
     </div>
   );
 }

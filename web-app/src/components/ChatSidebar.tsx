@@ -43,6 +43,7 @@ import { SidebarStates } from './sidebar/SidebarStates';
 import { ThreadList } from './sidebar/ThreadList';
 import { UserProfile } from './UserProfile';
 import { TagFilterBar } from './ui/TagFilterBar';
+import { AppModal } from './ui/AppModal';
 import { useTagSystemContext } from './TagSystem';
 import { useLogger } from '../hooks/useLogger';
 import { cn } from '../utils/cn';
@@ -53,6 +54,7 @@ interface ChatSidebarProps {
   currentThreadId: string | null;
   onThreadSelect: (threadId: string) => void;
   onNewChat: () => void;
+  onNewApp?: () => void; // Callback for creating new app
   onDeleteThread: (threadId: string) => void;
   onTogglePinThread: (threadId: string, isPinned: boolean) => void;
   onEditThread?: (threadId: string, newTitle: string) => Promise<ChatThread>;
@@ -88,6 +90,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   currentThreadId,
   onThreadSelect,
   onNewChat,
+  onNewApp,
   onDeleteThread,
   onTogglePinThread,
   onEditThread,
@@ -206,6 +209,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         <SidebarHeader
           onToggle={onToggle}
           onNewChat={handleNewChat}
+          onNewApp={onNewApp}
           threadCount={threads.length}
           pinnedCount={pinnedCount}
         />

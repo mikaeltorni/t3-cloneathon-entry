@@ -156,6 +156,26 @@ export interface ChatTag {
 }
 
 /**
+ * User-created app structure for custom AI assistants
+ * 
+ * @interface App
+ * @property id - Unique app identifier
+ * @property name - App display name
+ * @property systemPrompt - System prompt that defines the app's behavior
+ * @property createdAt - App creation timestamp
+ * @property updatedAt - Last modification timestamp
+ * @property isActive - Whether the app is currently active/selected
+ */
+export interface App {
+  id: string;
+  name: string;
+  systemPrompt: string;
+  createdAt: Date;
+  updatedAt: Date;
+  isActive?: boolean;
+}
+
+/**
  * User's complete chat data structure
  * 
  * @interface UserChats
