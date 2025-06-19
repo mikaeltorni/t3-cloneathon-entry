@@ -51,6 +51,8 @@ The .env file is in the .gitignore by default
 
 18. Once it's ready, press continue.
 
+NOTE THAT WE RECOMMEND TO USE THE SPARK PLAN FOR THIS PROJECT, INSTEAD OF THE BLAZE PLAN!
+
 19. Now you are at: https://console.firebase.google.com/u/0/project/t3-cloneathon-testing/overview
 
 20. Set up a web app right of the iOS and Android icons.
