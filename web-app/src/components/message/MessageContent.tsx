@@ -82,20 +82,27 @@ export const MessageContent: React.FC<MessageContentProps> = ({
           h3: ({ children }) => <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-slate-100">{children}</h3>,
           strong: ({ children }) => <strong className="font-bold text-gray-900 dark:text-slate-100">{children}</strong>,
           em: ({ children }) => <em className="italic">{children}</em>,
-          code: ({ children, ...props }) => {
+          code: ({ children, className, ...props }) => {
             const codeString = Array.isArray(children) ? children.join('') : String(children);
-            if ('inline' in props && props.inline) {
+            
+            // Check if this is inline code (no className means inline, className means block)
+            const isInline = !className;
+            
+            if (isInline) {
+              // Inline code - highlighted background, no copy button
               return (
-                <code className="bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-200 px-1 py-0.5 rounded text-sm font-mono">
+                <code className="bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 px-1.5 py-0.5 rounded font-mono text-sm border border-blue-200 dark:border-blue-700">
                   {children}
                 </code>
               );
             }
+            
+            // Code blocks - minimal container with subtle outline and copy button
             return (
-              <div className="relative group">
+              <div className="relative group my-2">
                 <CopyButton text={codeString} />
-                <pre className="bg-gray-100 dark:bg-slate-700 p-3 rounded-lg overflow-x-auto mb-4">
-                  <code className="text-sm font-mono text-gray-800 dark:text-slate-200">{codeString}</code>
+                <pre className="font-mono text-sm text-gray-800 dark:text-slate-200 whitespace-pre-wrap bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg p-3 overflow-x-auto">
+                  {codeString}
                 </pre>
               </div>
             );
