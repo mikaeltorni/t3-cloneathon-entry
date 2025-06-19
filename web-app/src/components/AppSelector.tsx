@@ -214,7 +214,7 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
             <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
               Choose Your AI Assistant
             </h2>
-            <p className="text-sm text-gray-600 dark:text-slate-400">
+            <p className="text-xs text-gray-600 dark:text-slate-400">
               Select an app to start chatting with a custom AI assistant
             </p>
           </div>
