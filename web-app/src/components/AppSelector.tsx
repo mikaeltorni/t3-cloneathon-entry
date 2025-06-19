@@ -232,7 +232,7 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
         </div>
 
         {/* Apps horizontal scroll */}
-        {apps.length === 0 ? (
+        {/* {apps.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-slate-600">
               <svg fill="currentColor" viewBox="0 0 24 24">
@@ -270,7 +270,7 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
               />
             ))}
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
