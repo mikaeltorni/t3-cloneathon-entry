@@ -60,6 +60,46 @@ export interface SharedModelConfig {
  * - Optional reasoning models use reasoningMode: 'optional' with reasoningType: 'effort'
  */
 export const SHARED_MODEL_CONFIG = {
+  'x-ai/grok-3-mini-beta': {
+    name: 'Grok 3 Mini Beta',
+    description: 'xAI’s lightweight model for math, puzzles, and reasoning-heavy tasks. "Thinks" before responding. Transparent traces; defaults to low reasoning, can boost with effort.',
+    released: '2025-04-09',
+    hasReasoning: true,
+    reasoningType: 'effort',
+    reasoningMode: 'forced',
+    supportsEffortControl: true,
+    webSearchMode: 'optional',
+    supportsWebEffortControl: false,
+    color: '#495057',
+    bgColor: '#F8F9FA',
+    textColor: '#212529',
+    contextLength: 131072,
+    provider: 'xai',
+    inputCostPer1k: 0.0003, 
+    outputCostPer1k: 0.0005,
+    hasVision: false
+  },
+
+  'x-ai/grok-3-beta': {
+    name: 'Grok 3 Beta',
+    description: 'xAI’s flagship model for coding, data extraction, summarization, and deep domain knowledge. Excels at enterprise and structured tasks.',
+    released: '2025-04-09',
+    hasReasoning: true,
+    reasoningType: 'effort',
+    reasoningMode: 'forced',
+    supportsEffortControl: true,
+    webSearchMode: 'optional',
+    supportsWebEffortControl: false,
+    color: '#495057',
+    bgColor: '#F8F9FA',
+    textColor: '#212529',
+    contextLength: 131072,
+    provider: 'xai',
+    inputCostPer1k: 0.003,
+    outputCostPer1k: 0.015,
+    hasVision: false
+  },
+
   // === OpenAI Models ===
   'openai/gpt-4o': {
     name: 'GPT-4o',
@@ -107,6 +147,7 @@ export const SHARED_MODEL_CONFIG = {
   //   hasVision: true
   // },
   
+  // REQUIRES OPENAI API KEY TO BE SET UP IN THE OPENROUTER
   // 'openai/o3': {
   //   name: 'OpenAI o3',
   //   description: 'Advanced reasoning model with deep research capabilities',
