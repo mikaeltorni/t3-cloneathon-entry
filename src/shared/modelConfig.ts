@@ -107,6 +107,7 @@ export const SHARED_MODEL_CONFIG = {
   //   hasVision: true
   // },
   
+  // REQUIRES OPENAI API KEY TO BE SET UP IN THE OPENROUTER
   // 'openai/o3': {
   //   name: 'OpenAI o3',
   //   description: 'Advanced reasoning model with deep research capabilities',
