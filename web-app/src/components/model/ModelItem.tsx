@@ -66,10 +66,10 @@ export const ModelItem: React.FC<ModelItemProps> = ({
 }) => {
   // Click handler with debugging
   const handleClick = () => {
-    console.debug(`[ModelItem] Button clicked for model: ${modelId}`);
+    console.log(`[ModelItem] Button clicked for model: ${modelId}`);
     
     if (loading || isPinning) {
-      console.debug(`[ModelItem] Click blocked - loading: ${loading}, pinning: ${isPinning}`);
+      console.log(`[ModelItem] Click blocked - loading: ${loading}, pinning: ${isPinning}`);
       return;
     }
     
@@ -80,7 +80,7 @@ export const ModelItem: React.FC<ModelItemProps> = ({
     
     try {
       onSelect(modelId);
-      console.debug(`[ModelItem] onSelect completed for: ${modelId}`);
+      console.log(`[ModelItem] onSelect completed for: ${modelId}`);
     } catch (error) {
       console.error(`[ModelItem] Error in onSelect for ${modelId}:`, error);
     }

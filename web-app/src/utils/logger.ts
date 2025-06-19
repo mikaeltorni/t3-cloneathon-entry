@@ -22,7 +22,7 @@ class Logger {
     
     switch (level) {
       case 'debug':
-        console.debug(formattedMessage, ...args);
+        console.log(formattedMessage, ...args);
         break;
       case 'info':
         console.info(formattedMessage, ...args);
