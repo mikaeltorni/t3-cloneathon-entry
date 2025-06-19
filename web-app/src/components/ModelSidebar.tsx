@@ -168,7 +168,7 @@ export const ModelSidebar: React.FC<ModelSidebarProps> = ({
           </div>
           
           <p className="text-xs text-gray-500 dark:text-slate-400 text-center leading-relaxed">
-            Choose your AI assistant • {modelCount} models available
+            Choose your AI model • {modelCount} models available
             {pinnedCount > 0 && (
               <span className="text-amber-600 dark:text-amber-400 ml-1">
                 • {pinnedCount} pinned

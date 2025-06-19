@@ -208,29 +208,6 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
   return (
     <div className={cn('bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-600', className)}>
       <div className="p-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
-              Choose Your AI Assistant
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-slate-400">
-              Select an app to start chatting with a custom AI assistant
-            </p>
-          </div>
-          {onNewApp && (
-            <button
-              onClick={onNewApp}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg shadow-sm transition-all duration-200 flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              New App
-            </button>
-          )}
-        </div>
-
         {/* Apps horizontal scroll */}
         {apps.length === 0 ? (
           <div className="text-center py-12">
@@ -258,18 +235,44 @@ export const AppSelector: React.FC<AppSelectorProps> = ({
             )}
           </div>
         ) : (
-          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
-            {apps.map((app) => (
-              <AppSelectorItem
-                key={app.id}
-                app={app}
-                isSelected={currentAppId === app.id}
-                onSelect={onAppSelect}
-                onEdit={onAppEdit}
-                onDelete={onAppDelete}
-              />
-            ))}
-          </div>
+          <>
+            {/* Header - Only shown when there are apps */}
+            <div className="flex flex-col items-center justify-center mb-4">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                  Choose Your AI Assistant
+                </h2>
+                <p className="text-xs text-gray-600 dark:text-slate-400">
+                  Select an app to start chatting with a custom AI assistant
+                </p>
+              </div>
+              {onNewApp && (
+                <button
+                  onClick={onNewApp}
+                  className="mt-4 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg shadow-sm transition-all duration-200 flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  New App
+                </button>
+              )}
+            </div>
+
+            {/* Apps list */}
+            <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+              {apps.map((app) => (
+                <AppSelectorItem
+                  key={app.id}
+                  app={app}
+                  isSelected={currentAppId === app.id}
+                  onSelect={onAppSelect}
+                  onEdit={onAppEdit}
+                  onDelete={onAppDelete}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

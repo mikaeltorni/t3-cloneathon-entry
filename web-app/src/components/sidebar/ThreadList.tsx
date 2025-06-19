@@ -111,7 +111,7 @@ export const ThreadList: React.FC<ThreadListProps> = ({
     // if the thread doesn't have its own model data yet (new thread scenario)
     if (thread.id === currentThreadId && !modelId && currentModel) {
       modelId = currentModel;
-      console.debug(`[ThreadList] Using global currentModel for new thread ${thread.id}: ${currentModel}`);
+      console.log(`[ThreadList] Using global currentModel for new thread ${thread.id}: ${currentModel}`);
     }
     
     // PRIORITY 3: Fallback to extracting model from thread messages if thread model data is missing
@@ -123,12 +123,12 @@ export const ThreadList: React.FC<ThreadListProps> = ({
       
       if (assistantMessages.length > 0) {
         modelId = assistantMessages[0].modelId;
-        console.debug(`[ThreadList] Using fallback model from message for thread ${thread.id}: ${modelId}`);
+        console.log(`[ThreadList] Using fallback model from message for thread ${thread.id}: ${modelId}`);
       }
     }
     
     // Enhanced debugging to track why models might disappear
-    console.debug(`[ThreadList] Model resolution for thread ${thread.id}:`, {
+    console.log(`[ThreadList] Model resolution for thread ${thread.id}:`, {
       threadId: thread.id,
       threadCurrentModel: thread.currentModel,
       threadLastUsedModel: thread.lastUsedModel,
@@ -149,7 +149,7 @@ export const ThreadList: React.FC<ThreadListProps> = ({
     
     // Log when no model is found at all
     if (!modelConfig && !modelId) {
-      console.debug(`[ThreadList] No model information found for thread ${thread.id}. Thread may be new or missing model data.`);
+      console.log(`[ThreadList] No model information found for thread ${thread.id}. Thread may be new or missing model data.`);
     }
     
     return modelConfig;

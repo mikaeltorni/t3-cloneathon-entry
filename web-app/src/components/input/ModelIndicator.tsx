@@ -74,21 +74,20 @@ export const ModelIndicator: React.FC<ModelIndicatorProps> = ({
       )}
       aria-label={`Current model: ${model.name}. Click to change model.`}
     >
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex flex-col gap-1 mb-2">
         <div className="flex items-center gap-2">
           <div 
             className="w-3 h-3 rounded-full flex-shrink-0"
             style={{ backgroundColor: model.color }}
             aria-hidden="true"
           />
-          <span className="text-sm font-medium text-gray-700 dark:text-slate-200 truncate">
+          <span className="text-sm font-medium text-gray-700 dark:text-slate-200 break-words">
             Current Model: {model.name}
           </span>
         </div>
-        
-        {/* Dropdown arrow and click hint with dark mode */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xs text-gray-500 dark:text-slate-400 hidden sm:inline">
+        {/* Dropdown arrow and click hint with dark mode, now always on a new row */}
+        <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+          <span className="text-xs text-gray-500 dark:text-slate-400">
             Click to change
           </span>
           <svg

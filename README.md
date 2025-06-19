@@ -1,3 +1,5 @@
+Follow the instructions carefully. The author is not liable for any unexpected costs if you don't set limits to protect against an unnoticed bug that makes infinite amount of calls to the API in a loop, as mentioned in the license of the repository.
+
 # INSTRUCTIONS
 
 Tested using Windows PowerShell
@@ -50,6 +52,8 @@ The .env file is in the .gitignore by default
 17. Press continue, the project will configure now.
 
 18. Once it's ready, press continue.
+
+NOTE THAT WE RECOMMEND TO USE THE SPARK PLAN FOR THIS PROJECT, INSTEAD OF THE BLAZE PLAN!
 
 19. Now you are at: https://console.firebase.google.com/u/0/project/t3-cloneathon-testing/overview
 

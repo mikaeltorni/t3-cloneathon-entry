@@ -11,6 +11,7 @@
  *   - Composed of smaller, focused components
  *   - Auto-resizing textarea with keyboard shortcuts
  *   - Image and document attachments management
+ *   - Clipboard paste support for images and documents
  *   - Model information display
  *   - Reasoning and search controls
  *   - Metrics display
@@ -30,9 +31,39 @@ import { DocumentAttachments } from './DocumentAttachments';
 import { useLogger } from '../hooks/useLogger';
 import { useMessageForm } from '../hooks/useMessageForm';
 import { useMobileScrollState } from '../hooks/useMobileScrollState';
+import { useFileProcessing } from '../hooks/fileDropZone/useFileProcessing';
 import { tokenizerService } from '../services/tokenizerService';
 import { cn } from '../utils/cn';
 import type { ModelConfig, ImageAttachment, DocumentAttachment, TokenMetrics, ChatMessage } from '../../../src/shared/types';
+
+// Supported file types for clipboard paste
+const SUPPORTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg', 
+  'image/png',
+  'image/gif',
+  'image/webp'
+];
+
+const SUPPORTED_DOCUMENT_TYPES = [
+  'application/pdf',
+  'text/plain',
+  'text/markdown',
+  'text/x-markdown',
+  'application/json',
+  'text/csv',
+  'text/xml',
+  'application/xml',
+  'text/html',
+  'application/javascript',
+  'application/typescript',
+  'text/css',
+  'application/yaml',
+  'text/yaml',
+  'application/x-yaml'
+];
+
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 /**
  * Props for the ChatInput component
@@ -65,6 +96,7 @@ interface ChatInputProps {
  * - Reasoning and search options
  * - Metrics display
  * - Message input and submission
+ * - Clipboard paste support for files
  * - Input remains writable during content generation
  * 
  * @param props - Component props
@@ -90,11 +122,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   mobileScrollState: externalMobileScrollState
 }) => {
   const inputBarRef = useRef<HTMLDivElement>(null);
-  const { debug } = useLogger('ChatInput');
+  const { debug, warn } = useLogger('ChatInput');
   
   // Mobile scroll state management - always call hook but use external state if provided
   const internalMobileScrollState = useMobileScrollState();
   const mobileScrollState = externalMobileScrollState || internalMobileScrollState;
+  
+  // File processing utilities
+  const { processImageFile, processDocumentFile, createTemporaryImageAttachment, createTemporaryDocumentAttachment } = useFileProcessing();
   
   // State for context window usage
   const [contextWindowUsage, setContextWindowUsage] = useState<{
@@ -138,6 +173,217 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   });
 
   /**
+   * Handle clipboard paste events to detect and process files
+   */
+  const handleClipboardPaste = useCallback(async (e: ClipboardEvent) => {
+    const clipboardItems = e.clipboardData?.items;
+    if (!clipboardItems) return;
+
+    debug('Clipboard paste detected, checking for files...');
+    const files: File[] = [];
+    
+    // Extract files from clipboard
+    for (let i = 0; i < clipboardItems.length; i++) {
+      const item = clipboardItems[i];
+      if (item.kind === 'file') {
+        const file = item.getAsFile();
+        if (file) {
+          files.push(file);
+          debug(`Found file in clipboard: ${file.name} (${file.type})`);
+        }
+      }
+    }
+
+    if (files.length === 0) {
+      debug('No files found in clipboard');
+      return;
+    }
+
+    // Prevent default paste behavior if we're processing files
+    e.preventDefault();
+    
+    debug(`Processing ${files.length} files from clipboard`);
+    await processClipboardFiles(files);
+  }, [debug]);
+
+  /**
+   * Process files from clipboard and add them as attachments
+   */
+  const processClipboardFiles = useCallback(async (files: File[]) => {
+    const imageFiles: File[] = [];
+    const documentFiles: File[] = [];
+    const unsupportedFiles: string[] = [];
+
+    // Categorize files
+    for (const file of files) {
+      if (SUPPORTED_IMAGE_TYPES.includes(file.type)) {
+        imageFiles.push(file);
+      } else if (SUPPORTED_DOCUMENT_TYPES.includes(file.type)) {
+        documentFiles.push(file);
+      } else {
+        unsupportedFiles.push(file.name);
+      }
+    }
+
+    // Warn about unsupported files
+    if (unsupportedFiles.length > 0) {
+      warn(`Unsupported file types pasted: ${unsupportedFiles.join(', ')}`);
+    }
+
+    // Process images
+    if (imageFiles.length > 0) {
+      const remainingImageSlots = Math.max(0, 5 - images.length); // Assuming max 5 images
+      const imagesToProcess = imageFiles.slice(0, remainingImageSlots);
+      
+      if (imagesToProcess.length < imageFiles.length) {
+        warn(`Can only add ${imagesToProcess.length} more images. Some files were skipped.`);
+      }
+
+      // Create temporary attachments for images
+      const temporaryImages = imagesToProcess.map(file => createTemporaryImageAttachment(file));
+      let currentImages = [...images, ...temporaryImages];
+      onImagesChange(currentImages);
+
+      // Process images
+      for (let i = 0; i < imagesToProcess.length; i++) {
+        const file = imagesToProcess[i];
+        const tempAttachment = temporaryImages[i];
+
+        try {
+          // Check file size
+          if (file.size > MAX_FILE_SIZE) {
+            warn(`Image ${file.name} is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 50MB.`);
+            // Mark as failed
+            currentImages = currentImages.map((img: ImageAttachment) => 
+              img.id === tempAttachment.id 
+                ? { ...img, isUploading: false, error: 'File too large' }
+                : img
+            );
+            onImagesChange(currentImages);
+            continue;
+          }
+
+          const result = await processImageFile(file, (progress) => {
+            // Update progress for this specific attachment
+            const updatedImages = currentImages.map((img: ImageAttachment) => 
+              img.id === tempAttachment.id 
+                ? { ...img, progress }
+                : img
+            );
+            currentImages = updatedImages;
+            onImagesChange(updatedImages);
+          });
+
+          if (result.success && result.attachment) {
+            // Replace temporary attachment with final one
+            currentImages = currentImages.map((img: ImageAttachment) => 
+              img.id === tempAttachment.id 
+                ? { ...result.attachment, isUploading: false } as ImageAttachment
+                : img
+            );
+            onImagesChange(currentImages);
+            debug(`Successfully processed pasted image: ${file.name}`);
+          } else {
+            // Mark as failed
+            currentImages = currentImages.map((img: ImageAttachment) => 
+              img.id === tempAttachment.id 
+                ? { ...img, isUploading: false, error: result.error || 'Processing failed' }
+                : img
+            );
+            onImagesChange(currentImages);
+            warn(`Failed to process pasted image ${file.name}: ${result.error}`);
+          }
+        } catch (error) {
+          // Mark as failed
+          currentImages = currentImages.map((img: ImageAttachment) => 
+            img.id === tempAttachment.id 
+              ? { ...img, isUploading: false, error: 'Processing failed' }
+              : img
+          );
+          onImagesChange(currentImages);
+          warn(`Error processing pasted image ${file.name}:`, error);
+        }
+      }
+    }
+
+    // Process documents
+    if (documentFiles.length > 0) {
+      const remainingDocumentSlots = Math.max(0, 5 - documents.length); // Assuming max 5 documents
+      const documentsToProcess = documentFiles.slice(0, remainingDocumentSlots);
+      
+      if (documentsToProcess.length < documentFiles.length) {
+        warn(`Can only add ${documentsToProcess.length} more documents. Some files were skipped.`);
+      }
+
+      // Create temporary attachments for documents
+      const temporaryDocuments = documentsToProcess.map(file => createTemporaryDocumentAttachment(file));
+      let currentDocuments = [...documents, ...temporaryDocuments];
+      onDocumentsChange(currentDocuments);
+
+      // Process documents
+      for (let i = 0; i < documentsToProcess.length; i++) {
+        const file = documentsToProcess[i];
+        const tempAttachment = temporaryDocuments[i];
+
+        try {
+          // Check file size
+          if (file.size > MAX_FILE_SIZE) {
+            warn(`Document ${file.name} is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 50MB.`);
+            // Mark as failed
+            currentDocuments = currentDocuments.map((doc: DocumentAttachment) => 
+              doc.id === tempAttachment.id 
+                ? { ...doc, isUploading: false, error: 'File too large' }
+                : doc
+            );
+            onDocumentsChange(currentDocuments);
+            continue;
+          }
+
+          const result = await processDocumentFile(file, (progress) => {
+            // Update progress for this specific attachment
+            const updatedDocuments = currentDocuments.map((doc: DocumentAttachment) => 
+              doc.id === tempAttachment.id 
+                ? { ...doc, progress }
+                : doc
+            );
+            currentDocuments = updatedDocuments;
+            onDocumentsChange(updatedDocuments);
+          });
+
+          if (result.success && result.attachment) {
+            // Replace temporary attachment with final one
+            currentDocuments = currentDocuments.map((doc: DocumentAttachment) => 
+              doc.id === tempAttachment.id 
+                ? { ...result.attachment, isUploading: false } as DocumentAttachment
+                : doc
+            );
+            onDocumentsChange(currentDocuments);
+            debug(`Successfully processed pasted document: ${file.name}`);
+          } else {
+            // Mark as failed
+            currentDocuments = currentDocuments.map((doc: DocumentAttachment) => 
+              doc.id === tempAttachment.id 
+                ? { ...doc, isUploading: false, error: result.error || 'Processing failed' }
+                : doc
+            );
+            onDocumentsChange(currentDocuments);
+            warn(`Failed to process pasted document ${file.name}: ${result.error}`);
+          }
+        } catch (error) {
+          // Mark as failed
+          currentDocuments = currentDocuments.map((doc: DocumentAttachment) => 
+            doc.id === tempAttachment.id 
+              ? { ...doc, isUploading: false, error: 'Processing failed' }
+              : doc
+          );
+          onDocumentsChange(currentDocuments);
+          warn(`Error processing pasted document ${file.name}:`, error);
+        }
+      }
+    }
+  }, [images, documents, onImagesChange, onDocumentsChange, processImageFile, processDocumentFile, createTemporaryImageAttachment, createTemporaryDocumentAttachment, debug, warn]);
+
+  /**
    * Calculate context window usage based on current messages and model
    */
   const calculateContextWindow = useCallback(async () => {
@@ -174,6 +420,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   useEffect(() => {
     calculateContextWindow();
   }, [calculateContextWindow]);
+
+  // Add clipboard paste event listener
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      handleClipboardPaste(e);
+    };
+
+    // Add event listener to the document to catch paste events
+    document.addEventListener('paste', handlePaste);
+
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, [handleClipboardPaste]);
 
   /**
    * Auto-resize textarea based on content
