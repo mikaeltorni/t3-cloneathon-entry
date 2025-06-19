@@ -1,3 +1,5 @@
+Follow the instructions carefully. The author is not liable for any unexpected costs if you don't set limits to protect against an unnoticed bug that makes infinite amount of calls to the API in a loop, as mentioned in the license of the repository.
+
 # INSTRUCTIONS
 
 Tested using Windows PowerShell
