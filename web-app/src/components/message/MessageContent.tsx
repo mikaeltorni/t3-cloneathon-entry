@@ -82,7 +82,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({
           h3: ({ children }) => <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-slate-100">{children}</h3>,
           strong: ({ children }) => <strong className="font-bold text-gray-900 dark:text-slate-100">{children}</strong>,
           em: ({ children }) => <em className="italic">{children}</em>,
-          code: ({ children, className, ...props }) => {
+          code: ({ children, className }) => {
             const codeString = Array.isArray(children) ? children.join('') : String(children);
             
             // Check if this is inline code (no className means inline, className means block)
