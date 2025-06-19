@@ -43,22 +43,45 @@ export const MessageReasoning: React.FC<MessageReasoningProps> = ({
    * Check if this message is currently streaming reasoning
    */
   const isStreamingReasoning = useMemo(() => {
-    return message?.metadata?.isReasoning === true && !!message?.metadata?.reasoning;
-  }, [message?.metadata?.isReasoning, message?.metadata?.reasoning]);
+    const result = message?.metadata?.isReasoning === true && !!message?.metadata?.reasoning;
+    // Debug: streaming reasoning state
+    // eslint-disable-next-line no-console
+    console.log(`[MessageReasoning] isStreamingReasoning for messageId=${messageId}:`, result, {
+      isReasoning: message?.metadata?.isReasoning,
+      reasoning: message?.metadata?.reasoning
+    });
+    return result;
+  }, [message?.metadata?.isReasoning, message?.metadata?.reasoning, messageId]);
 
   /**
    * Get the streaming reasoning content
    */
   const streamingReasoningContent = useMemo(() => {
-    return isStreamingReasoning ? message?.metadata?.reasoning : null;
-  }, [isStreamingReasoning, message?.metadata?.reasoning]);
+    const content = isStreamingReasoning ? message?.metadata?.reasoning : null;
+    // Debug: streaming reasoning content
+    // eslint-disable-next-line no-console
+    console.log(`[MessageReasoning] streamingReasoningContent for messageId=${messageId}:`, content);
+    return content;
+  }, [isStreamingReasoning, message?.metadata?.reasoning, messageId]);
 
   /**
    * Memoized reasoning content - handles both streaming and final reasoning
    */
   const reasoningContent = useMemo(() => {
+    // Debug: reasoningContent recompute
+    // eslint-disable-next-line no-console
+    console.log(`[MessageReasoning] reasoningContent recompute for messageId=${messageId}`, {
+      isStreamingReasoning,
+      streamingReasoningContent,
+      reasoning,
+      showReasoning
+    });
+
     // Show streaming reasoning first if available
     if (isStreamingReasoning && streamingReasoningContent) {
+      // Debug: rendering streaming reasoning
+      // eslint-disable-next-line no-console
+      console.log(`[MessageReasoning] Rendering streaming reasoning for messageId=${messageId}`);
       return (
         <div className="mb-3">
           <ReasoningDisplay 
@@ -71,13 +94,27 @@ export const MessageReasoning: React.FC<MessageReasoningProps> = ({
 
     // Show final reasoning with toggle if available
     if (!reasoning) {
+      // Debug: no reasoning to display
+      // eslint-disable-next-line no-console
+      console.log(`[MessageReasoning] No reasoning to display for messageId=${messageId}`);
       return null;
     }
+
+    // Debug: rendering final reasoning with toggle
+    // eslint-disable-next-line no-console
+    console.log(`[MessageReasoning] Rendering final reasoning with toggle for messageId=${messageId}`, {
+      showReasoning
+    });
 
     return (
       <div className="mb-3">
         <button
-          onClick={onToggleReasoning}
+          onClick={() => {
+            // Debug: toggle reasoning button clicked
+            // eslint-disable-next-line no-console
+            console.log(`[MessageReasoning] Toggle reasoning button clicked for messageId=${messageId}, current showReasoning=${showReasoning}`);
+            onToggleReasoning();
+          }}
           className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-2 transition-colors duration-200"
           aria-expanded={showReasoning}
           aria-controls={`reasoning-${messageId}`}
@@ -98,12 +135,18 @@ export const MessageReasoning: React.FC<MessageReasoningProps> = ({
             id={`reasoning-${messageId}`}
             className="bg-blue-50 dark:bg-slate-700 p-3 rounded-md text-sm text-blue-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed animate-in slide-in-from-top-2 duration-200"
           >
-            {reasoning}
+            {/* Debug: showing reasoning content */}
+            {/* eslint-disable-next-line no-console */}
+            {(() => { console.log(`[MessageReasoning] Showing reasoning content for messageId=${messageId}`); return reasoning; })()}
           </div>
         )}
       </div>
     );
   }, [reasoning, messageId, showReasoning, onToggleReasoning, isStreamingReasoning, streamingReasoningContent]);
+
+  // Debug: returning reasoningContent
+  // eslint-disable-next-line no-console
+  console.log(`[MessageReasoning] Returning reasoningContent for messageId=${messageId}`);
 
   return reasoningContent;
 }; 
